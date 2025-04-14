@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: MediaQuery.of(context).size.height / 3,
+        toolbarHeight: MediaQuery.of(context).size.height * 0.3,
         title: const RootPageHead(),
         bottom: TabBar(
           tabs: _tabs,

@@ -11,7 +11,7 @@ class _RootPageHeadState extends State<RootPageHead> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height / 3,
+      //height: MediaQuery.of(context).size.height / 3,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -20,6 +20,7 @@ class _RootPageHeadState extends State<RootPageHead> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
