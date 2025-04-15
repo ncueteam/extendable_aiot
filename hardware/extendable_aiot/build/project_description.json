@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "extendable_aiot",
-    "project_version":    "1828f9f-dirty",
+    "project_version":    "1ec93aa-dirty",
     "project_path":       "D:/workspace/study/extendable_aiot/hardware/extendable_aiot",
     "idf_path":           "D:/workspace/study/idf_path/v5.4.1/esp-idf",
     "build_dir":          "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build",
@@ -1225,7 +1225,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip", "espressif__ssd1306", "tny-robotics__sh1106-esp-idf", "zorxx__dht" ],
             "file": "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/main/libmain.a",
-            "sources": [ "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/main.c", "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/oled_display.c" ],
+            "sources": [ "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/led_manager.c", "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/main.c", "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/oled_display.c", "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/wifi_manager.c", "D:/workspace/study/extendable_aiot/hardware/extendable_aiot/main/time_sync.c" ],
             "include_dirs": [ "." ]
         },
         "mbedtls": {

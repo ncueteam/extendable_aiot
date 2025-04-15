@@ -4,16 +4,20 @@
 #include "freertos/timers.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "led_strip.h"
 #include "sdkconfig.h"
 #include "oled_display.h"
 #include "esp_timer.h"
+#include "nvs_flash.h"
+#include "wifi_manager.h"
+#include "time_sync.h"
+#include "led_manager.h"
 
 static const char *TAG = "extended_aiot";
 
-#define BLINK_GPIO CONFIG_BLINK_GPIO
+// WiFi 相關定義
+#define WIFI_SSID      "Yun"
+#define WIFI_PASSWORD  "0937565253"
 
-static uint8_t s_led_state = 0;
 static oled_display_t* oled_display = NULL;
 
 // 時間狀態
@@ -25,69 +29,6 @@ static struct {
 
 // 時鐘更新任務句柄
 static TaskHandle_t clock_task_handle = NULL;
-
-#ifdef CONFIG_BLINK_LED_STRIP
-
-static led_strip_handle_t led_strip;
-
-static void blink_led(void)
-{
-    /* If the addressable LED is enabled */
-    if (s_led_state) {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led_strip, 0, 16, 16, 16);
-        /* Refresh the strip to send data */
-        led_strip_refresh(led_strip);
-    } else {
-        /* Set all LED off to clear all pixels */
-        led_strip_clear(led_strip);
-    }
-}
-
-static void configure_led(void)
-{
-    ESP_LOGI(TAG, "Example configured to blink addressable LED!");
-    /* LED strip initialization with the GPIO and pixels number*/
-    led_strip_config_t strip_config = {
-        .strip_gpio_num = BLINK_GPIO,
-        .max_leds = 1, // at least one LED on board
-    };
-#if CONFIG_BLINK_LED_STRIP_BACKEND_RMT
-    led_strip_rmt_config_t rmt_config = {
-        .resolution_hz = 10 * 1000 * 1000, // 10MHz
-        .flags.with_dma = false,
-    };
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-#elif CONFIG_BLINK_LED_STRIP_BACKEND_SPI
-    led_strip_spi_config_t spi_config = {
-        .spi_bus = SPI2_HOST,
-        .flags.with_dma = true,
-    };
-    ESP_ERROR_CHECK(led_strip_new_spi_device(&strip_config, &spi_config, &led_strip));
-#else
-#error "unsupported LED strip backend"
-#endif
-    /* Set all LED off to clear all pixels */
-    led_strip_clear(led_strip);
-}
-
-#elif CONFIG_BLINK_LED_GPIO
-
-static void blink_led(void)
-{
-    gpio_set_level(BLINK_GPIO, s_led_state);
-}
-
-static void configure_led(void)
-{
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
-    gpio_reset_pin(BLINK_GPIO);
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
-}
-
-#else
-#error "unsupported LED type"
-#endif
 
 static void update_oled_display(void)
 {
@@ -165,22 +106,37 @@ static void test_pixel_pattern(void)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
+// WiFi 事件回調函數
+static void wifi_event_callback(wifi_manager_event_t event, void* data)
+{
+    switch (event) {
+        case WIFI_EVENT_CONNECTED:
+            ESP_LOGI(TAG, "WiFi Connected");
+            break;
+        case WIFI_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG, "WiFi Disconnected");
+            break;
+        case WIFI_EVENT_GOT_IP:
+            ESP_LOGI(TAG, "WiFi Got IP");
+            // 初始化時間同步
+            ESP_ERROR_CHECK(time_sync_init());
+            // 等待時間同步完成（設置30秒超時）
+            if (time_sync_wait(30000) == ESP_OK) {
+                ESP_LOGI(TAG, "Time synchronized successfully");
+                // 更新當前時間
+                time_sync_get_time(&current_time.hours, &current_time.minutes, &current_time.seconds);
+            } else {
+                ESP_LOGE(TAG, "Time synchronization timeout");
+            }
+            break;
+    }
+}
+
 static void update_clock_task(void* arg)
 {
     while (1) {
-        // 更新時間
-        current_time.seconds++;
-        if (current_time.seconds >= 60) {
-            current_time.seconds = 0;
-            current_time.minutes++;
-            if (current_time.minutes >= 60) {
-                current_time.minutes = 0;
-                current_time.hours++;
-                if (current_time.hours >= 24) {
-                    current_time.hours = 0;
-                }
-            }
-        }
+        // 更新時間（從網路同步的時間）
+        time_sync_get_time(&current_time.hours, &current_time.minutes, &current_time.seconds);
 
         // 更新顯示
         if (oled_display) {
@@ -197,8 +153,22 @@ static void update_clock_task(void* arg)
 
 void app_main(void)
 {
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // Initialize WiFi
+    ESP_LOGI(TAG, "Initializing WiFi");
+    ESP_ERROR_CHECK(wifi_manager_init(WIFI_SSID, WIFI_PASSWORD));
+    wifi_manager_set_callback(wifi_event_callback);
+    ESP_ERROR_CHECK(wifi_manager_start());
+
     // Initialize LED
-    configure_led();
+    ESP_ERROR_CHECK(led_manager_init());
     
     // Initialize OLED
     oled_display = oled_display_init();
@@ -207,15 +177,15 @@ void app_main(void)
         return;
     }
 
-    // 創建時鐘更新任務
+    // Create clock update task
     xTaskCreate(update_clock_task, "clock_task", 2048, NULL, 5, &clock_task_handle);
 
     while (1) {
         ESP_LOGI(TAG, "Current time: %02d:%02d:%02d", 
                  current_time.hours, current_time.minutes, current_time.seconds);
-        // LED blink
-        blink_led();
-        s_led_state = !s_led_state;
+        
+        // Toggle LED state
+        led_manager_toggle();
         vTaskDelay(CONFIG_BLINK_PERIOD / portTICK_PERIOD_MS);
     }
 }
