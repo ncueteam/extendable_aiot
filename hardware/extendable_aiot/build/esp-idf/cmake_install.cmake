@@ -554,6 +554,21 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/espressif__ssd1306/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/tny-robotics__sh1106-esp-idf/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/zorxx__dht/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/main/cmake_install.cmake")
 endif()
 

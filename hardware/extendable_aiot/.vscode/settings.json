@@ -10,5 +10,10 @@
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32"
     },
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "freertos.h": "c",
+        "task.h": "c",
+        "ssd1306.h": "c"
+    }
 }

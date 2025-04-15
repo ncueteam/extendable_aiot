@@ -82,4 +82,7 @@ D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/rt/lib
 D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/spiffs/libspiffs.a
 D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/espressif__led_strip/libespressif__led_strip.a
+D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/espressif__ssd1306/libespressif__ssd1306.a
+D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/tny-robotics__sh1106-esp-idf/libtny-robotics__sh1106-esp-idf.a
+D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/zorxx__dht/libzorxx__dht.a
 D:/workspace/study/extendable_aiot/hardware/extendable_aiot/build/esp-idf/main/libmain.a

@@ -30233,6 +30233,13 @@
                 "id": "component-config-wi-fi-provisioning-manager",
                 "title": "Wi-Fi Provisioning Manager",
                 "type": "menu"
+            },
+            {
+                "children": [],
+                "depends_on": null,
+                "id": "component-config-sh1106-esp-idf-driver",
+                "title": "SH1106 ESP-IDF Driver",
+                "type": "menu"
             }
         ],
         "depends_on": null,
