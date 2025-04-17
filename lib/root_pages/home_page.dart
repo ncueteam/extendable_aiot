@@ -1,4 +1,5 @@
 import 'package:extendable_aiot/components/root_page_head.dart';
+import 'package:extendable_aiot/config/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -30,20 +31,6 @@ final List<Widget> _tabsContent = [
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late TabController _tabController;
 
-  // final List<Tab> _tabs = const [
-  //   Tab(text: '所有房間'),
-  //   Tab(text: '客廳'),
-  //   Tab(text: '臥室'),
-  //   Tab(text: '廚房'),
-  // ];
-
-  // final List<Widget> _tabsContent = const [
-  //   Center(child: Text('這是所有房間的內容')),
-  //   Center(child: Text('這是客廳的內容')),
-  //   Center(child: Text('這是臥室的內容')),
-  //   Center(child: Text('這是廚房的內容')),
-  // ];
-
   @override
   void initState() {
     super.initState();
@@ -60,14 +47,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0, // 移除 AppBar 的陰影（分隔線）
         toolbarHeight: MediaQuery.of(context).size.height * 0.35,
         title: const RootPageHead(),
         bottom: TabBar(
           tabs: _tabs,
           controller: _tabController,
+          dividerColor: AppColors.page,
           //isScrollable: true,
+          indicatorColor: AppColors.active,
+          labelColor: AppColors.active,
+          unselectedLabelColor: AppColors.unactive,
+          
         ),
-      ),
+        
+      ),      
       body: TabBarView(controller: _tabController, children: _tabsContent),
     );
   }

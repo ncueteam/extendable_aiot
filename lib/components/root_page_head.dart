@@ -45,23 +45,32 @@ class _RootPageHeadState extends State<RootPageHead> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
+                const Icon(
+                  Icons.wb_cloudy_rounded,
+                  color: Colors.white,
+                  size: 120,
+                ),
                 const SizedBox(width: 50),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
                       '32°',
-                      style: TextStyle(color: Colors.white, fontSize: 45),
+                      style: TextStyle(color: Colors.white, fontSize: 40),
                     ),
-                    Text('今日多雲', style: TextStyle(color: Colors.white, fontSize: 15)),
-                    Text('彰化市彰化區', style: TextStyle(color: Colors.white, fontSize: 15)),
+                    Text(
+                      '今日多雲',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    Text(
+                      '彰化市彰化區',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
         ],
       ),
     );
