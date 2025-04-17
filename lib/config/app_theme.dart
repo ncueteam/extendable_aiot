@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 final ThemeData themeData = ThemeData(
-  primaryColor: AppColors.primary,//主題色
   scaffoldBackgroundColor: AppColors.page,//頁面背景色
   indicatorColor: AppColors.active, // 選項卡列中所選選項卡指示器的顏色
   splashColor: Colors.transparent, // 取消水波纹效果

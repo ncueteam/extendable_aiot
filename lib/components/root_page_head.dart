@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_colors.dart';
 
 class RootPageHead extends StatefulWidget {
   const RootPageHead({super.key});
@@ -13,7 +14,7 @@ class _RootPageHeadState extends State<RootPageHead> {
     return Container(
       //height: MediaQuery.of(context).size.height / 3,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: Colors.white),
+      decoration: BoxDecoration(color: AppColors.nav),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -21,17 +22,19 @@ class _RootPageHeadState extends State<RootPageHead> {
             icon: const Icon(Icons.menu, color: Colors.black),
             onPressed: () {},
           ),
+
+          const SizedBox(height: 10),
           const Text(
-            "您好！",
+            "您好！Have a nice day",
             style: TextStyle(
               color: Colors.black,
-              fontSize: 20,
+              fontSize: 25,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          const Text('xxxx年xx月xx日', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 10),
+          //const SizedBox(height: 10),
+          const Text('xxxx年xx月xx日', style: TextStyle(color: Colors.blue)),
+          const SizedBox(height: 20),
 
           Container(
             padding: const EdgeInsets.all(16),
@@ -40,23 +43,25 @@ class _RootPageHeadState extends State<RootPageHead> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wb_cloudy, color: Colors.white, size: 50),
-                const SizedBox(width: 16),
+                const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
+                const SizedBox(width: 50),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
                       '32°',
-                      style: TextStyle(color: Colors.white, fontSize: 32),
+                      style: TextStyle(color: Colors.white, fontSize: 45),
                     ),
-                    Text('今日多雲', style: TextStyle(color: Colors.white)),
-                    Text('彰化市彰化區', style: TextStyle(color: Colors.white)),
+                    Text('今日多雲', style: TextStyle(color: Colors.white, fontSize: 15)),
+                    Text('彰化市彰化區', style: TextStyle(color: Colors.white, fontSize: 15)),
                   ],
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
