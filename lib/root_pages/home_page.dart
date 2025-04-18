@@ -1,5 +1,6 @@
 import 'package:extendable_aiot/components/root_page_head.dart';
 import 'package:extendable_aiot/config/app_colors.dart';
+import 'package:extendable_aiot/sub_pages/all_room_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,12 +18,14 @@ const List<Tab> _tabs = [
 ];
 
 final List<Widget> _tabsContent = [
-  Center(child: Text('這是所有房間的內容')),
+  //Center(child: Text('這是所有房間的內容')),
+
+  const AllRoomPage(),
   Center(child: Text('這是客廳的內容')),
   Center(child: Text('這是臥室的內容')),
   Center(child: Text('這是廚房的內容')),
 
-  // const SongPage(),
+  
   // const SingerPage(),
   // const TinyVideoPage(),
   // const ArticlePage(),
