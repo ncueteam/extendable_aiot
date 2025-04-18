@@ -48,7 +48,6 @@ class _RootPageHeadState extends State<RootPageHead> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
               const Text(
                 "您好！Have a nice day",
                 style: TextStyle(
@@ -58,12 +57,11 @@ class _RootPageHeadState extends State<RootPageHead> {
                 ),
               ),
               
-              Text(_currentTime,
-                  style: const TextStyle(color: Colors.blue)),
+              // Text(_currentTime, style: const TextStyle(color: Colors.blue)),
               
               //天氣卡
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.blue,
                   borderRadius: BorderRadius.circular(20),
@@ -76,23 +74,25 @@ class _RootPageHeadState extends State<RootPageHead> {
                       color: Colors.white,
                       size: 120,
                     ),
-                    const SizedBox(width: 50),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          '32°',
-                          style: TextStyle(color: Colors.white, fontSize: 40),
-                        ),
-                        Text(
-                          '今日多雲',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                        Text(
-                          '彰化市彰化區',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                      ],
+                    Container(
+                      padding: EdgeInsets.only(left: 50),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            '32°',
+                            style: TextStyle(color: Colors.white, fontSize: 40),
+                          ),
+                          Text(
+                            '今日多雲',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
+                          Text(
+                            '彰化市彰化區',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
