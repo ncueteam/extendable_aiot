@@ -15,12 +15,11 @@ class _RootPageHeadState extends State<RootPageHead> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          alignment: Alignment.centerLeft,
+          icon: const Icon(Icons.menu, color: AppColors.active),
+          alignment: Alignment.topLeft,
           onPressed: () {},
         ),
         Container(
-          //height: MediaQuery.of(context).size.height / 3,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(color: AppColors.nav),
           child: Column(
