@@ -13,6 +13,7 @@ class _RootPageHeadState extends State<RootPageHead> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         IconButton(
           icon: const Icon(Icons.menu, color: AppColors.active),
