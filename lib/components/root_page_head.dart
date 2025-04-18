@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
-
+import 'dart:async';
 class RootPageHead extends StatefulWidget {
   const RootPageHead({super.key});
 
@@ -9,6 +9,28 @@ class RootPageHead extends StatefulWidget {
 }
 
 class _RootPageHeadState extends State<RootPageHead> {
+  late String _currentTime;
+
+  @override
+  void initState() {
+    
+    super.initState();
+    _updateTime();
+    // Update the time every second
+    Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
+  }
+
+
+  void _updateTime() {
+    setState(() {
+      final now = DateTime.now();
+      _currentTime =
+          '${now.year}年${now.month.toString().padLeft(2, '0')}月${now.day.toString().padLeft(2, '0')}日 '
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+    });
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -35,9 +57,9 @@ class _RootPageHeadState extends State<RootPageHead> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              //const SizedBox(height: 10),
-              const Text('xxxx年xx月xx日', style: TextStyle(color: Colors.blue)),
-              const SizedBox(height: 20),
+              
+              Text(_currentTime,
+                  style: const TextStyle(color: Colors.blue)),
               
               //天氣卡
               Container(

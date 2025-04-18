@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 final ThemeData themeData = ThemeData(
-  scaffoldBackgroundColor: AppColors.page,//頁面背景色
-  indicatorColor: AppColors.active, // 選項卡列中所選選項卡指示器的顏色
+  scaffoldBackgroundColor: AppColors.page, // 選項卡列中所選選項卡指示器的顏色
   splashColor: Colors.transparent, // 取消水波纹效果
   highlightColor: Colors.transparent, // 取消水波纹效果
   textTheme: const TextTheme(
@@ -12,7 +11,7 @@ final ThemeData themeData = ThemeData(
     ),
   ),
   // tabbar的样式
-  tabBarTheme: const TabBarTheme(
+  tabBarTheme: const TabBarThemeData(
     unselectedLabelColor: AppColors.unactive,
     indicatorSize: TabBarIndicatorSize.label,
     labelStyle: TextStyle(
