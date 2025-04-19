@@ -1,9 +1,19 @@
+import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/root_page.dart';
-import 'config/app_theme.dart';
+import 'package:provider/provider.dart';
 
-void main() async{
-  runApp(const MyApp());
+void main() async {
+  final themeManager = ThemeManager();
+  await themeManager.loadTheme('default');
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeManager>.value(value: themeManager),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,11 +22,16 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: themeData,
-      //title: 'NCUE AIOT',
-      debugShowCheckedModeBanner: false, //去掉右上角的紅色橫條
-      home: const RootPage(),
+    return Consumer<ThemeManager>(
+      builder: (context, themeManager, child) {
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: themeManager.lightTheme(context),
+          darkTheme: themeManager.darkTheme(context),
+          themeMode: themeManager.themeMode(context),
+          home: const RootPage(),
+        );
+      },
     );
   }
 }

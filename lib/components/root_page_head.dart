@@ -1,6 +1,8 @@
+import 'package:app_chiseletor/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
-import 'dart:async';
+// import 'dart:async';
+
 class RootPageHead extends StatefulWidget {
   const RootPageHead({super.key});
 
@@ -9,38 +11,40 @@ class RootPageHead extends StatefulWidget {
 }
 
 class _RootPageHeadState extends State<RootPageHead> {
-  late String _currentTime;
+  // late String _currentTime;
 
   @override
   void initState() {
-    
     super.initState();
-    _updateTime();
+    // _updateTime();
     // Update the time every second
-    Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
+    // Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
   }
 
+  // void _updateTime() {
+  //   setState(() {
+  //     final now = DateTime.now();
+  //     _currentTime =
+  //         '${now.year}年${now.month.toString().padLeft(2, '0')}月${now.day.toString().padLeft(2, '0')}日 '
+  //         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+  //   });
+  // }
 
-  void _updateTime() {
-    setState(() {
-      final now = DateTime.now();
-      _currentTime =
-          '${now.year}年${now.month.toString().padLeft(2, '0')}月${now.day.toString().padLeft(2, '0')}日 '
-          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-    });
-  }
-
-  
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.active),
-          alignment: Alignment.topLeft,
-          onPressed: () {},
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.active),
+              alignment: Alignment.topLeft,
+              onPressed: () {},
+            ),
+            ThemeToggleButton(),
+          ],
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -56,7 +60,7 @@ class _RootPageHeadState extends State<RootPageHead> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              
+
               // Text(_currentTime, style: const TextStyle(color: Colors.blue)),
               SizedBox(height: 16),
               //天氣卡
