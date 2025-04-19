@@ -1,4 +1,0 @@
-dependencies:
-  espressif/led_strip: ^2.4.1
-  espressif/ssd1306: ^1.0.5~1
-  zorxx/dht: ^1.0.1
