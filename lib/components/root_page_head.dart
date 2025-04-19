@@ -58,7 +58,7 @@ class _RootPageHeadState extends State<RootPageHead> {
               ),
               
               // Text(_currentTime, style: const TextStyle(color: Colors.blue)),
-              
+              SizedBox(height: 16),
               //天氣卡
               Container(
                 padding: const EdgeInsets.all(8),
@@ -70,7 +70,7 @@ class _RootPageHeadState extends State<RootPageHead> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.wb_cloudy_rounded,
+                      Icons.wb_cloudy,
                       color: Colors.white,
                       size: 120,
                     ),
