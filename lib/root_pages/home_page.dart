@@ -56,10 +56,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           unselectedLabelColor: AppColors.unactive,
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _tabsContent,
-      ),
+      body: TabBarView(controller: _tabController, children: _tabsContent),
     );
   }
 }

@@ -2,8 +2,12 @@ import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/root_page.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final themeManager = ThemeManager();
   await themeManager.loadTheme('default');
   runApp(

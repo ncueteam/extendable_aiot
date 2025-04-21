@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "10965259978",
+    "project_id": "extendableaiot",
+    "storage_bucket": "extendableaiot.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10965259978:android:00b82f9a141b9bdfc50633",
+        "android_client_info": {
+          "package_name": "com.example.extendable_aiot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_ZKNdEIHlWUaWIG1rX41YZPEtiQuFplM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
