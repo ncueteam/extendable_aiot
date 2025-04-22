@@ -1,8 +1,6 @@
-import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:extendable_aiot/components/temp_data.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ControlCard extends StatefulWidget {
   final TempData tempData;

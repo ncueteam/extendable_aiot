@@ -1,15 +1,17 @@
-import 'package:app_chiseletor/l10n/app_localizations.dart';
+import 'package:app_chiseletor/theme/theme_interface.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:app_chiseletor/theme/theme_interface.dart';
 
 class DefaultTheme implements ThemeInterface {
   @override
-  String get name => 'Default';
+  String get name => 'ThemeVicky';
 
   @override
   String getLocalizedName(BuildContext context) {
-    return AppLocalizations.of(context)!.themeDefault;
+    final localizations = AppLocalizations.of(context);
+    print('Current localizations: $localizations'); // 添加調試輸出
+    return AppLocalizations.of(context)?.themeVicky ?? name;
   }
 
   @override

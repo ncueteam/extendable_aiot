@@ -13,10 +13,10 @@ packages:
     dependency: "direct main"
     description:
       name: app_chiseletor
-      sha256: edd9afd4fb3199858e04ae7b5a7ab330739af2891443ae825dbeb3a87b043560
+      sha256: "4de4f9e782ce58d47b333ab2d7674a7d29bf7f649d39aba0e5053a170459e89c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.1+3"
+    version: "1.1.2+4"
   async:
     dependency: transitive
     description:
@@ -215,7 +215,7 @@ packages:
     source: hosted
     version: "5.0.0"
   flutter_localizations:
-    dependency: transitive
+    dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
@@ -289,10 +289,10 @@ packages:
     dependency: transitive
     description:
       name: google_identity_services_web
-      sha256: "55580f436822d64c8ff9a77e37d61f5fb1e6c7ec9d632a43ee324e2a05c3c6c9"
+      sha256: "5d187c46dc59e02646e10fe82665fc3884a9b71bc1c90c2b8b749316d33ee454"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.3"
+    version: "0.3.3+1"
   google_sign_in:
     dependency: transitive
     description:

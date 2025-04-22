@@ -1,0 +1,7 @@
+{
+    "@@locale": "en",
+    "themeVicky": "Vicky's Theme",
+    "@themeVicky": {
+        "description": "The theme name for Vicky's theme"
+    }
+}
