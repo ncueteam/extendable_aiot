@@ -1,3 +1,6 @@
+import 'package:app_chiseletor/auth/auth_button.dart';
+import 'package:app_chiseletor/widgets/language_toggle_button.dart';
+import 'package:app_chiseletor/widgets/theme_selection_button.dart';
 import 'package:app_chiseletor/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
@@ -44,6 +47,9 @@ class _RootPageHeadState extends State<RootPageHead> {
               onPressed: () {},
             ),
             ThemeToggleButton(),
+            ThemeSelectionButton(),
+            LanguageToggleButton(),
+            AuthButton(),
           ],
         ),
         Container(
@@ -73,11 +79,7 @@ class _RootPageHeadState extends State<RootPageHead> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.wb_cloudy,
-                      color: Colors.white,
-                      size: 120,
-                    ),
+                    const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
                     Container(
                       padding: EdgeInsets.only(left: 50),
                       child: Column(
