@@ -16,6 +16,19 @@ class TempData {
     required this.icon,
     this.isOn = false,
   });
+
+  Map<String, dynamic> toMap() {
+    return {'title': title, 'room': room, 'icon': icon.codePoint, 'isOn': isOn};
+  }
+
+  static TempData fromMap(Map<String, dynamic> map) {
+    return TempData(
+      title: map['title'],
+      room: map['room'],
+      icon: IconData(map['icon'], fontFamily: 'MaterialIcons'),
+      isOn: map['isOn'],
+    );
+  }
 }
 
 List<TempData> tempData = [

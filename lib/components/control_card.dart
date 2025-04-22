@@ -1,4 +1,5 @@
 import 'package:extendable_aiot/components/temp_data.dart';
+import 'package:extendable_aiot/services/device_services.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -47,10 +48,23 @@ class _ControlCardState extends State<ControlCard> {
             alignment: Alignment.bottomRight,
             child: Switch(
               value: widget.tempData.isOn,
-              onChanged: (_) {
-                setState(() {
-                  widget.tempData.toogle();
-                });
+              onChanged: (_) async {
+                try {
+                  setState(() {
+                    widget.tempData.toogle();
+                  });
+
+                  DeviceService dv = DeviceService();
+                  await dv.saveDevices([widget.tempData]);
+                } catch (e) {
+                  // Revert the change if save fails
+                  setState(() {
+                    widget.tempData.toogle();
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update device: $e')),
+                  );
+                }
               },
               activeColor: Colors.white,
               inactiveThumbColor: Colors.grey,

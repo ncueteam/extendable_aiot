@@ -8,10 +8,22 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+dependencies {
+    // Use the Firebase Bill of Materials (BOM)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    
+    // Declare dependencies without versions
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.android.gms:play-services-base:18.3.0")
+    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
+}
+
 android {
     namespace = "com.example.extendable_aiot"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
+    //ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,6 +32,8 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
+        apiVersion = "2.1"  // Add this line
+        languageVersion = "2.1"  // Add this line
     }
 
     defaultConfig {
