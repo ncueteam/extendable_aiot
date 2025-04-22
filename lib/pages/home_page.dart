@@ -1,6 +1,6 @@
 import 'package:extendable_aiot/components/root_page_head.dart';
-import 'package:extendable_aiot/config/app_colors.dart';
-import 'package:extendable_aiot/sub_pages/all_room_page.dart';
+import 'package:extendable_aiot/themes/app_colors.dart';
+import 'package:extendable_aiot/pages/all_room_page.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/components/storage_test.dart';
 
@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabsContent = [
       const AllRoomPage(),
-      const StorageTestWidget(), // 將 StorageTestWidget 放在第二個標籤頁
+      const StorageTestWidget(),
       const Center(child: Text('這是臥室的內容')),
       const Center(child: Text('這是廚房的內容')),
     ];
