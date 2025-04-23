@@ -1,5 +1,7 @@
+import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:flutter/material.dart';
-import '../root_pages/home_page.dart';
+import 'package:provider/provider.dart';
+import 'home_page.dart';
 
 class RootPage extends StatefulWidget {
   const RootPage({super.key});
@@ -56,12 +58,13 @@ class _RootPageState extends State<RootPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeManager themeManager = context.read<ThemeManager>();
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         items: _bottomNavBarList,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: themeManager.currentTheme?.lightTheme.primaryColor,
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,

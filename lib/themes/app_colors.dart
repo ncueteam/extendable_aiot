@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color primary = Color(0xfffbfbfb);
@@ -36,7 +36,11 @@ class AppColors {
       if (value < 0xFF000000) {
         value += 0xFF000000;
       }
-        }
+    }
     return Color(value);
+  }
+
+  static Color getCardColor(bool isOn) {
+    return isOn ? Colors.white : Colors.black;
   }
 }

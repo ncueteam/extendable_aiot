@@ -1,38 +1,30 @@
-import 'package:app_chiseletor/theme/theme_manager.dart';
+import 'package:app_chiseletor/auth/auth_wrapper.dart';
+import 'package:app_chiseletor/theme/app_initializer.dart';
+import 'package:app_chiseletor/widgets/theme_material_app.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
+import 'package:extendable_aiot/themes/default_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:extendable_aiot/root_page.dart';
+import 'package:extendable_aiot/pages/root_page.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  final themeManager = ThemeManager();
-  await themeManager.loadTheme('default');
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final providers = await AppInitializer.initialize(
+    customThemes: [DefaultTheme()],
+    defaultLocale: const Locale('zh', 'TW'),
+  );
+
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ThemeManager>.value(value: themeManager),
-      ],
-      child: MyApp(),
+      providers: providers,
+      child: const ThemedMaterialApp(
+        home: AuthWrapper(homepage: RootPage()),
+        localization: AppLocalizations.delegate, // 這裡是多國語言的代理
+      ),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ThemeManager>(
-      builder: (context, themeManager, child) {
-        return MaterialApp(
-          title: 'Flutter Demo',
-          debugShowCheckedModeBanner: false,
-          theme: themeManager.lightTheme(context),
-          darkTheme: themeManager.darkTheme(context),
-          themeMode: themeManager.themeMode(context),
-          home: const RootPage(),
-        );
-      },
-    );
-  }
 }

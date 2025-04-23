@@ -1,6 +1,11 @@
+import 'package:app_chiseletor/auth/auth_button.dart';
+import 'package:app_chiseletor/theme/theme_manager.dart';
+import 'package:app_chiseletor/widgets/language_toggle_button.dart';
+import 'package:app_chiseletor/widgets/theme_selection_button.dart';
 import 'package:app_chiseletor/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
-import '../config/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../themes/app_colors.dart';
 // import 'dart:async';
 
 class RootPageHead extends StatefulWidget {
@@ -32,6 +37,7 @@ class _RootPageHeadState extends State<RootPageHead> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeManager themeManager = context.read<ThemeManager>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -39,11 +45,22 @@ class _RootPageHeadState extends State<RootPageHead> {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.active),
+              icon: Icon(
+                Icons.menu,
+                color:
+                    themeManager
+                        .currentTheme
+                        ?.lightTheme
+                        .bottomNavigationBarTheme
+                        .selectedItemColor,
+              ),
               alignment: Alignment.topLeft,
               onPressed: () {},
             ),
             ThemeToggleButton(),
+            ThemeSelectionButton(),
+            LanguageToggleButton(),
+            AuthButton(),
           ],
         ),
         Container(
@@ -73,11 +90,7 @@ class _RootPageHeadState extends State<RootPageHead> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.wb_cloudy,
-                      color: Colors.white,
-                      size: 120,
-                    ),
+                    const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
                     Container(
                       padding: EdgeInsets.only(left: 50),
                       child: Column(
