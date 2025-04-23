@@ -1,6 +1,7 @@
 import 'package:extendable_aiot/components/root_page_head.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
-import 'package:extendable_aiot/pages/allroom_page.dart';
+import 'package:extendable_aiot/pages/all_room_page.dart';
+import 'package:extendable_aiot/views/sub_pages/bedroom_page.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/components/storage_test.dart';
 
@@ -29,7 +30,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _tabsContent = [
       const AllRoomPage(),
       const StorageTestWidget(),
-      const Center(child: Text('這是臥室的內容')),
+      const BedRoomPage(),
       const Center(child: Text('這是廚房的內容')),
     ];
   }
