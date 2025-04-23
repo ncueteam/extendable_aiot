@@ -14,3 +14,19 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+#這是給我看的 勿改勿動
+our-project/
+├── main.dart
+├── root_page.dart
+├── view
+    └── root
+        ├──home_page.dart
+        ├──setting_page.dart
+        ├──notify_page.dart
+        └──profile_page.dart
+    └── sub
+        ├──all_room_page.dart
+        ├──.dart
+        ├──bedroom_page.dart
+        └──kitchen_page.dart

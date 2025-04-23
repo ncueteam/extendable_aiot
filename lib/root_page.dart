@@ -1,7 +1,7 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'home_page.dart';
+import 'views/root_pages/home_page.dart';
 
 class RootPage extends StatefulWidget {
   const RootPage({super.key});
