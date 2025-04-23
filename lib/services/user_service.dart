@@ -68,6 +68,17 @@ class UserService {
         .snapshots();
   }
 
+  Stream<DocumentSnapshot> getRoomById(String roomId) {
+    if (currentUserId == null) throw Exception('User not authenticated');
+
+    return _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('rooms')
+        .doc(roomId)
+        .snapshots();
+  }
+
   // 創建新設備
   Future<DocumentReference> addDevice({
     required String name,
