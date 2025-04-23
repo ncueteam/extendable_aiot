@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TempData {
   final String title;
@@ -6,7 +7,7 @@ class TempData {
   final IconData icon;
   bool isOn;
 
-  void toogle() {
+  void toggle() {
     isOn = !isOn;
   }
 
@@ -26,14 +27,16 @@ class TempData {
       title: map['title'],
       room: map['room'],
       icon: IconData(map['icon'], fontFamily: 'MaterialIcons'),
-      isOn: map['isOn'],
+      isOn: map['isOn'] ?? false,
     );
   }
 }
 
-List<TempData> tempData = [
-  TempData(title: "中央空調", room: "客廳", icon: Icons.ac_unit, isOn: true),
-  TempData(title: "燈", room: "臥室", icon: Icons.lightbulb),
-  TempData(title: "電視機", room: "客廳", icon: Icons.tv),
-  TempData(title: "無線路由器", room: "客廳", icon: Icons.router),
-];
+// 取得所有設備資料的 Stream
+Stream<List<TempData>> getTempDataStream() {
+  return FirebaseFirestore.instance.collection('devices').snapshots().map((
+    snapshot,
+  ) {
+    return snapshot.docs.map((doc) => TempData.fromMap(doc.data())).toList();
+  });
+}

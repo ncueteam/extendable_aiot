@@ -51,7 +51,7 @@ class _ControlCardState extends State<ControlCard> {
               onChanged: (_) async {
                 try {
                   setState(() {
-                    widget.tempData.toogle();
+                    widget.tempData.toggle();
                   });
 
                   DeviceService dv = DeviceService();
@@ -59,7 +59,7 @@ class _ControlCardState extends State<ControlCard> {
                 } catch (e) {
                   // Revert the change if save fails
                   setState(() {
-                    widget.tempData.toogle();
+                    widget.tempData.toggle();
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Failed to update device: $e')),
