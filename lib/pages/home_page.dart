@@ -18,18 +18,6 @@ const List<Tab> _tabs = [
   Tab(text: '廚房'),
 ];
 
-<<<<<<< HEAD:lib/root_pages/home_page.dart
-final List<Widget> _tabsContent = [
-  //Center(child: Text('這是所有房間的內容')),
-
-  const AllRoomPage(),
-  Center(child: Text('這是客廳的內容')),
-  Center(child: Text('這是臥室的內容')),
-  Center(child: Text('這是廚房的內容')),
-];
-
-=======
->>>>>>> 50d30d5f6f4fe15b5031afe964442cff4e3157f8:lib/pages/home_page.dart
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late TabController _tabController;
   late List<Widget> _tabsContent;
