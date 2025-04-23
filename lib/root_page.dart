@@ -21,7 +21,6 @@ class _RootPageState extends State<RootPage> {
   //頁面集合
   final List<Widget> _pages = [
     const HomePage(),
-    //PlaceholderWidget(color: Colors.red, text: "首頁"),
     PlaceholderWidget(color: Colors.green, text: "設定頁面"),
     PlaceholderWidget(color: Colors.orange, text: "通知頁面"),
     PlaceholderWidget(color: Colors.purple, text: "個人資料"),

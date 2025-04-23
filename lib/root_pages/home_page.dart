@@ -24,11 +24,6 @@ final List<Widget> _tabsContent = [
   Center(child: Text('這是客廳的內容')),
   Center(child: Text('這是臥室的內容')),
   Center(child: Text('這是廚房的內容')),
-
-  
-  // const SingerPage(),
-  // const TinyVideoPage(),
-  // const ArticlePage(),
 ];
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
