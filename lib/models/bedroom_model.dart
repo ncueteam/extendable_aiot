@@ -7,11 +7,8 @@ class BedRoomList {
 
   /// 循環後台返回的數組，將每一項組裝成 UserItem
   factory BedRoomList.fromJson(List<dynamic> list) {
-    return BedRoomList(
-      list.map((item) => BedRoomItem.fromJson(item)).toList(),
-    );
+    return BedRoomList(list.map((item) => BedRoomItem.fromJson(item)).toList());
   }
-      
 }
 
 class BedRoomItem {
@@ -35,7 +32,7 @@ class BedRoomItem {
   factory BedRoomItem.fromJson(dynamic item) {
     return BedRoomItem(
       icon: IconData(item['icon'], fontFamily: 'MaterialIcons'),
-      num: item['num'],
+      num: item['num'], // 強制轉換為整數
       name: item['name'],
       isOn: item['isOn'] ?? false,
     );
