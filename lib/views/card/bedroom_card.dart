@@ -16,7 +16,7 @@ class _BedRoomCardState extends State<BedRoomCard> {
     return Container(
       alignment: Alignment.bottomLeft,
       margin: const EdgeInsets.all(15),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(15),
       width: MediaQuery.of(context).size.width * 0.5,
       height: MediaQuery.of(context).size.width * 0.5 * 0.8,
       decoration: BoxDecoration(
@@ -26,10 +26,20 @@ class _BedRoomCardState extends State<BedRoomCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            widget.bedRoomItem.icon,
-            color: AppColors.getCardColor(widget.bedRoomItem.isOn),
-            size: 30,
+          Row(
+            children: [
+              Icon(
+                widget.bedRoomItem.icon,
+                color: AppColors.getCardColor(widget.bedRoomItem.isOn),
+                size: 30,
+              ),
+              Expanded(child: SizedBox()),
+              Icon(
+                Icons.more_vert,
+                color: AppColors.getCardColor(widget.bedRoomItem.isOn),
+                size: 30,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
