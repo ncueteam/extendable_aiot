@@ -1,5 +1,6 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:extendable_aiot/pages/user_drawer.dart';
+import 'package:extendable_aiot/views/sub_pages/sensor_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'views/root_pages/home_page.dart';
@@ -25,7 +26,8 @@ class _RootPageState extends State<RootPage> {
   final List<Widget> _pages = [
     const HomePage(),
     PlaceholderWidget(color: Colors.green, text: "設定頁面"),
-    PlaceholderWidget(color: Colors.orange, text: "通知頁面"),
+    // PlaceholderWidget(color: Colors.orange, text: "通知頁面"),
+    const SensorPage(),
     Scaffold(
       appBar: AppBar(title: const Text("個人頁面")),
       drawer: UserDrawer(),
