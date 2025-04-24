@@ -55,7 +55,9 @@ class _RootPageHeadState extends State<RootPageHead> {
                         .selectedItemColor,
               ),
               alignment: Alignment.topLeft,
-              onPressed: () {},
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
             ),
             ThemeToggleButton(),
             ThemeSelectionButton(),

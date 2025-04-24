@@ -1,4 +1,5 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
+import 'package:extendable_aiot/pages/user_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'views/root_pages/home_page.dart';
@@ -60,6 +61,7 @@ class _RootPageState extends State<RootPage> {
   Widget build(BuildContext context) {
     final ThemeManager themeManager = context.read<ThemeManager>();
     return Scaffold(
+      drawer: UserDrawer(),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
