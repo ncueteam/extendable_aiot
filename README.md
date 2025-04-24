@@ -19,7 +19,7 @@ samples, guidance on mobile development, and a full API reference.
 our-project/
 ├── main.dart
 ├── root_page.dart
-├── view
+└── view
     └── root
         ├──home_page.dart
         ├──setting_page.dart
@@ -32,10 +32,16 @@ our-project/
         └──kitchen_page.dart
 
 資料(devices)
-
-devices/
-├── name:客戶可修改
-├── num:可變動數值
-├── type:頁面
-├── status:開關，客戶可修改
-├── icon:客戶可修改
+database/
+├── users/
+    ├── createdAt
+    ├── email
+    ├── lastLogin
+    ├── name
+    └──
+└── devices/
+    ├── name:客戶可修改
+    ├── num:可變動數值
+    ├── type:頁面
+    ├── status:開關，客戶可修改
+    └── icon:客戶可修改
