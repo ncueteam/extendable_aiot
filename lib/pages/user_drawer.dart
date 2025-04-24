@@ -30,14 +30,17 @@ class UserDrawer extends StatelessWidget {
             children: [
               UserAccountsDrawerHeader(
                 currentAccountPicture: CircleAvatar(
-                  backgroundImage:
-                      user?.photoURL != null
-                          ? NetworkImage(user!.photoURL!)
-                          : null,
                   child:
-                      user?.photoURL == null
+                      user!.photoURL!.isEmpty
                           ? const Icon(Icons.person, size: 40)
-                          : null,
+                          : ClipOval(
+                            child: Image.network(
+                              user.photoURL!,
+                              fit: BoxFit.cover,
+                              width: 70,
+                              height: 70,
+                            ),
+                          ),
                 ),
                 accountName: Text(userData?['name'] ?? '未設定名稱'),
                 accountEmail: Text(user?.email ?? '未設定信箱'),

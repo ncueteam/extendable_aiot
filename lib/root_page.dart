@@ -26,7 +26,11 @@ class _RootPageState extends State<RootPage> {
     const HomePage(),
     PlaceholderWidget(color: Colors.green, text: "設定頁面"),
     PlaceholderWidget(color: Colors.orange, text: "通知頁面"),
-    PlaceholderWidget(color: Colors.purple, text: "個人資料"),
+    Scaffold(
+      appBar: AppBar(title: const Text("個人頁面")),
+      drawer: UserDrawer(),
+      body: const PlaceholderWidget(color: Colors.blue, text: "你看不到"),
+    ),
   ];
   // final List<IndexedStackChild> _pages = [
   //   IndexedStackChild(child: const HomePage()),
@@ -61,7 +65,6 @@ class _RootPageState extends State<RootPage> {
   Widget build(BuildContext context) {
     final ThemeManager themeManager = context.read<ThemeManager>();
     return Scaffold(
-      drawer: UserDrawer(),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
