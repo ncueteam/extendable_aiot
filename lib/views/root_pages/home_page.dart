@@ -2,7 +2,6 @@ import 'package:extendable_aiot/components/root_page_head.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/pages/all_room_page.dart';
 import 'package:extendable_aiot/views/sub_pages/bedroom_page.dart';
-import 'package:extendable_aiot/views/sub_pages/rooms_page.dart';
 import 'package:extendable_aiot/views/sub_pages/testroom_page.dart';
 import 'package:flutter/material.dart';
 

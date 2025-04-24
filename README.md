@@ -30,3 +30,12 @@ our-project/
         ├──.dart
         ├──bedroom_page.dart
         └──kitchen_page.dart
+
+資料(devices)
+
+devices/
+├── name:客戶可修改
+├── num:可變動數值
+├── type:頁面
+├── status:開關，客戶可修改
+├── icon:客戶可修改

@@ -36,7 +36,7 @@ class _BedRoomPageState extends State<BedRoomPage>
     _getDevices();
   }
 
-  Future _getDevices({bool replace = true}) async {
+  Future _getDevices() async {
     try {
       QuerySnapshot querySnapshot =
           await FirebaseFirestore.instance.collection('BedRoomItem').get();
@@ -70,10 +70,11 @@ class _BedRoomPageState extends State<BedRoomPage>
       header: const ClassicHeader(),
       footer: const ClassicFooter(),
       child: ListView.builder(
-        
         itemCount: _bedRoomList.length,
         itemBuilder: (BuildContext context, int index) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               BedRoomCard(bedRoomItem: _bedRoomList[index]),
             ],

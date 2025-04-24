@@ -14,7 +14,11 @@ class _BedRoomCardState extends State<BedRoomCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      alignment: Alignment.bottomLeft,
+      margin: const EdgeInsets.all(15),
       padding: const EdgeInsets.all(12),
+      width: MediaQuery.of(context).size.width * 0.5,
+      height: MediaQuery.of(context).size.width * 0.5 * 0.8,
       decoration: BoxDecoration(
         color: widget.bedRoomItem.isOn ? Colors.blue : Colors.grey[100],
         borderRadius: BorderRadius.circular(20),
@@ -27,7 +31,7 @@ class _BedRoomCardState extends State<BedRoomCard> {
             color: AppColors.getCardColor(widget.bedRoomItem.isOn),
             size: 30,
           ),
-          const Spacer(),
+          const SizedBox(height: 8),
           Text(
             "臥室",
             style: TextStyle(
@@ -42,32 +46,17 @@ class _BedRoomCardState extends State<BedRoomCard> {
               fontSize: 16,
             ),
           ),
-          // Align(
-          //   alignment: Alignment.bottomRight,
-          //   child: Switch(
-          //     value: widget.bedRoomItem.isOn,
-          //     onChanged: (_) async {
-          //       try {
-          //         setState(() {
-          //           widget.bedRoomItem.toggle();
-          //         });
-
-          //         DeviceService dv = DeviceService();
-          //         await dv.saveDevices([widget.bedRoomItem]);
-          //       } catch (e) {
-          //         // Revert the change if save fails
-          //         setState(() {
-          //           widget.bedRoomItem.toggle();
-          //         });
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(content: Text('Failed to update device: $e')),
-          //         );
-          //       }
-          //     },
-          //     activeColor: Colors.white,
-          //     inactiveThumbColor: Colors.grey,
-          //   ),
-          // ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Switch(
+              value: widget.bedRoomItem.isOn,
+              onChanged: (_) async {
+                try {} catch (e) {}
+              },
+              activeColor: Colors.white,
+              inactiveThumbColor: Colors.grey,
+            ),
+          ),
         ],
       ),
     );
