@@ -24,12 +24,14 @@ class _ControlCardState extends State<ControlCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            widget.tempData.icon,
-            color: AppColors.getCardColor(widget.tempData.isOn),
-            size: 30,
+          Padding(
+            padding: EdgeInsets.only(bottom: 6),
+            child: Icon(
+              widget.tempData.icon,
+              color: AppColors.getCardColor(widget.tempData.isOn),
+              size: 30,
+            ),
           ),
-          const Spacer(),
           Text(
             widget.tempData.room,
             style: TextStyle(
