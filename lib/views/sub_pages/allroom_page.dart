@@ -1,6 +1,7 @@
-import 'package:extendable_aiot/components/control_card.dart';
-import 'package:extendable_aiot/components/temp_data.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_refresh/easy_refresh.dart';
+import 'package:extendable_aiot/models/bedroom_model.dart';
+import 'package:extendable_aiot/views/card/bedroom_card.dart';
 import 'package:flutter/material.dart';
 
 
@@ -11,38 +12,71 @@ class AllRoomPage extends StatefulWidget {
   State<AllRoomPage> createState() => _AllRoomPageState();
 }
 
-class _AllRoomPageState extends State<AllRoomPage> {
+class _AllRoomPageState extends State<AllRoomPage> with AutomaticKeepAliveClientMixin{
+  late ScrollController _scrollController;
+  List<BedRoomItem> _bedRoomList = BedRoomList([]).list;
+  int page = 1;
+  int limit = 10;
+  bool hasMore = true;
+  bool loading = true;
+  bool error = false;
+  String? errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _getDevices();
+  }
+
+  Future _getDevices() async {
+    try {
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('BedRoomItem').get();
+
+      print('Fetched ${querySnapshot.docs.length} documents');
+
+      List<dynamic> deviceDataList =
+          querySnapshot.docs.map((doc) {
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            print("Document data: $data"); // 調試用
+            return data;
+          }).toList();
+
+      BedRoomList deviceListModel = BedRoomList.fromJson(deviceDataList);
+      setState(() => _bedRoomList = deviceListModel.list);
+
+      print('Fetching finished');
+    } catch (e) {
+      print('Error fetching devices: $e');
+      setState(() {
+        error = true;
+        errorMsg = e.toString();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: StreamBuilder<List<TempData>>(
-        stream: getTempDataStream(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final devices = snapshot.data!;
-
-          return GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-            ),
-            itemCount: devices.length,
-            itemBuilder: (context, index) {
-              return ControlCard(tempData: devices[index]);
-            },
+    super.build(context);
+    return EasyRefresh(
+      header: const ClassicHeader(),
+      footer: const ClassicFooter(),
+      child: ListView.builder(
+        itemCount: _bedRoomList.length,
+        itemBuilder: (BuildContext context, int index) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              BedRoomCard(bedRoomItem: _bedRoomList[index]),
+            ],
           );
         },
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

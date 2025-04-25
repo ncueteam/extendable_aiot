@@ -7,19 +7,11 @@ class FetchData {
 
   String? get currentUserId => _auth.currentUser?.uid;
 
-  // 獲取所有房間
+  // 獲取建立的房間
   Stream<QuerySnapshot> getRooms() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
-    print(
-      "獲取所有房間: " +
-          _firestore
-              .collection('users')
-              .doc(currentUserId)
-              .collection('rooms')
-              .snapshots()
-              .toString(),
-    );
+    print("獲取建立的房間");
 
     return _firestore
         .collection('users')
