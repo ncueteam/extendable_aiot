@@ -43,7 +43,7 @@ class UserDrawer extends StatelessWidget {
                           ),
                 ),
                 accountName: Text(userData?['name'] ?? '未設定名稱'),
-                accountEmail: Text(user?.email ?? '未設定信箱'),
+                accountEmail: Text(user.email ?? '未設定信箱'),
               ),
               ListTile(
                 leading: const Icon(Icons.person),
