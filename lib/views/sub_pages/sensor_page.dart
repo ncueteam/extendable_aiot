@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:extendable_aiot/models/sensor_data.dart';
 import 'package:extendable_aiot/services/mqtt_service.dart';
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'dart:async';
 
 class SensorPage extends StatefulWidget {
   const SensorPage({super.key});
@@ -13,6 +15,8 @@ class SensorPage extends StatefulWidget {
 class _SensorPageState extends State<SensorPage> {
   final MQTTService _mqttService = MQTTService();
   SensorData? _lastData;
+  bool _deviceOnline = false;
+  StreamSubscription? _subscription;
 
   @override
   void initState() {
@@ -22,16 +26,37 @@ class _SensorPageState extends State<SensorPage> {
 
   Future<void> _connectToMQTT() async {
     await _mqttService.connect();
-    _mqttService.subscribe('esp32/sensors', (payload) {
-      final data = SensorData.fromJson(jsonDecode(payload));
+
+    // 訂閱所需的主題
+    _mqttService.subscribe('esp32/sensors');
+    _mqttService.subscribe('esp32/status');
+
+    // 直接監聽MQTT訊息流
+    _subscription = _mqttService.updates?.listen((
+      List<MqttReceivedMessage<MqttMessage>> c,
+    ) {
+      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+      final payload = MqttPublishPayload.bytesToStringAsString(
+        message.payload.message,
+      );
+
       setState(() {
-        _lastData = data;
+        if (c[0].topic == 'esp32/status') {
+          _deviceOnline = payload == 'online';
+        } else if (c[0].topic == 'esp32/sensors') {
+          try {
+            _lastData = SensorData.fromJson(jsonDecode(payload));
+          } catch (e) {
+            print('數據解析錯誤: $e');
+          }
+        }
       });
     });
   }
 
   @override
   void dispose() {
+    _subscription?.cancel();
     _mqttService.disconnect();
     super.dispose();
   }
@@ -39,11 +64,42 @@ class _SensorPageState extends State<SensorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('感測器數據')),
+      appBar: AppBar(
+        title: const Text('感測器數據'),
+        actions: [
+          // 顯示設備在線狀態
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.circle,
+                    size: 12,
+                    color: _deviceOnline ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(_deviceOnline ? '在線' : '離線'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Center(
         child:
             _lastData == null
-                ? const CircularProgressIndicator()
+                ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(
+                      _deviceOnline ? '等待數據...' : '設備離線',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                )
                 : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

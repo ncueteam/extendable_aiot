@@ -16,4 +16,10 @@ class SensorData {
       timestamp: json['timestamp'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'temperature': temperature,
+    'humidity': humidity,
+    'timestamp': timestamp,
+  };
 }

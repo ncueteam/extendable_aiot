@@ -8,16 +8,23 @@ class MQTTService {
   MQTTService._internal();
 
   MqttServerClient? _client;
-  final String broker = 'broker.hivemq.com';
+  final String broker = 'broker.emqx.io';
   final int port = 1883;
-  final String clientId = 'flutter_client';
+  final String clientId =
+      'flutter_client_${DateTime.now().millisecondsSinceEpoch}';
+
+  Stream<List<MqttReceivedMessage<MqttMessage>>>? get updates =>
+      _client?.updates;
+  bool get isConnected =>
+      _client?.connectionStatus?.state == MqttConnectionState.connected;
 
   Future<void> connect() async {
     _client = MqttServerClient(broker, clientId);
     _client!.port = port;
     _client!.keepAlivePeriod = 60;
-    _client!.onDisconnected = _onDisconnected;
-    _client!.onConnected = _onConnected;
+    _client!.onDisconnected = () => print('MQTT已斷開連接');
+    _client!.onConnected = () => print('MQTT已連接到 $broker');
+    _client!.onSubscribed = (topic) => print('已訂閱主題: $topic');
 
     try {
       await _client!.connect();
@@ -27,22 +34,15 @@ class MQTTService {
     }
   }
 
-  void subscribe(String topic, Function(String payload) onData) {
-    if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
+  void subscribe(String topic) {
+    if (isConnected) {
       _client!.subscribe(topic, MqttQos.atLeastOnce);
-      _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-        final payload = MqttPublishPayload.bytesToStringAsString(
-          message.payload.message,
-        );
-        onData(payload);
-      });
     }
   }
 
   void publish(String topic, String message) {
-    if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
-      final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
+    if (isConnected) {
+      final builder = MqttClientPayloadBuilder();
       builder.addString(message);
       _client!.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
     }
@@ -50,13 +50,5 @@ class MQTTService {
 
   void disconnect() {
     _client?.disconnect();
-  }
-
-  void _onConnected() {
-    print('MQTT已連接');
-  }
-
-  void _onDisconnected() {
-    print('MQTT已斷開');
   }
 }
