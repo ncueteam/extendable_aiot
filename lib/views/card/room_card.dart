@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/temp/sensor_page.dart';
+import 'package:extendable_aiot/temp/testroom_page.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -15,48 +16,57 @@ class RoomCard extends StatefulWidget {
 class _RoomCardState extends State<RoomCard> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.bottomLeft,
-      margin: const EdgeInsets.all(15),
-      padding: const EdgeInsets.all(15),
-      width: MediaQuery.of(context).size.width * 0.5,
-      height: MediaQuery.of(context).size.width * 0.5 * 0.8,
-      decoration: BoxDecoration(
-        color: widget.roomItem['status'] ? Colors.blue : Colors.grey[100],
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                IconData(
-                  int.parse(widget.roomItem['icon']),
-                  fontFamily: 'MaterialIcons',
-                ),
-                color: AppColors.getCardColor(widget.roomItem['status']),
-                size: 40,
-              ),
-              Expanded(child: SizedBox()),
-              Icon(
-                Icons.more_vert,
-                color: AppColors.getCardColor(widget.roomItem['status']),
-                size: 40,
-              ),
-            ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SensorPage(), // 替換成你的目標頁面
           ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.roomName,
-                  style: TextStyle(
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: widget.roomItem['status'] ? Colors.blue : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  Icon(
+                    IconData(
+                      int.parse(widget.roomItem['icon']),
+                      fontFamily: 'MaterialIcons',
+                    ),
                     color: AppColors.getCardColor(widget.roomItem['status']),
+                    size: 30,
                   ),
-                ),
+                  Expanded(child: SizedBox()),
+                  Icon(
+                    Icons.more_vert,
+                    color: AppColors.getCardColor(widget.roomItem['status']),
+                    size: 30,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(),
+            Text(
+              widget.roomName,
+              style: TextStyle(
+                color: AppColors.getCardColor(widget.roomItem['status']),
+              ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
                   widget.roomItem['name'],
                   style: TextStyle(
@@ -65,21 +75,18 @@ class _RoomCardState extends State<RoomCard> {
                     fontSize: 16,
                   ),
                 ),
+                Switch(
+                  value: widget.roomItem['status'],
+                  onChanged: (_) async {
+                    try {} catch (e) {}
+                  },
+                  activeColor: Colors.white,
+                  inactiveThumbColor: Colors.grey,
+                ),
               ],
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Switch(
-              value: widget.roomItem['status'],
-              onChanged: (_) async {
-                try {} catch (e) {}
-              },
-              activeColor: Colors.white,
-              inactiveThumbColor: Colors.grey,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

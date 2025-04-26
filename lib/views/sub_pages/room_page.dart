@@ -59,7 +59,13 @@ class _RoomPageState extends State<RoomPage>
         return EasyRefresh(
           header: const ClassicHeader(),
           footer: const ClassicFooter(),
-          child: ListView.builder(
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+            ),
             itemCount: devices.length,
             itemBuilder: (BuildContext context, int index) {
               return Column(
