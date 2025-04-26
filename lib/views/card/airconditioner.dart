@@ -3,15 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class Airconditioner extends StatefulWidget {
-  final String title;
-  final int value;
-  final bool status;
+  final Map<String, dynamic> roomItem;
   final String roomName;
+
   const Airconditioner({
     super.key,
-    required this.title,
-    required this.value,
-    required this.status,
+    required this.roomItem,
     required this.roomName,
   });
 
@@ -55,7 +52,7 @@ class _AirconditionerState extends State<Airconditioner> with SingleTickerProvid
 
   void _incrementTemperature() {
     setState(() {
-      if (temperature < 30) {
+      if (temperature < 35) {
         temperature += 1;
       }
     });
@@ -63,7 +60,7 @@ class _AirconditionerState extends State<Airconditioner> with SingleTickerProvid
 
   void _decrementTemperature() {
     setState(() {
-      if (temperature > 10) {
+      if (temperature > 15) {
         temperature -= 1;
       }
     });
@@ -88,13 +85,13 @@ class _AirconditionerState extends State<Airconditioner> with SingleTickerProvid
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.blue.shade100,
+              color: Colors.blue,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('直接開關', style: TextStyle(fontSize: 18)),
+                const Text('連接開關', style: TextStyle(fontSize: 18)),
                 Switch(
                   value: isSwitchOn,
                   onChanged: (value) {
@@ -164,8 +161,8 @@ class _AirconditionerState extends State<Airconditioner> with SingleTickerProvid
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Slider(
               value: temperature,
-              min: 10,
-              max: 30,
+              min: 15,
+              max: 35,
               divisions: 20,
               label: '${temperature.toInt()}°C',
               onChanged: (value) {

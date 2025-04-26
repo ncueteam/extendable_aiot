@@ -55,4 +55,6 @@ class FetchData {
         .snapshots()
         .map((snapshot) => snapshot.docs);
   }
+
+  
 }

@@ -1,4 +1,5 @@
-import 'package:extendable_aiot/pages/airconditioner.dart';
+import 'package:extendable_aiot/utils/util.dart';
+import 'package:extendable_aiot/views/card/airconditioner.dart';
 import 'package:extendable_aiot/temp/sensor_page.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -22,20 +23,18 @@ class _RoomCardState extends State<RoomCard> {
         switch (widget.roomItem['type']) {
           case "中央空調":
             targetPage = Airconditioner(
-              title: widget.roomItem['name'],
-              value: widget.roomItem['num'],
-              status: widget.roomItem['status'],
+              roomItem: widget.roomItem,
               roomName: widget.roomName,
-            ); // 替換成你的第一個頁面
+            );
             break;
           // case "2":
-          //   targetPage = Page2(); // 替換成你的第二個頁面
+          //   targetPage = Page2();
           //   break;
           // case "3":
-          //   targetPage = Page3(); // 替換成你的第三個頁面
+          //   targetPage = Page3();
           //   break;
           // case "4":
-          //   targetPage = Page4(); // 替換成你的第四個頁面
+          //   targetPage = Page4();
           //   break;
           // default:
           //   targetPage = SensorPage(); // 預設頁面
@@ -88,13 +87,14 @@ class _RoomCardState extends State<RoomCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.roomItem['name'],
+                  truncateString(widget.roomItem['name'],10),
                   style: TextStyle(
                     color: AppColors.getCardColor(widget.roomItem['status']),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
+
                 Switch(
                   value: widget.roomItem['status'],
                   onChanged: (_) async {

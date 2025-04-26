@@ -1,6 +1,7 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:extendable_aiot/pages/user_drawer.dart';
 import 'package:extendable_aiot/temp/sensor_page.dart';
+import 'package:extendable_aiot/temp/testroom_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'root_pages/home_page.dart';
@@ -12,13 +13,6 @@ class RootPage extends StatefulWidget {
   State<RootPage> createState() => _RootPageState();
 }
 
-// const Map<String, String> _bottomNames = {
-//   'home': '首頁',
-//   'setting': '設定',
-//   'notify': '通知',
-//   'profile': '我的',
-// };
-
 class _RootPageState extends State<RootPage> {
   //當前選中頁索引
   int _currentIndex = 0;
@@ -26,8 +20,7 @@ class _RootPageState extends State<RootPage> {
   final List<Widget> _pages = [
     const HomePage(),
     PlaceholderWidget(color: Colors.green, text: "設定頁面"),
-    // PlaceholderWidget(color: Colors.orange, text: "通知頁面"),
-    const SensorPage(),
+    const TestRoomPage(roomId:"roomId"),
     Scaffold(
       appBar: AppBar(title: const Text("個人頁面")),
       drawer: UserDrawer(),
