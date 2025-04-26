@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
+import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/views/card/room_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -13,7 +14,8 @@ class RoomPage extends StatefulWidget {
   State<RoomPage> createState() => _RoomPageState();
 }
 
-class _RoomPageState extends State<RoomPage> with AutomaticKeepAliveClientMixin {
+class _RoomPageState extends State<RoomPage>
+    with AutomaticKeepAliveClientMixin {
   final FetchData _fetchData = FetchData();
   late ScrollController _scrollController;
 
@@ -60,12 +62,15 @@ class _RoomPageState extends State<RoomPage> with AutomaticKeepAliveClientMixin 
           child: ListView.builder(
             itemCount: devices.length,
             itemBuilder: (BuildContext context, int index) {
-              final deviceData = devices[index].data() as Map<String, dynamic>;
-
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
-                children: [RoomCard(roomItem: [devices[index]])],
+                children: [
+                  RoomCard(
+                    roomName: widget.roomId,
+                    roomItem: devices[index].data() as Map<String, dynamic>,
+                  ),
+                ],
               );
             },
           ),
