@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
-import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/views/card/room_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';

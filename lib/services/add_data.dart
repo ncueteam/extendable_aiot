@@ -23,11 +23,11 @@ class AddData {
         .add({
           'name': name,
           'type': type,
-          'room':roomId,
+          'room': roomId,
           'status': false,
           'lastUpdate': FieldValue.serverTimestamp(),
-          "icon":"0xe037",
-          "num":28,
+          "icon": "0xe037",
+          "num": 28,
         });
 
     // 更新房間的設備列表
@@ -41,5 +41,23 @@ class AddData {
         });
 
     return deviceRef;
+  }
+
+  // 創建新房間
+  Future<DocumentReference> addRoom({required String roomId}) async {
+    if (currentUserId == null) throw Exception('User not authenticated');
+
+    await _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('rooms')
+        .doc(roomId)
+        .set({'devices': [], 'createdAt': FieldValue.serverTimestamp()});
+
+    return _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('rooms')
+        .doc(roomId);
   }
 }

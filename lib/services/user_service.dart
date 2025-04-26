@@ -38,7 +38,7 @@ class UserService {
     return _firestore.collection('users').doc(currentUserId).snapshots();
   }
 
-  // 創建新房間
+  // 創建新房間 O
   Future<DocumentReference> addRoom({
     required String name,
     required String type,
@@ -57,7 +57,7 @@ class UserService {
         });
   }
 
-  // 獲取所有房間
+  // 獲取所有房間 O
   Stream<QuerySnapshot> getRooms() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
