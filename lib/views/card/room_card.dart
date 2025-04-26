@@ -18,11 +18,26 @@ class _RoomCardState extends State<RoomCard> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        Widget targetPage = SensorPage(); // Default page
+        switch (widget.roomName) {
+          case "中央空調":
+            targetPage = SensorPage(); // 替換成你的第一個頁面
+            break;
+          // case "2":
+          //   targetPage = Page2(); // 替換成你的第二個頁面
+          //   break;
+          // case "3":
+          //   targetPage = Page3(); // 替換成你的第三個頁面
+          //   break;
+          // case "4":
+          //   targetPage = Page4(); // 替換成你的第四個頁面
+          //   break;
+          // default:
+          //   targetPage = SensorPage(); // 預設頁面
+        }
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => SensorPage(), // 替換成你的目標頁面
-          ),
+          MaterialPageRoute(builder: (context) => targetPage),
         );
       },
       child: Container(
