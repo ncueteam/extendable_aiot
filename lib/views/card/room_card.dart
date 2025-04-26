@@ -5,10 +5,9 @@ import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class RoomCard extends StatefulWidget {
-  final String roomName;
   final Map<String, dynamic> roomItem;
 
-  const RoomCard({super.key, required this.roomName, required this.roomItem});
+  const RoomCard({super.key, required this.roomItem});
 
   @override
   State<RoomCard> createState() => _RoomCardState();
@@ -22,10 +21,7 @@ class _RoomCardState extends State<RoomCard> {
         Widget targetPage = SensorPage(); // Default page
         switch (widget.roomItem['type']) {
           case "中央空調":
-            targetPage = Airconditioner(
-              roomItem: widget.roomItem,
-              roomName: widget.roomName,
-            );
+            targetPage = Airconditioner(roomItem: widget.roomItem);
             break;
           // case "2":
           //   targetPage = Page2();
@@ -77,7 +73,7 @@ class _RoomCardState extends State<RoomCard> {
             ),
             const SizedBox(),
             Text(
-              widget.roomName,
+              widget.roomItem['room'],
               style: TextStyle(
                 color: AppColors.getCardColor(widget.roomItem['status']),
               ),
@@ -87,7 +83,7 @@ class _RoomCardState extends State<RoomCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  truncateString(widget.roomItem['name'],10),
+                  truncateString(widget.roomItem['name'], 10),
                   style: TextStyle(
                     color: AppColors.getCardColor(widget.roomItem['status']),
                     fontWeight: FontWeight.bold,

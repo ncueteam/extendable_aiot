@@ -23,6 +23,7 @@ class AddData {
         .add({
           'name': name,
           'type': type,
+          'room':roomId,
           'status': false,
           'lastUpdate': FieldValue.serverTimestamp(),
           "icon":"0xe037",

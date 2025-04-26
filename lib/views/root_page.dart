@@ -1,4 +1,5 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
+import 'package:extendable_aiot/pages/all_room_page.dart';
 import 'package:extendable_aiot/pages/user_drawer.dart';
 import 'package:extendable_aiot/temp/sensor_page.dart';
 import 'package:extendable_aiot/temp/testroom_page.dart';
@@ -19,18 +20,13 @@ class _RootPageState extends State<RootPage> {
   //頁面集合
   final List<Widget> _pages = [
     const HomePage(),
-    PlaceholderWidget(color: Colors.green, text: "設定頁面"),
+    const AllRoomPage(),
     const TestRoomPage(roomId:"roomId"),
-    Scaffold(
-      appBar: AppBar(title: const Text("個人頁面")),
-      drawer: UserDrawer(),
-      body: const PlaceholderWidget(color: Colors.blue, text: "你看不到"),
-    ),
+    const SensorPage(),
   ];
   // final List<IndexedStackChild> _pages = [
   //   IndexedStackChild(child: const HomePage()),
   //   IndexedStackChild(child: const MusicPage()),
-  //   IndexedStackChild(child: Container()),
   //   IndexedStackChild(child: const TinyVideoPage()),
   //   IndexedStackChild(child: const ProfilePage()),
   // ];
@@ -74,27 +70,6 @@ class _RootPageState extends State<RootPage> {
             _currentIndex = index;
           });
         },
-      ),
-    );
-  }
-}
-
-// 測試用佔位頁面
-class PlaceholderWidget extends StatelessWidget {
-  final Color color;
-  final String text;
-
-  const PlaceholderWidget({super.key, required this.color, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: color,
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 24, color: Colors.white),
-        ),
       ),
     );
   }

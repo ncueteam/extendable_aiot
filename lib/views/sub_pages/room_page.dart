@@ -134,7 +134,6 @@ class _RoomPageState extends State<RoomPage>
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     RoomCard(
-                      roomName: widget.roomId,
                       roomItem: devices[index].data() as Map<String, dynamic>,
                     ),
                   ],

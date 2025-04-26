@@ -20,7 +20,7 @@ class FetchData {
         .snapshots();
   }
 
-  // 獲取房間的所有設備
+  // 獲取房間的設備
   Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 
@@ -56,5 +56,17 @@ class FetchData {
         .map((snapshot) => snapshot.docs);
   }
 
-  
+  // 獲取所有房間的設備
+  Stream<List<DocumentSnapshot>> getAllDevices() {
+    if (currentUserId == null) throw Exception('User not authenticated');
+
+    print("獲取所有房間的設備");
+
+    return _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .collection('devices')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+  }
 }

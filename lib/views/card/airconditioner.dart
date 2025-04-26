@@ -4,19 +4,15 @@ import 'package:flutter/material.dart';
 
 class Airconditioner extends StatefulWidget {
   final Map<String, dynamic> roomItem;
-  final String roomName;
 
-  const Airconditioner({
-    super.key,
-    required this.roomItem,
-    required this.roomName,
-  });
+  const Airconditioner({super.key, required this.roomItem});
 
   @override
   State<Airconditioner> createState() => _AirconditionerState();
 }
 
-class _AirconditionerState extends State<Airconditioner> with SingleTickerProviderStateMixin {
+class _AirconditionerState extends State<Airconditioner>
+    with SingleTickerProviderStateMixin {
   bool isSwitchOn = true;
   double temperature = 26; // 初始溫度
   late AnimationController _controller;

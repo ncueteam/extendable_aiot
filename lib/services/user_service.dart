@@ -79,7 +79,7 @@ class UserService {
         .snapshots();
   }
 
-  // 創建新設備
+  // 創建新設備 O
   Future<DocumentReference> addDevice({
     required String name,
     required String type,
@@ -127,7 +127,7 @@ class UserService {
         .update({'status': status, 'lastUpdate': FieldValue.serverTimestamp()});
   }
 
-  // 獲取房間的所有設備
+  // 獲取房間的所有設備 O
   Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 
