@@ -20,14 +20,39 @@ class FetchData {
         .snapshots();
   }
 
-  Stream<DocumentSnapshot> getRoomById(String roomId) {
+  // 獲取房間的所有設備
+  Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 
-    return _firestore
+    print("獲取${roomId}的設備");
+
+    final roomDoc =
+        await _firestore
+            .collection('users')
+            .doc(currentUserId)
+            .collection('rooms')
+            .doc(roomId)
+            .get();
+
+    final devicesField = roomDoc.data()?['devices'];
+    List<String> deviceIds = [];
+    if (devicesField is List) {
+      deviceIds = List<String>.from(devicesField);
+    } else if (devicesField is Map) {
+      deviceIds = List<String>.from(devicesField.keys);
+    }
+
+    if (deviceIds.isEmpty) {
+      yield [];
+      return;
+    }
+
+    yield* _firestore
         .collection('users')
         .doc(currentUserId)
-        .collection('rooms')
-        .doc(roomId)
-        .snapshots();
+        .collection('devices')
+        .where(FieldPath.documentId, whereIn: deviceIds)
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
   }
 }
