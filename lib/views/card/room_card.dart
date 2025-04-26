@@ -1,5 +1,5 @@
+import 'package:extendable_aiot/pages/airconditioner.dart';
 import 'package:extendable_aiot/temp/sensor_page.dart';
-import 'package:extendable_aiot/temp/testroom_page.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -19,9 +19,14 @@ class _RoomCardState extends State<RoomCard> {
     return GestureDetector(
       onTap: () {
         Widget targetPage = SensorPage(); // Default page
-        switch (widget.roomName) {
+        switch (widget.roomItem['type']) {
           case "中央空調":
-            targetPage = SensorPage(); // 替換成你的第一個頁面
+            targetPage = Airconditioner(
+              title: widget.roomItem['name'],
+              value: widget.roomItem['num'],
+              status: widget.roomItem['status'],
+              roomName: widget.roomName,
+            ); // 替換成你的第一個頁面
             break;
           // case "2":
           //   targetPage = Page2(); // 替換成你的第二個頁面
