@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/models/device_data.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/views/card/room_card.dart';
@@ -19,7 +20,6 @@ class _RoomPageState extends State<RoomPage>
   final AddData _addData = AddData();
   final FetchData _fetchData = FetchData();
   final TextEditingController _deviceNameController = TextEditingController();
-  final List<String> _deviceTypes = ['中央空調', '風扇', '燈光'];
   String _selectedDeviceType = '中央空調';
 
   int page = 1;
@@ -28,16 +28,6 @@ class _RoomPageState extends State<RoomPage>
   bool loading = true;
   bool error = false;
   String? errorMsg;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   Future<void> _showAddDeviceDialog() async {
     return showDialog(
@@ -54,10 +44,13 @@ class _RoomPageState extends State<RoomPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButton<String>(
-                  value: _selectedDeviceType,
+                  value: DeviceData.deviceTypes[0],
                   items:
-                      _deviceTypes.map((type) {
-                        return DropdownMenuItem(value: type, child: Text(type));
+                      DeviceData.deviceTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type),
+                        );
                       }).toList(),
                   onChanged: (value) {
                     setState(() {
@@ -94,6 +87,7 @@ class _RoomPageState extends State<RoomPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDeviceDialog,
@@ -128,14 +122,11 @@ class _RoomPageState extends State<RoomPage>
               ),
               itemCount: devices.length,
               itemBuilder: (BuildContext context, int index) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    RoomCard(
-                      roomItem: devices[index].data() as Map<String, dynamic>,
-                    ),
-                  ],
+                return RoomCard(
+                  roomItem: DeviceData.fromJson(
+                    devices[index].id,
+                    devices[index].data() as Map<String, dynamic>,
+                  ),
                 );
               },
             ),

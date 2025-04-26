@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:extendable_aiot/models/device_data.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/views/card/room_card.dart';
@@ -93,7 +94,10 @@ class _AllRoomPageState extends State<AllRoomPage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     RoomCard(
-                      roomItem: devices[index].data() as Map<String, dynamic>,
+                      roomItem: DeviceData.fromJson(
+                        devices[index].id,
+                        devices[index].data() as Map<String, dynamic>,
+                      ),
                     ),
                   ],
                 );
