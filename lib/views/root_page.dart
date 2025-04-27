@@ -2,6 +2,7 @@ import 'package:app_chiseletor/theme/theme_manager.dart';
 import 'package:extendable_aiot/pages/all_room_page.dart';
 import 'package:extendable_aiot/temp/sensor_page.dart';
 import 'package:extendable_aiot/temp/testroom_page.dart';
+import 'package:extendable_aiot/views/root_pages/automatic.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'root_pages/home_page.dart';
@@ -19,7 +20,7 @@ class _RootPageState extends State<RootPage> {
   //頁面集合
   final List<Widget> _pages = [
     const HomePage(),
-    const AllRoomPage(),
+    const Automatic(),
     const TestRoomPage(roomId:"roomId"),
     const SensorPage(),
   ];
