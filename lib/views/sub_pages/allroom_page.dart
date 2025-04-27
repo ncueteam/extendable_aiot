@@ -81,6 +81,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
             header: const ClassicHeader(),
             footer: const ClassicFooter(),
             child: GridView.builder(
+              //padding: const EdgeInsets.all(12),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 //crossAxisSpacing: 12,

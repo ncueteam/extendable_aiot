@@ -20,7 +20,12 @@ class _AirconditionerState extends State<Airconditioner>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const Icon(Icons.arrow_back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
         title: const Text('Air Condition'),
         centerTitle: true,
       ),
@@ -89,21 +94,27 @@ class _AirconditionerState extends State<Airconditioner>
                     );
                   }).toList(),
             ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Power', style: TextStyle(fontSize: 18)),
-                const SizedBox(width: 10),
-                Switch(
-                  value: powerOn,
-                  onChanged: (value) {
-                    setState(() {
-                      powerOn = value;
-                    });
-                  },
-                ),
-              ],
+            const SizedBox(height: 60),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Power', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 10),
+                  Switch(
+                    value: powerOn,
+                    onChanged: (value) {
+                      setState(() {
+                        powerOn = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
