@@ -26,15 +26,6 @@ class _RootPageHeadState extends State<RootPageHead> {
     // Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
   }
 
-  // void _updateTime() {
-  //   setState(() {
-  //     final now = DateTime.now();
-  //     _currentTime =
-  //         '${now.year}年${now.month.toString().padLeft(2, '0')}月${now.day.toString().padLeft(2, '0')}日 '
-  //         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     final ThemeManager themeManager = context.read<ThemeManager>();
@@ -42,80 +33,88 @@ class _RootPageHeadState extends State<RootPageHead> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.menu,
-                color:
-                    themeManager
-                        .currentTheme
-                        ?.lightTheme
-                        .bottomNavigationBarTheme
-                        .selectedItemColor,
-              ),
-              alignment: Alignment.topLeft,
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            ),
-            ThemeToggleButton(),
-            ThemeSelectionButton(),
-            LanguageToggleButton(),
-            AuthButton(),
-          ],
-        ),
+        // Row(
+        //   children: [
+        //     IconButton(
+        //       icon: Icon(
+        //         Icons.menu,
+        //         color:
+        //             themeManager
+        //                 .currentTheme
+        //                 ?.lightTheme
+        //                 .bottomNavigationBarTheme
+        //                 .selectedItemColor,
+        //       ),
+        //       alignment: Alignment.topLeft,
+        //       onPressed: () {
+        //         Scaffold.of(context).openDrawer();
+        //       },
+        //     ),
+        //     ThemeToggleButton(),
+        //     ThemeSelectionButton(),
+        //     LanguageToggleButton(),
+        //     AuthButton(),
+        //   ],
+        // ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: AppColors.nav),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          //decoration: BoxDecoration(color: AppColors.nav),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "您好！Have a nice day",
+                "Hello",
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: 40,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
+              const SizedBox(),
+              const Text(
+                "let's manage your smart home.",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               // Text(_currentTime, style: const TextStyle(color: Colors.blue)),
               SizedBox(height: 16),
               //天氣卡
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
-                    Container(
-                      padding: EdgeInsets.only(left: 50),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            '32°',
-                            style: TextStyle(color: Colors.white, fontSize: 40),
-                          ),
-                          Text(
-                            '今日多雲',
-                            style: TextStyle(color: Colors.white, fontSize: 20),
-                          ),
-                          Text(
-                            '彰化市彰化區',
-                            style: TextStyle(color: Colors.white, fontSize: 20),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Container(
+              //   padding: const EdgeInsets.all(8),
+              //   decoration: BoxDecoration(
+              //     color: Colors.blue,
+              //     borderRadius: BorderRadius.circular(20),
+              //   ),
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.center,
+              //     children: [
+              //       const Icon(Icons.wb_cloudy, color: Colors.white, size: 120),
+              //       Container(
+              //         padding: EdgeInsets.only(left: 50),
+              //         child: Column(
+              //           crossAxisAlignment: CrossAxisAlignment.start,
+              //           children: const [
+              //             Text(
+              //               '32°',
+              //               style: TextStyle(color: Colors.white, fontSize: 40),
+              //             ),
+              //             Text(
+              //               '今日多雲',
+              //               style: TextStyle(color: Colors.white, fontSize: 20),
+              //             ),
+              //             Text(
+              //               '彰化市彰化區',
+              //               style: TextStyle(color: Colors.white, fontSize: 20),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),

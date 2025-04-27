@@ -11,165 +11,143 @@ class Airconditioner extends StatefulWidget {
 
 class _AirconditionerState extends State<Airconditioner>
     with SingleTickerProviderStateMixin {
-  bool isSwitchOn = true;
-  double temperature = 26; // 初始溫度
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-      lowerBound: 1.0,
-      upperBound: 1.05,
-    );
-    _scaleAnimation = _controller.drive(Tween(begin: 1.0, end: 1.05));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Color _getTemperatureColor(double temp) {
-    if (temp < 18) {
-      return Colors.blueAccent; // 冷色
-    } else if (temp > 26) {
-      return Colors.redAccent; // 熱色
-    } else {
-      return Colors.lightBlue; // 中間色
-    }
-  }
-
-  void _incrementTemperature() {
-    setState(() {
-      if (temperature < 35) {
-        temperature += 1;
-      }
-    });
-  }
-
-  void _decrementTemperature() {
-    setState(() {
-      if (temperature > 15) {
-        temperature -= 1;
-      }
-    });
-  }
+  double temperature = 25.0;
+  String mode = 'Auto';
+  String fanSpeed = 'Mid';
+  bool powerOn = true;
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('中央空調'),
+        leading: const Icon(Icons.arrow_back),
+        title: const Text('Air Condition'),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
       ),
-      body: Column(
-        children: [
-          // 開關區域
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.circular(12),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text(
+              'Living room',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 10),
+            Text(
+              '${temperature.toInt()}°',
+              style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              'Celcius',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            Slider(
+              value: temperature,
+              min: 16,
+              max: 30,
+              divisions: 14,
+              onChanged: (value) {
+                setState(() {
+                  temperature = value;
+                });
+              },
+            ),
+            const SizedBox(height: 30),
+            _buildSectionTitle('Mode'),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children:
+                  ['Auto', 'Cool', 'Dry'].map((m) {
+                    return _buildOptionButton(
+                      label: m,
+                      selected: mode == m,
+                      onTap: () {
+                        setState(() {
+                          mode = m;
+                        });
+                      },
+                    );
+                  }).toList(),
+            ),
+            const SizedBox(height: 30),
+            _buildSectionTitle('Fan speed'),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children:
+                  ['Low', 'Mid', 'High'].map((f) {
+                    return _buildOptionButton(
+                      label: f,
+                      selected: fanSpeed == f,
+                      onTap: () {
+                        setState(() {
+                          fanSpeed = f;
+                        });
+                      },
+                    );
+                  }).toList(),
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('連接開關', style: TextStyle(fontSize: 18)),
+                const Text('Power', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
                 Switch(
-                  value: isSwitchOn,
+                  value: powerOn,
                   onChanged: (value) {
                     setState(() {
-                      isSwitchOn = value;
+                      powerOn = value;
                     });
                   },
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
-          // 中間圓形控制區，加動畫
-          Expanded(
-            child: Center(
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Container(
-                  width: screenWidth * 0.6,
-                  height: screenWidth * 0.6,
-                  decoration: BoxDecoration(
-                    color: _getTemperatureColor(temperature),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${temperature.toInt()}°C\n房間溫度',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
 
-          // 加減按鈕
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
-                iconSize: 40,
-                onPressed: () {
-                  _decrementTemperature();
-                },
-              ),
-              const SizedBox(width: 30),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                iconSize: 40,
-                onPressed: () {
-                  _incrementTemperature();
-                },
-              ),
-            ],
+  Widget _buildOptionButton({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        height: 50,
+        decoration: BoxDecoration(
+          color: selected ? Colors.pink[100] : Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? Colors.pink : Colors.transparent,
+            width: 2,
           ),
-          const SizedBox(height: 20),
-
-          // 溫度滑桿
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Slider(
-              value: temperature,
-              min: 15,
-              max: 35,
-              divisions: 20,
-              label: '${temperature.toInt()}°C',
-              onChanged: (value) {
-                setState(() {
-                  temperature = value;
-                });
-                _controller.forward().then((_) => _controller.reverse());
-              },
-            ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            color: selected ? Colors.pink[800] : Colors.black87,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
-
-          const SizedBox(height: 20),
-        ],
+        ),
       ),
     );
   }

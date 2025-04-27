@@ -83,8 +83,8 @@ class _AllRoomPageState extends State<AllRoomPage> {
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                //crossAxisSpacing: 12,
+                //mainAxisSpacing: 12,
                 childAspectRatio: 1.2,
               ),
               itemCount: devices.length,

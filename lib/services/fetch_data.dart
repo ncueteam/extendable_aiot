@@ -24,7 +24,7 @@ class FetchData {
   Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 
-    print("獲取${roomId}的設備");
+    print("獲取$roomId的設備");
 
     final roomDoc =
         await _firestore
@@ -69,4 +69,12 @@ class FetchData {
         .snapshots()
         .map((snapshot) => snapshot.docs);
   }
+
+  // 獲取用戶資料
+  Stream<DocumentSnapshot> getUserData() {
+    if (currentUserId == null) throw Exception('User not authenticated');
+
+    return _firestore.collection('users').doc(currentUserId).snapshots();
+  }
+
 }

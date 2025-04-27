@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return Scaffold(
           appBar: AppBar(
             elevation: 0,
-            toolbarHeight: MediaQuery.of(context).size.height * 0.35,
+            toolbarHeight: MediaQuery.of(context).size.height * 0.2,
             title: const RootPageHead(),
             bottom: TabBar(
               controller: _tabController,

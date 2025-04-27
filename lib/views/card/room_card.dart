@@ -61,18 +61,22 @@ class _RoomCardState extends State<RoomCard> {
             ),
             const SizedBox(),
             Text(
-              data.type,
-              style: TextStyle(color: AppColors.getCardColor(data.status)),
+              truncateString(data.name, 15),
+              style: TextStyle(
+                color: AppColors.getCardColor(data.status),
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  truncateString(data.name, 10),
+                  truncateString(data.type, 10),
                   style: TextStyle(
                     color: AppColors.getCardColor(data.status),
-                    fontWeight: FontWeight.bold,
+                    //fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
