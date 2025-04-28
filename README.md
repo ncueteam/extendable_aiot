@@ -15,7 +15,6 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
-
 資料(devices)
 database/
 ├── users/
@@ -30,8 +29,15 @@ database/
     └── updatedAt:
 └── devices/
     ├── name:
-    ├── num:
-    ├── type:
+    ├── data:
     ├── status:
     ├── lastUpdate
     └── icon:
+    └── data#switchable
+        └── name
+        └── update-value(array)
+        └── previous-value:(array)
+        └── status:
+    └── data#sensor
+        └── name
+        └── value(array)
