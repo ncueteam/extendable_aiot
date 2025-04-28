@@ -4,6 +4,7 @@ import 'package:extendable_aiot/temp/sensor_page.dart';
 import 'package:extendable_aiot/temp/testroom_page.dart';
 import 'package:extendable_aiot/views/root_pages/automatic.dart';
 import 'package:extendable_aiot/views/root_pages/profile.dart';
+import 'package:extendable_aiot/views/root_pages/test_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'root_pages/home_page.dart';
@@ -22,7 +23,8 @@ class _RootPageState extends State<RootPage> {
   final List<Widget> _pages = [
     const HomePage(),
     const Automatic(),
-    const SensorPage(),
+    // const SensorPage(),
+    const TestPage(),
     const Profile(),
   ];
   // final List<IndexedStackChild> _pages = [

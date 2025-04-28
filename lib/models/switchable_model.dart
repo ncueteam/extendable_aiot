@@ -1,6 +1,7 @@
 import 'package:extendable_aiot/models/general_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SwitchableModel extends GeneralModel {
   List<dynamic> updateValue;
@@ -19,9 +20,84 @@ class SwitchableModel extends GeneralModel {
   });
 
   @override
-  Future<void> createData() {
-    //在firebase/userid/device collection裡面創建一個新的device document
-    return super.createData();
+  Future<void> createData() async {
+    // 在firebase/userid/device collection裡面創建一個新的device document
+    try {
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('devices')
+            .doc(id)
+            .set(toJson());
+      }
+    } catch (e) {
+      print('Error creating switchable device: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> readData() async {
+    try {
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        final docSnapshot =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .collection('devices')
+                .doc(id)
+                .get();
+
+        if (docSnapshot.exists) {
+          fromJson(docSnapshot.data()!);
+        }
+      }
+    } catch (e) {
+      print('Error reading switchable device: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateData() async {
+    try {
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        // Update the lastUpdated timestamp
+        lastUpdated = Timestamp.now();
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('devices')
+            .doc(id)
+            .update(toJson());
+      }
+    } catch (e) {
+      print('Error updating switchable device: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteData() async {
+    try {
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('devices')
+            .doc(id)
+            .delete();
+      }
+    } catch (e) {
+      print('Error deleting switchable device: $e');
+      rethrow;
+    }
   }
 
   @override

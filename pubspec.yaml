@@ -23,6 +23,7 @@ dependencies:
   firebase_app_check: ^0.3.2+5
   mqtt_client: ^10.8.0
   json_annotation: ^4.9.0
+  firebase_auth: 5.5.2
 
 dev_dependencies:
   flutter_test:
