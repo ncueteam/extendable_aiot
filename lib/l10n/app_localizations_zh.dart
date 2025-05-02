@@ -177,6 +177,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get diningRoom => '餐厅';
+
+  @override
+  String get nameUpdated => '名字已更新';
+
+  @override
+  String get updateError => '更新失败';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -352,6 +358,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get diningRoom => '餐厅';
+
+  @override
+  String get nameUpdated => '名字已更新';
+
+  @override
+  String get updateError => '更新失败';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -527,4 +539,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get diningRoom => '餐廳';
+
+  @override
+  String get nameUpdated => '名字已更新';
+
+  @override
+  String get updateError => '更新失敗';
 }

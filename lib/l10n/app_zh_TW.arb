@@ -55,5 +55,7 @@
     "kitchen": "廚房",
     "bathroom": "浴室",
     "studyRoom": "書房",
-    "diningRoom": "餐廳"
+    "diningRoom": "餐廳",
+    "nameUpdated": "名字已更新",
+    "updateError": "更新失敗"
 }

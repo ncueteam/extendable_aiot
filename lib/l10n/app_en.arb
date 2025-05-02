@@ -229,5 +229,13 @@
     "diningRoom": "Dining Room",
     "@diningRoom": {
         "description": "Dining room label"
+    },
+    "nameUpdated": "Name updated successfully",
+    "@nameUpdated": {
+        "description": "Message shown when user name is updated successfully"
+    },
+    "updateError": "Update failed",
+    "@updateError": {
+        "description": "Message shown when an update operation fails"
     }
 }

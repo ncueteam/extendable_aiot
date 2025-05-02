@@ -432,6 +432,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dining Room'**
   String get diningRoom;
+
+  /// Message shown when user name is updated successfully
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated successfully'**
+  String get nameUpdated;
+
+  /// Message shown when an update operation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed'**
+  String get updateError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

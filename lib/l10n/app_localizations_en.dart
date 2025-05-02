@@ -177,4 +177,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diningRoom => 'Dining Room';
+
+  @override
+  String get nameUpdated => 'Name updated successfully';
+
+  @override
+  String get updateError => 'Update failed';
 }
