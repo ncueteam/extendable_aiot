@@ -1,3 +1,4 @@
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class Airconditioner extends StatefulWidget {
@@ -18,6 +19,8 @@ class _AirconditionerState extends State<Airconditioner>
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -26,25 +29,25 @@ class _AirconditionerState extends State<Airconditioner>
             Navigator.of(context).pop();
           },
         ),
-        title: const Text('Air Condition'),
+        title: Text(localizations?.airCondition ?? 'Air Condition'),
         centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text(
-              'Living room',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            Text(
+              localizations?.livingRoom ?? 'Living room',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 10),
             Text(
               '${temperature.toInt()}°',
               style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold),
             ),
-            const Text(
-              'Celcius',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            Text(
+              localizations?.celsius ?? 'Celsius',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             Slider(
@@ -59,40 +62,74 @@ class _AirconditionerState extends State<Airconditioner>
               },
             ),
             const SizedBox(height: 30),
-            _buildSectionTitle('Mode'),
+            _buildSectionTitle(localizations?.mode ?? 'Mode'),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children:
-                  ['Auto', 'Cool', 'Dry'].map((m) {
-                    return _buildOptionButton(
-                      label: m,
-                      selected: mode == m,
-                      onTap: () {
-                        setState(() {
-                          mode = m;
-                        });
-                      },
-                    );
-                  }).toList(),
+              children: [
+                _buildOptionButton(
+                  label: localizations?.auto ?? 'Auto',
+                  selected: mode == 'Auto',
+                  onTap: () {
+                    setState(() {
+                      mode = 'Auto';
+                    });
+                  },
+                ),
+                _buildOptionButton(
+                  label: localizations?.cool ?? 'Cool',
+                  selected: mode == 'Cool',
+                  onTap: () {
+                    setState(() {
+                      mode = 'Cool';
+                    });
+                  },
+                ),
+                _buildOptionButton(
+                  label: localizations?.dry ?? 'Dry',
+                  selected: mode == 'Dry',
+                  onTap: () {
+                    setState(() {
+                      mode = 'Dry';
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 30),
-            _buildSectionTitle('Fan speed'),
+            _buildSectionTitle(localizations?.fanSpeed ?? 'Fan speed'),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children:
-                  ['Low', 'Mid', 'High'].map((f) {
-                    return _buildOptionButton(
-                      label: f,
-                      selected: fanSpeed == f,
-                      onTap: () {
-                        setState(() {
-                          fanSpeed = f;
-                        });
-                      },
-                    );
-                  }).toList(),
+              children: [
+                _buildOptionButton(
+                  label: localizations?.low ?? 'Low',
+                  selected: fanSpeed == 'Low',
+                  onTap: () {
+                    setState(() {
+                      fanSpeed = 'Low';
+                    });
+                  },
+                ),
+                _buildOptionButton(
+                  label: localizations?.mid ?? 'Mid',
+                  selected: fanSpeed == 'Mid',
+                  onTap: () {
+                    setState(() {
+                      fanSpeed = 'Mid';
+                    });
+                  },
+                ),
+                _buildOptionButton(
+                  label: localizations?.high ?? 'High',
+                  selected: fanSpeed == 'High',
+                  onTap: () {
+                    setState(() {
+                      fanSpeed = 'High';
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 60),
             Container(
@@ -103,7 +140,10 @@ class _AirconditionerState extends State<Airconditioner>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Power', style: TextStyle(fontSize: 18)),
+                  Text(
+                    localizations?.power ?? 'Power',
+                    style: const TextStyle(fontSize: 18),
+                  ),
                   const SizedBox(width: 10),
                   Switch(
                     value: powerOn,

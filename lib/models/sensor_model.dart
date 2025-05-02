@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/models/general_model.dart';
-import 'package:flutter/material.dart';
 
 class SensorModel extends GeneralModel {
   List<dynamic> value;

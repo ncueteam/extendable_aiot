@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/root_page_head.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/views/sub_pages/allroom_page.dart';
@@ -26,10 +27,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchData.getRooms(),
       builder: (context, snapshot) {
-        List<Tab> tabs = [const Tab(text: '所有房間')];
+        List<Tab> tabs = [Tab(text: localizations?.allRooms ?? '所有房間')];
         List<Widget> tabContents = [const AllRoomPage()];
 
         if (snapshot.hasData) {

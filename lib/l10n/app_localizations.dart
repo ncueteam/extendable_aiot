@@ -102,6 +102,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vicky\'s Theme'**
   String get themeVicky;
+
+  /// Greeting text on the main page
+  ///
+  /// In en, this message translates to:
+  /// **'Hello'**
+  String get hello;
+
+  /// Subtitle text on the main page
+  ///
+  /// In en, this message translates to:
+  /// **'let\'s manage your smart home.'**
+  String get manageSmartHome;
+
+  /// Button to add a new room
+  ///
+  /// In en, this message translates to:
+  /// **'Add Room'**
+  String get addRoom;
+
+  /// Button to add a new device
+  ///
+  /// In en, this message translates to:
+  /// **'Add Device'**
+  String get addDevice;
+
+  /// Label for room name input
+  ///
+  /// In en, this message translates to:
+  /// **'Room Name'**
+  String get roomName;
+
+  /// Label for device name input
+  ///
+  /// In en, this message translates to:
+  /// **'Device Name'**
+  String get deviceName;
+
+  /// Cancel button text
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Confirm button text
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// Tab title for all rooms
+  ///
+  /// In en, this message translates to:
+  /// **'All Rooms'**
+  String get allRooms;
+
+  /// Message when no devices are available
+  ///
+  /// In en, this message translates to:
+  /// **'No devices yet'**
+  String get noDevices;
+
+  /// Message when no rooms are available
+  ///
+  /// In en, this message translates to:
+  /// **'No rooms created yet'**
+  String get noRooms;
+
+  /// Profile page title
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// Settings menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Logout button text
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// Title for the family members list
+  ///
+  /// In en, this message translates to:
+  /// **'Family List'**
+  String get familyList;
+
+  /// Title for the functions section
+  ///
+  /// In en, this message translates to:
+  /// **'Functions'**
+  String get functions;
+
+  /// Button to change user name
+  ///
+  /// In en, this message translates to:
+  /// **'Change Name'**
+  String get changeName;
+
+  /// Save button text
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// Placeholder for name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new name'**
+  String get enterNewName;
+
+  /// Label for account creation date
+  ///
+  /// In en, this message translates to:
+  /// **'Created At'**
+  String get createdAt;
+
+  /// Label for user ID
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get id;
+
+  /// Label for user email
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// Label for last login date
+  ///
+  /// In en, this message translates to:
+  /// **'Last Login'**
+  String get lastLogin;
+
+  /// Title for air conditioner page
+  ///
+  /// In en, this message translates to:
+  /// **'Air Condition'**
+  String get airCondition;
+
+  /// Living room label
+  ///
+  /// In en, this message translates to:
+  /// **'Living room'**
+  String get livingRoom;
+
+  /// Temperature unit label
+  ///
+  /// In en, this message translates to:
+  /// **'Celsius'**
+  String get celsius;
+
+  /// AC mode label
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get mode;
+
+  /// AC auto mode
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get auto;
+
+  /// AC cool mode
+  ///
+  /// In en, this message translates to:
+  /// **'Cool'**
+  String get cool;
+
+  /// AC dry mode
+  ///
+  /// In en, this message translates to:
+  /// **'Dry'**
+  String get dry;
+
+  /// Fan speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Fan speed'**
+  String get fanSpeed;
+
+  /// Low fan speed
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get low;
+
+  /// Medium fan speed
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get mid;
+
+  /// High fan speed
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get high;
+
+  /// Power label
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get power;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

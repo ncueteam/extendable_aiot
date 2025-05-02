@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/device_data.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
@@ -19,17 +20,21 @@ class _AllRoomPageState extends State<AllRoomPage> {
   final TextEditingController _roomNameController = TextEditingController();
 
   Future<void> _showAddRoomDialog() async {
+    final localizations = AppLocalizations.of(context);
+
     return showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('新增房間'),
+            title: Text(localizations?.addRoom ?? '新增房間'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: _roomNameController,
-                  decoration: const InputDecoration(labelText: '房間名稱'),
+                  decoration: InputDecoration(
+                    labelText: localizations?.roomName ?? '房間名稱',
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -37,7 +42,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text(localizations?.cancel ?? '取消'),
               ),
               TextButton(
                 onPressed: () async {
@@ -47,7 +52,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
                     if (mounted) Navigator.pop(context);
                   }
                 },
-                child: const Text('確認'),
+                child: Text(localizations?.confirm ?? '確認'),
               ),
             ],
           ),
@@ -56,6 +61,8 @@ class _AllRoomPageState extends State<AllRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddRoomDialog,
@@ -75,7 +82,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
           final devices = snapshot.data ?? [];
 
           if (devices.isEmpty) {
-            return const Center(child: Text('還沒有創建設備'));
+            return Center(child: Text(localizations?.noDevices ?? '還沒有創建設備'));
           }
           return EasyRefresh(
             header: const ClassicHeader(),

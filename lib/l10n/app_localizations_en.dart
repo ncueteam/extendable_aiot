@@ -10,4 +10,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeVicky => 'Vicky\'s Theme';
+
+  @override
+  String get hello => 'Hello';
+
+  @override
+  String get manageSmartHome => 'let\'s manage your smart home.';
+
+  @override
+  String get addRoom => 'Add Room';
+
+  @override
+  String get addDevice => 'Add Device';
+
+  @override
+  String get roomName => 'Room Name';
+
+  @override
+  String get deviceName => 'Device Name';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get allRooms => 'All Rooms';
+
+  @override
+  String get noDevices => 'No devices yet';
+
+  @override
+  String get noRooms => 'No rooms created yet';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get familyList => 'Family List';
+
+  @override
+  String get functions => 'Functions';
+
+  @override
+  String get changeName => 'Change Name';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get enterNewName => 'Enter new name';
+
+  @override
+  String get createdAt => 'Created At';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get lastLogin => 'Last Login';
+
+  @override
+  String get airCondition => 'Air Condition';
+
+  @override
+  String get livingRoom => 'Living room';
+
+  @override
+  String get celsius => 'Celsius';
+
+  @override
+  String get mode => 'Mode';
+
+  @override
+  String get auto => 'Auto';
+
+  @override
+  String get cool => 'Cool';
+
+  @override
+  String get dry => 'Dry';
+
+  @override
+  String get fanSpeed => 'Fan speed';
+
+  @override
+  String get low => 'Low';
+
+  @override
+  String get mid => 'Mid';
+
+  @override
+  String get high => 'High';
+
+  @override
+  String get power => 'Power';
 }

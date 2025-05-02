@@ -1,7 +1,4 @@
 import 'package:app_chiseletor/theme/theme_manager.dart';
-import 'package:extendable_aiot/pages/all_room_page.dart';
-import 'package:extendable_aiot/temp/sensor_page.dart';
-import 'package:extendable_aiot/temp/testroom_page.dart';
 import 'package:extendable_aiot/views/root_pages/automatic.dart';
 import 'package:extendable_aiot/views/root_pages/profile.dart';
 import 'package:extendable_aiot/views/root_pages/test_page.dart';

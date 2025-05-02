@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/services/user_service.dart';
@@ -11,6 +12,8 @@ class UserDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Drawer(
       child: StreamBuilder<DocumentSnapshot>(
         stream: _userService.getUserData(),
@@ -47,7 +50,7 @@ class UserDrawer extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.person),
-                title: const Text('個人資料'),
+                title: Text(localizations?.profile ?? '個人資料'),
                 onTap: () {
                   // TODO: 導航到個人資料編輯頁面
                 },
@@ -70,14 +73,14 @@ class UserDrawer extends StatelessWidget {
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('設定'),
+                title: Text(localizations?.settings ?? '設定'),
                 onTap: () {
                   // TODO: 導航到設定頁面
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.logout),
-                title: const Text('登出'),
+                title: Text(localizations?.logout ?? '登出'),
                 onTap: () async {
                   await _auth.signOut();
                   if (context.mounted) {

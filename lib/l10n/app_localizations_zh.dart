@@ -10,6 +10,111 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeVicky => 'Vicky主題';
+
+  @override
+  String get hello => '您好';
+
+  @override
+  String get manageSmartHome => '让我们管理您的智能家居。';
+
+  @override
+  String get addRoom => '添加房间';
+
+  @override
+  String get addDevice => '添加设备';
+
+  @override
+  String get roomName => '房间名称';
+
+  @override
+  String get deviceName => '设备名称';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirm => '确认';
+
+  @override
+  String get allRooms => '所有房间';
+
+  @override
+  String get noDevices => '还没有创建设备';
+
+  @override
+  String get noRooms => '还没有创建房间';
+
+  @override
+  String get profile => '个人资料';
+
+  @override
+  String get settings => '设置';
+
+  @override
+  String get logout => '登出';
+
+  @override
+  String get familyList => '家人列表';
+
+  @override
+  String get functions => '功能';
+
+  @override
+  String get changeName => '更改名字';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get enterNewName => '输入新的名字';
+
+  @override
+  String get createdAt => '创建于';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get email => '电子邮件';
+
+  @override
+  String get lastLogin => '最后登录';
+
+  @override
+  String get airCondition => '空调';
+
+  @override
+  String get livingRoom => '客厅';
+
+  @override
+  String get celsius => '摄氏';
+
+  @override
+  String get mode => '模式';
+
+  @override
+  String get auto => '自动';
+
+  @override
+  String get cool => '制冷';
+
+  @override
+  String get dry => '除湿';
+
+  @override
+  String get fanSpeed => '风速';
+
+  @override
+  String get low => '低速';
+
+  @override
+  String get mid => '中速';
+
+  @override
+  String get high => '高速';
+
+  @override
+  String get power => '电源';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -26,4 +131,109 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get themeVicky => 'Vicky主題';
+
+  @override
+  String get hello => '您好';
+
+  @override
+  String get manageSmartHome => '讓我們管理您的智能家居。';
+
+  @override
+  String get addRoom => '新增房間';
+
+  @override
+  String get addDevice => '新增設備';
+
+  @override
+  String get roomName => '房間名稱';
+
+  @override
+  String get deviceName => '設備名稱';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirm => '確認';
+
+  @override
+  String get allRooms => '所有房間';
+
+  @override
+  String get noDevices => '還沒有創建設備';
+
+  @override
+  String get noRooms => '還沒有創建房間';
+
+  @override
+  String get profile => '個人資料';
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get logout => '登出';
+
+  @override
+  String get familyList => '家人列表';
+
+  @override
+  String get functions => '功能';
+
+  @override
+  String get changeName => '更改名字';
+
+  @override
+  String get save => '儲存';
+
+  @override
+  String get enterNewName => '輸入新的名字';
+
+  @override
+  String get createdAt => '創建於';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get email => '電子郵件';
+
+  @override
+  String get lastLogin => '最後登入';
+
+  @override
+  String get airCondition => '空調';
+
+  @override
+  String get livingRoom => '客廳';
+
+  @override
+  String get celsius => '攝氏';
+
+  @override
+  String get mode => '模式';
+
+  @override
+  String get auto => '自動';
+
+  @override
+  String get cool => '製冷';
+
+  @override
+  String get dry => '除濕';
+
+  @override
+  String get fanSpeed => '風速';
+
+  @override
+  String get low => '低速';
+
+  @override
+  String get mid => '中速';
+
+  @override
+  String get high => '高速';
+
+  @override
+  String get power => '電源';
 }

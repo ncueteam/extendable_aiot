@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/device_data.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
@@ -30,17 +31,21 @@ class _RoomPageState extends State<RoomPage>
   String? errorMsg;
 
   Future<void> _showAddDeviceDialog() async {
+    final localizations = AppLocalizations.of(context);
+
     return showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('新增設備'),
+            title: Text(localizations?.addDevice ?? '新增設備'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: _deviceNameController,
-                  decoration: const InputDecoration(labelText: '設備名稱'),
+                  decoration: InputDecoration(
+                    labelText: localizations?.deviceName ?? '設備名稱',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 DropdownButton<String>(
@@ -63,7 +68,7 @@ class _RoomPageState extends State<RoomPage>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
+                child: Text(localizations?.cancel ?? '取消'),
               ),
               TextButton(
                 onPressed: () async {
@@ -77,7 +82,7 @@ class _RoomPageState extends State<RoomPage>
                     if (mounted) Navigator.pop(context);
                   }
                 },
-                child: const Text('確認'),
+                child: Text(localizations?.confirm ?? '確認'),
               ),
             ],
           ),
@@ -87,6 +92,7 @@ class _RoomPageState extends State<RoomPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -107,7 +113,7 @@ class _RoomPageState extends State<RoomPage>
           final devices = snapshot.data ?? [];
 
           if (devices.isEmpty) {
-            return const Center(child: Text('此房間還沒有設備'));
+            return Center(child: Text(localizations?.noDevices ?? '此房間還沒有設備'));
           }
 
           return EasyRefresh(
@@ -116,8 +122,6 @@ class _RoomPageState extends State<RoomPage>
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                //crossAxisSpacing: 12,
-                //mainAxisSpacing: 12,
                 childAspectRatio: 1.2,
               ),
               itemCount: devices.length,

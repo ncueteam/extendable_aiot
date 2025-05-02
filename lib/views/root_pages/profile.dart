@@ -1,3 +1,4 @@
+import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class Profile extends StatefulWidget {
@@ -12,9 +13,14 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: Colors.black)),
+        title: Text(
+          localizations?.profile ?? 'Profile',
+          style: const TextStyle(color: Colors.black),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -31,7 +37,7 @@ class _ProfileState extends State<Profile> {
           children: [
             const CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/avatar_placeholder.png'), // 預設頭像，可以換成你的
+              backgroundImage: AssetImage('assets/avatar_placeholder.png'),
             ),
             const SizedBox(height: 12),
             Text(
@@ -40,40 +46,52 @@ class _ProfileState extends State<Profile> {
             ),
             const SizedBox(height: 30),
 
-            _buildInfoCard(),
+            _buildInfoCard(localizations),
 
             const SizedBox(height: 20),
-            _buildFamilyList(),
+            _buildFamilyList(localizations),
 
             const SizedBox(height: 20),
-            _buildFunctionList(),
+            _buildFunctionList(localizations),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildInfoCard(AppLocalizations? localizations) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: const [
-            _InfoRow(title: "Created At", value: "2025年4月24日 凌晨4:22:06 [UTC+8]"),
-            Divider(),
-            _InfoRow(title: "ID", value: "xxxxxxxxxxxxxxxxxxx"),
-            Divider(),
-            _InfoRow(title: "Email", value: "yunitrish0419@gmail.com"),
-            Divider(),
-            _InfoRow(title: "Last Login", value: "2025年4月24日 凌晨4:36:38 [UTC+8]"),
+          children: [
+            _InfoRow(
+              title: localizations?.createdAt ?? "Created At",
+              value: "2025年4月24日 凌晨4:22:06 [UTC+8]",
+            ),
+            const Divider(),
+            _InfoRow(
+              title: localizations?.id ?? "ID",
+              value: "xxxxxxxxxxxxxxxxxxx",
+            ),
+            const Divider(),
+            _InfoRow(
+              title: localizations?.email ?? "Email",
+              value: "yunitrish0419@gmail.com",
+            ),
+            const Divider(),
+            _InfoRow(
+              title: localizations?.lastLogin ?? "Last Login",
+              value: "2025年4月24日 凌晨4:36:38 [UTC+8]",
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFamilyList() {
+  Widget _buildFamilyList(AppLocalizations? localizations) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -81,7 +99,10 @@ class _ProfileState extends State<Profile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("家人列表", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              localizations?.familyList ?? "家人列表",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.person),
@@ -107,7 +128,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildFunctionList() {
+  Widget _buildFunctionList(AppLocalizations? localizations) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -115,17 +136,20 @@ class _ProfileState extends State<Profile> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("功能", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              localizations?.functions ?? "功能",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('更改名字'),
+              title: Text(localizations?.changeName ?? '更改名字'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: _changeNameDialog,
+              onTap: () => _changeNameDialog(localizations),
             ),
             ListTile(
               leading: const Icon(Icons.logout),
-              title: const Text('登出'),
+              title: Text(localizations?.logout ?? '登出'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {},
             ),
@@ -135,21 +159,23 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  void _changeNameDialog() {
+  void _changeNameDialog(AppLocalizations? localizations) {
     TextEditingController controller = TextEditingController(text: name);
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('更改名字'),
+          title: Text(localizations?.changeName ?? '更改名字'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(hintText: "輸入新的名字"),
+            decoration: InputDecoration(
+              hintText: localizations?.enterNewName ?? "輸入新的名字",
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text(localizations?.cancel ?? '取消'),
             ),
             TextButton(
               onPressed: () {
@@ -158,7 +184,7 @@ class _ProfileState extends State<Profile> {
                 });
                 Navigator.pop(context);
               },
-              child: const Text('儲存'),
+              child: Text(localizations?.save ?? '儲存'),
             ),
           ],
         );

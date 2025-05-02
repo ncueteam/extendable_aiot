@@ -3,5 +3,145 @@
     "themeVicky": "Vicky's Theme",
     "@themeVicky": {
         "description": "The theme name for Vicky's theme"
+    },
+    "hello": "Hello",
+    "@hello": {
+        "description": "Greeting text on the main page"
+    },
+    "manageSmartHome": "let's manage your smart home.",
+    "@manageSmartHome": {
+        "description": "Subtitle text on the main page"
+    },
+    "addRoom": "Add Room",
+    "@addRoom": {
+        "description": "Button to add a new room"
+    },
+    "addDevice": "Add Device",
+    "@addDevice": {
+        "description": "Button to add a new device"
+    },
+    "roomName": "Room Name",
+    "@roomName": {
+        "description": "Label for room name input"
+    },
+    "deviceName": "Device Name",
+    "@deviceName": {
+        "description": "Label for device name input"
+    },
+    "cancel": "Cancel",
+    "@cancel": {
+        "description": "Cancel button text"
+    },
+    "confirm": "Confirm",
+    "@confirm": {
+        "description": "Confirm button text"
+    },
+    "allRooms": "All Rooms",
+    "@allRooms": {
+        "description": "Tab title for all rooms"
+    },
+    "noDevices": "No devices yet",
+    "@noDevices": {
+        "description": "Message when no devices are available"
+    },
+    "noRooms": "No rooms created yet",
+    "@noRooms": {
+        "description": "Message when no rooms are available"
+    },
+    "profile": "Profile",
+    "@profile": {
+        "description": "Profile page title"
+    },
+    "settings": "Settings",
+    "@settings": {
+        "description": "Settings menu item"
+    },
+    "logout": "Logout",
+    "@logout": {
+        "description": "Logout button text"
+    },
+    "familyList": "Family List",
+    "@familyList": {
+        "description": "Title for the family members list"
+    },
+    "functions": "Functions",
+    "@functions": {
+        "description": "Title for the functions section"
+    },
+    "changeName": "Change Name",
+    "@changeName": {
+        "description": "Button to change user name"
+    },
+    "save": "Save",
+    "@save": {
+        "description": "Save button text"
+    },
+    "enterNewName": "Enter new name",
+    "@enterNewName": {
+        "description": "Placeholder for name input field"
+    },
+    "createdAt": "Created At",
+    "@createdAt": {
+        "description": "Label for account creation date"
+    },
+    "id": "ID",
+    "@id": {
+        "description": "Label for user ID"
+    },
+    "email": "Email",
+    "@email": {
+        "description": "Label for user email"
+    },
+    "lastLogin": "Last Login",
+    "@lastLogin": {
+        "description": "Label for last login date"
+    },
+    "airCondition": "Air Condition",
+    "@airCondition": {
+        "description": "Title for air conditioner page"
+    },
+    "livingRoom": "Living room",
+    "@livingRoom": {
+        "description": "Living room label"
+    },
+    "celsius": "Celsius",
+    "@celsius": {
+        "description": "Temperature unit label"
+    },
+    "mode": "Mode",
+    "@mode": {
+        "description": "AC mode label"
+    },
+    "auto": "Auto",
+    "@auto": {
+        "description": "AC auto mode"
+    },
+    "cool": "Cool",
+    "@cool": {
+        "description": "AC cool mode"
+    },
+    "dry": "Dry",
+    "@dry": {
+        "description": "AC dry mode"
+    },
+    "fanSpeed": "Fan speed",
+    "@fanSpeed": {
+        "description": "Fan speed label"
+    },
+    "low": "Low",
+    "@low": {
+        "description": "Low fan speed"
+    },
+    "mid": "Mid",
+    "@mid": {
+        "description": "Medium fan speed"
+    },
+    "high": "High",
+    "@high": {
+        "description": "High fan speed"
+    },
+    "power": "Power",
+    "@power": {
+        "description": "Power label"
     }
 }
