@@ -183,6 +183,74 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get updateError => '更新失败';
+
+  @override
+  String get addFriend => '添加好友';
+
+  @override
+  String get enterEmail => '请输入好友邮箱';
+
+  @override
+  String get add => '添加';
+
+  @override
+  String get addingFriend => '正在添加好友...';
+
+  @override
+  String get friendAdded => '好友添加成功';
+
+  @override
+  String get friendAddFailed => '添加好友失败，该用户可能不存在或已是您的好友';
+
+  @override
+  String get selectRoom => '选择房间';
+
+  @override
+  String get loadingRooms => '正在加载房间列表...';
+
+  @override
+  String get removeAccess => '移除访问权限';
+
+  @override
+  String get confirmRemoveAccess => '确定要移除该好友对此房间的访问权限吗？';
+
+  @override
+  String get accessRemoved => '访问权限已移除';
+
+  @override
+  String get accessGranted => '访问权限已授予';
+
+  @override
+  String get deleteFriend => '删除好友';
+
+  @override
+  String confirmDeleteFriend(String name) {
+    return '确定要删除好友 $name 吗？所有相关的房间访问权限也会被删除。';
+  }
+
+  @override
+  String get friendRemoved => '好友已删除';
+
+  @override
+  String get manageFriends => '管理好友';
+
+  @override
+  String get loadingFriends => '正在加载好友列表...';
+
+  @override
+  String get noFriends => '还没有添加好友';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get roomUpdated => '房间已更新';
+
+  @override
+  String get friendList => '好友列表';
+
+  @override
+  String get addToRoom => '添加到房间';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -364,6 +432,74 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get updateError => '更新失败';
+
+  @override
+  String get addFriend => '添加好友';
+
+  @override
+  String get enterEmail => '请输入好友邮箱';
+
+  @override
+  String get add => '添加';
+
+  @override
+  String get addingFriend => '正在添加好友...';
+
+  @override
+  String get friendAdded => '好友添加成功';
+
+  @override
+  String get friendAddFailed => '添加好友失败，该用户可能不存在或已是您的好友';
+
+  @override
+  String get selectRoom => '选择房间';
+
+  @override
+  String get loadingRooms => '正在加载房间列表...';
+
+  @override
+  String get removeAccess => '移除访问权限';
+
+  @override
+  String get confirmRemoveAccess => '确定要移除该好友对此房间的访问权限吗？';
+
+  @override
+  String get accessRemoved => '访问权限已移除';
+
+  @override
+  String get accessGranted => '访问权限已授予';
+
+  @override
+  String get deleteFriend => '删除好友';
+
+  @override
+  String confirmDeleteFriend(String name) {
+    return '确定要删除好友 $name 吗？所有相关的房间访问权限也会被删除。';
+  }
+
+  @override
+  String get friendRemoved => '好友已删除';
+
+  @override
+  String get manageFriends => '管理好友';
+
+  @override
+  String get loadingFriends => '正在加载好友列表...';
+
+  @override
+  String get noFriends => '还没有添加好友';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get roomUpdated => '房间已更新';
+
+  @override
+  String get friendList => '好友列表';
+
+  @override
+  String get addToRoom => '添加到房间';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -545,4 +681,72 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get updateError => '更新失敗';
+
+  @override
+  String get addFriend => '新增好友';
+
+  @override
+  String get enterEmail => '請輸入好友郵箱';
+
+  @override
+  String get add => '新增';
+
+  @override
+  String get addingFriend => '正在新增好友...';
+
+  @override
+  String get friendAdded => '好友新增成功';
+
+  @override
+  String get friendAddFailed => '新增好友失敗，該用戶可能不存在或已是您的好友';
+
+  @override
+  String get selectRoom => '選擇房間';
+
+  @override
+  String get loadingRooms => '正在載入房間列表...';
+
+  @override
+  String get removeAccess => '移除訪問權限';
+
+  @override
+  String get confirmRemoveAccess => '確定要移除該好友對此房間的訪問權限嗎？';
+
+  @override
+  String get accessRemoved => '訪問權限已移除';
+
+  @override
+  String get accessGranted => '訪問權限已授予';
+
+  @override
+  String get deleteFriend => '刪除好友';
+
+  @override
+  String confirmDeleteFriend(String name) {
+    return '確定要刪除好友 $name 嗎？所有相關的房間訪問權限也會被刪除。';
+  }
+
+  @override
+  String get friendRemoved => '好友已刪除';
+
+  @override
+  String get manageFriends => '管理好友';
+
+  @override
+  String get loadingFriends => '正在載入好友列表...';
+
+  @override
+  String get noFriends => '還沒有新增好友';
+
+  @override
+  String get close => '關閉';
+
+  @override
+  String get roomUpdated => '房間已更新';
+
+  @override
+  String get friendList => '好友列表';
+
+  @override
+  String get addToRoom => '添加到房間';
 }

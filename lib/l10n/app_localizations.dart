@@ -444,6 +444,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update failed'**
   String get updateError;
+
+  /// Button to add a new friend
+  ///
+  /// In en, this message translates to:
+  /// **'Add Friend'**
+  String get addFriend;
+
+  /// Placeholder for email input when adding a friend
+  ///
+  /// In en, this message translates to:
+  /// **'Enter friend\'s email'**
+  String get enterEmail;
+
+  /// Generic add button text
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// Message shown when adding a friend
+  ///
+  /// In en, this message translates to:
+  /// **'Adding friend...'**
+  String get addingFriend;
+
+  /// Message shown when a friend is added successfully
+  ///
+  /// In en, this message translates to:
+  /// **'Friend added successfully'**
+  String get friendAdded;
+
+  /// Message shown when adding a friend fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add friend. The user may not exist or is already your friend.'**
+  String get friendAddFailed;
+
+  /// Title for room selection dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Select Room'**
+  String get selectRoom;
+
+  /// Message shown when loading rooms
+  ///
+  /// In en, this message translates to:
+  /// **'Loading rooms...'**
+  String get loadingRooms;
+
+  /// Title for dialog to remove friend's access to a room
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Access'**
+  String get removeAccess;
+
+  /// Confirmation message for removing friend's access
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove this friend\'s access to this room?'**
+  String get confirmRemoveAccess;
+
+  /// Message shown when access is removed
+  ///
+  /// In en, this message translates to:
+  /// **'Access removed'**
+  String get accessRemoved;
+
+  /// Message shown when access is granted
+  ///
+  /// In en, this message translates to:
+  /// **'Access granted'**
+  String get accessGranted;
+
+  /// Title for friend deletion dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Friend'**
+  String get deleteFriend;
+
+  /// Confirmation message for deleting a friend
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete friend {name}? All related room access permissions will also be removed.'**
+  String confirmDeleteFriend(String name);
+
+  /// Message shown when a friend is removed
+  ///
+  /// In en, this message translates to:
+  /// **'Friend removed'**
+  String get friendRemoved;
+
+  /// Button to manage friends
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Friends'**
+  String get manageFriends;
+
+  /// Message shown when loading friends
+  ///
+  /// In en, this message translates to:
+  /// **'Loading friends...'**
+  String get loadingFriends;
+
+  /// Message shown when no friends are available
+  ///
+  /// In en, this message translates to:
+  /// **'No friends added yet'**
+  String get noFriends;
+
+  /// Close button text
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// Message shown when a room is updated
+  ///
+  /// In en, this message translates to:
+  /// **'Room updated'**
+  String get roomUpdated;
+
+  /// Title for the friends list
+  ///
+  /// In en, this message translates to:
+  /// **'Friend List'**
+  String get friendList;
+
+  /// Tooltip for button to add friend to a room
+  ///
+  /// In en, this message translates to:
+  /// **'Add to room'**
+  String get addToRoom;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

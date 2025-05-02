@@ -183,4 +183,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateError => 'Update failed';
+
+  @override
+  String get addFriend => 'Add Friend';
+
+  @override
+  String get enterEmail => 'Enter friend\'s email';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get addingFriend => 'Adding friend...';
+
+  @override
+  String get friendAdded => 'Friend added successfully';
+
+  @override
+  String get friendAddFailed => 'Failed to add friend. The user may not exist or is already your friend.';
+
+  @override
+  String get selectRoom => 'Select Room';
+
+  @override
+  String get loadingRooms => 'Loading rooms...';
+
+  @override
+  String get removeAccess => 'Remove Access';
+
+  @override
+  String get confirmRemoveAccess => 'Are you sure you want to remove this friend\'s access to this room?';
+
+  @override
+  String get accessRemoved => 'Access removed';
+
+  @override
+  String get accessGranted => 'Access granted';
+
+  @override
+  String get deleteFriend => 'Delete Friend';
+
+  @override
+  String confirmDeleteFriend(String name) {
+    return 'Are you sure you want to delete friend $name? All related room access permissions will also be removed.';
+  }
+
+  @override
+  String get friendRemoved => 'Friend removed';
+
+  @override
+  String get manageFriends => 'Manage Friends';
+
+  @override
+  String get loadingFriends => 'Loading friends...';
+
+  @override
+  String get noFriends => 'No friends added yet';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get roomUpdated => 'Room updated';
+
+  @override
+  String get friendList => 'Friend List';
+
+  @override
+  String get addToRoom => 'Add to room';
 }

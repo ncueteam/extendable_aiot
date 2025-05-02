@@ -10,6 +10,7 @@ class RoomModel {
   List<String> devices = [];
   Timestamp createdAt;
   IconData icon;
+  List<String> authorizedFriends = []; // 添加授权好友列表
 
   RoomModel({
     required this.name,
@@ -17,10 +18,12 @@ class RoomModel {
     List<String>? devices,
     Timestamp? createdAt,
     IconData? icon,
+    List<String>? authorizedFriends,
   }) : id = id ?? _generateFirebaseId(),
        devices = devices ?? [],
        createdAt = createdAt ?? Timestamp.now(),
-       icon = icon ?? Icons.meeting_room;
+       icon = icon ?? Icons.meeting_room,
+       authorizedFriends = authorizedFriends ?? [];
 
   static String _generateFirebaseId() {
     const chars =
@@ -45,6 +48,10 @@ class RoomModel {
           json['icon'] != null
               ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
               : Icons.meeting_room,
+      authorizedFriends:
+          json['authorizedFriends'] != null
+              ? List<String>.from(json['authorizedFriends'])
+              : [],
     );
   }
 
@@ -62,6 +69,7 @@ class RoomModel {
       'devices': devices,
       'createdAt': createdAt,
       'icon': icon.codePoint,
+      'authorizedFriends': authorizedFriends,
     };
   }
 
@@ -282,6 +290,34 @@ class RoomModel {
       }
 
       return controller.stream;
+    }
+  }
+
+  // 添加授权好友
+  Future<bool> addAuthorizedFriend(String friendUserId) async {
+    try {
+      if (authorizedFriends.contains(friendUserId)) {
+        return true; // 已经授权
+      }
+
+      authorizedFriends.add(friendUserId);
+      await updateRoom();
+      return true;
+    } catch (e) {
+      print('Error adding authorized friend: $e');
+      return false;
+    }
+  }
+
+  // 移除授权好友
+  Future<bool> removeAuthorizedFriend(String friendUserId) async {
+    try {
+      authorizedFriends.remove(friendUserId);
+      await updateRoom();
+      return true;
+    } catch (e) {
+      print('Error removing authorized friend: $e');
+      return false;
     }
   }
 }

@@ -237,5 +237,99 @@
     "updateError": "Update failed",
     "@updateError": {
         "description": "Message shown when an update operation fails"
+    },
+    "addFriend": "Add Friend",
+    "@addFriend": {
+        "description": "Button to add a new friend"
+    },
+    "enterEmail": "Enter friend's email",
+    "@enterEmail": {
+        "description": "Placeholder for email input when adding a friend"
+    },
+    "add": "Add",
+    "@add": {
+        "description": "Generic add button text"
+    },
+    "addingFriend": "Adding friend...",
+    "@addingFriend": {
+        "description": "Message shown when adding a friend"
+    },
+    "friendAdded": "Friend added successfully",
+    "@friendAdded": {
+        "description": "Message shown when a friend is added successfully"
+    },
+    "friendAddFailed": "Failed to add friend. The user may not exist or is already your friend.",
+    "@friendAddFailed": {
+        "description": "Message shown when adding a friend fails"
+    },
+    "selectRoom": "Select Room",
+    "@selectRoom": {
+        "description": "Title for room selection dialog"
+    },
+    "loadingRooms": "Loading rooms...",
+    "@loadingRooms": {
+        "description": "Message shown when loading rooms"
+    },
+    "removeAccess": "Remove Access",
+    "@removeAccess": {
+        "description": "Title for dialog to remove friend's access to a room"
+    },
+    "confirmRemoveAccess": "Are you sure you want to remove this friend's access to this room?",
+    "@confirmRemoveAccess": {
+        "description": "Confirmation message for removing friend's access"
+    },
+    "accessRemoved": "Access removed",
+    "@accessRemoved": {
+        "description": "Message shown when access is removed"
+    },
+    "accessGranted": "Access granted",
+    "@accessGranted": {
+        "description": "Message shown when access is granted"
+    },
+    "deleteFriend": "Delete Friend",
+    "@deleteFriend": {
+        "description": "Title for friend deletion dialog"
+    },
+    "confirmDeleteFriend": "Are you sure you want to delete friend {name}? All related room access permissions will also be removed.",
+    "@confirmDeleteFriend": {
+        "description": "Confirmation message for deleting a friend",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "John"
+            }
+        }
+    },
+    "friendRemoved": "Friend removed",
+    "@friendRemoved": {
+        "description": "Message shown when a friend is removed"
+    },
+    "manageFriends": "Manage Friends",
+    "@manageFriends": {
+        "description": "Button to manage friends"
+    },
+    "loadingFriends": "Loading friends...",
+    "@loadingFriends": {
+        "description": "Message shown when loading friends"
+    },
+    "noFriends": "No friends added yet",
+    "@noFriends": {
+        "description": "Message shown when no friends are available"
+    },
+    "close": "Close",
+    "@close": {
+        "description": "Close button text"
+    },
+    "roomUpdated": "Room updated",
+    "@roomUpdated": {
+        "description": "Message shown when a room is updated"
+    },
+    "friendList": "Friend List",
+    "@friendList": {
+        "description": "Title for the friends list"
+    },
+    "addToRoom": "Add to room",
+    "@addToRoom": {
+        "description": "Tooltip for button to add friend to a room"
     }
 }
