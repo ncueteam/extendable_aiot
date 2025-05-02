@@ -1,6 +1,6 @@
 {
     "@@locale": "zh",
-    "themeVicky": "Vicky主題",
+    "themeVicky": "Vicky主题",
     "hello": "您好",
     "manageSmartHome": "让我们管理您的智能家居。",
     "addRoom": "添加房间",
@@ -44,5 +44,16 @@
     "humidity": "湿度",
     "on": "开",
     "off": "关",
-    "lastUpdated": "最后更新"
+    "lastUpdated": "最后更新",
+    "rooms": "房间",
+    "devices": "设备",
+    "recentlyUsed": "最近使用",
+    "error": "错误",
+    "roomNotFound": "找不到房间",
+    "confirmDeleteRoom": "确定要删除房间 \"{name}\" 吗？此操作无法撤销，且会同时删除所有关联设备。",
+    "bedroom": "卧室",
+    "kitchen": "厨房",
+    "bathroom": "浴室",
+    "studyRoom": "书房",
+    "diningRoom": "餐厅"
 }

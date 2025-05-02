@@ -44,5 +44,16 @@
     "humidity": "濕度",
     "on": "開",
     "off": "關",
-    "lastUpdated": "最後更新"
+    "lastUpdated": "最後更新",
+    "rooms": "房間",
+    "devices": "設備",
+    "recentlyUsed": "最近使用",
+    "error": "錯誤",
+    "roomNotFound": "找不到房間",
+    "confirmDeleteRoom": "確定要刪除房間 \"{name}\" 嗎？此操作無法撤銷，且會同時刪除所有關聯設備。",
+    "bedroom": "臥室",
+    "kitchen": "廚房",
+    "bathroom": "浴室",
+    "studyRoom": "書房",
+    "diningRoom": "餐廳"
 }

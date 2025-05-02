@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/general_model.dart';
+import 'package:extendable_aiot/models/room_model.dart';
 import 'package:extendable_aiot/models/switch_model.dart';
-import 'package:extendable_aiot/models/switchable_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/services/add_data.dart';
-import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -22,10 +20,9 @@ class RoomPage extends StatefulWidget {
 
 class _RoomPageState extends State<RoomPage>
     with AutomaticKeepAliveClientMixin {
-  final AddData _addData = AddData();
-  final FetchData _fetchData = FetchData();
   final TextEditingController _deviceNameController = TextEditingController();
   String _selectedDeviceType = '中央空調';
+  RoomModel? _roomModel;
 
   int page = 1;
   int limit = 10;
@@ -35,7 +32,7 @@ class _RoomPageState extends State<RoomPage>
 
   // 设备类型列表
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'type': '中央空調', 'name': '中央空調', 'icon': Icons.ac_unit},
+    {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': '風扇', 'name': '風扇', 'icon': Icons.wind_power},
     {'type': '燈光', 'name': '燈光', 'icon': Icons.lightbulb},
     {'type': '窗簾', 'name': '窗簾', 'icon': Icons.curtains},
@@ -43,6 +40,32 @@ class _RoomPageState extends State<RoomPage>
     {'type': '感測器', 'name': '感測器', 'icon': Icons.sensors},
     {'type': 'dht11', 'name': 'DHT11溫濕度傳感器', 'icon': Icons.thermostat},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoomModel();
+  }
+
+  Future<void> _loadRoomModel() async {
+    try {
+      final room = await RoomModel.getRoom(widget.roomId);
+      if (mounted) {
+        setState(() {
+          _roomModel = room;
+          loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          error = true;
+          errorMsg = e.toString();
+          loading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _showAddDeviceDialog() async {
     final localizations = AppLocalizations.of(context);
@@ -92,11 +115,11 @@ class _RoomPageState extends State<RoomPage>
               ),
               TextButton(
                 onPressed: () async {
-                  if (_deviceNameController.text.isNotEmpty) {
-                    await _addData.addDevice(
-                      name: _deviceNameController.text,
-                      type: _selectedDeviceType,
-                      roomId: widget.roomId,
+                  if (_deviceNameController.text.isNotEmpty &&
+                      _roomModel != null) {
+                    await _addDevice(
+                      _deviceNameController.text,
+                      _selectedDeviceType,
                     );
                     _deviceNameController.clear();
                     if (mounted) Navigator.pop(context);
@@ -109,18 +132,84 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
+  // 使用模型来添加设备
+  Future<void> _addDevice(String name, String type) async {
+    if (_roomModel == null) return;
+
+    try {
+      switch (type) {
+        case 'air_conditioner':
+          final acDevice = AirConditionerModel(
+            null, // Firebase 会自动生成 ID
+            name: name,
+            roomId: widget.roomId,
+            lastUpdated: Timestamp.now(),
+          );
+          await acDevice.createData();
+          await _roomModel!.addDevice(acDevice.id);
+          break;
+        case 'dht11':
+          final dht11Device = DHT11SensorModel(
+            null, // Firebase 会自动生成 ID
+            name: name,
+            roomId: widget.roomId,
+            lastUpdated: Timestamp.now(),
+            temperature: 0.0,
+            humidity: 0.0,
+          );
+          await dht11Device.createData();
+          await _roomModel!.addDevice(dht11Device.id);
+          break;
+        default:
+          // 默认使用基本的 SwitchModel
+          final switchable = SwitchModel(
+            null, // Firebase 会自动生成 ID
+            name: name,
+            type: type,
+            lastUpdated: Timestamp.now(),
+            icon: _getIconForType(type),
+            updateValue: [true, false],
+            previousValue: [false, true],
+            status: false,
+          );
+          await switchable.createData();
+          await _roomModel!.addDevice(switchable.id);
+          break;
+      }
+    } catch (e) {
+      print('添加设备错误: $e');
+      // 可以添加错误处理逻辑，如显示错误消息等
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final localizations = AppLocalizations.of(context);
 
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (error) {
+      return Center(child: Text('錯誤: $errorMsg'));
+    }
+
+    if (_roomModel == null) {
+      return Center(child: Text(localizations?.roomNotFound ?? '找不到房間'));
+    }
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_roomModel?.name ?? ''), // 显示房间名称
+        centerTitle: true,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDeviceDialog,
         child: const Icon(Icons.add),
       ),
       body: StreamBuilder<List<DocumentSnapshot>>(
-        stream: _fetchData.getRoomDevices(widget.roomId),
+        stream: _roomModel!.devicesStream(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('錯誤: ${snapshot.error}'));
@@ -141,45 +230,78 @@ class _RoomPageState extends State<RoomPage>
           for (var device in devices) {
             try {
               final data = device.data() as Map<String, dynamic>;
-              final String type = data['type'] as String;
+              final String type = data['type'] as String? ?? '未知';
+              final String name = data['name'] as String? ?? '未命名設備';
+              final Timestamp lastUpdated =
+                  data['lastUpdated'] as Timestamp? ?? Timestamp.now();
+              final bool status = data['status'] as bool? ?? false;
 
               switch (type) {
-                case '中央空調':
-                  final acDevice = AirConditionerModel(
-                    device.id,
-                    name: data['name'] as String,
-                    roomId: widget.roomId,
-                    lastUpdated:
-                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
-                  );
-                  acDevice.fromJson(data);
-                  deviceModels.add(acDevice);
+                case 'air_conditioner':
+                  try {
+                    final acDevice = AirConditionerModel(
+                      device.id,
+                      name: name,
+                      roomId: widget.roomId,
+                      lastUpdated: lastUpdated,
+                    );
+                    acDevice.fromJson(data);
+                    deviceModels.add(acDevice);
+                  } catch (e) {
+                    print('解析空调设备错误: $e');
+                    // 使用基本的 SwitchModel 作为备用
+                    final fallbackDevice = SwitchModel(
+                      device.id,
+                      name: name,
+                      type: type,
+                      lastUpdated: lastUpdated,
+                      icon: _getIconForType(type),
+                      updateValue: [true, false],
+                      previousValue: [false, true],
+                      status: status,
+                    );
+                    deviceModels.add(fallbackDevice);
+                  }
                   break;
                 case 'dht11':
-                  final dht11Device = DHT11SensorModel(
-                    device.id,
-                    name: data['name'] as String,
-                    roomId: widget.roomId,
-                    lastUpdated:
-                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
-                    temperature:
-                        (data['temperature'] as num?)?.toDouble() ?? 0.0,
-                    humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
-                  );
-                  deviceModels.add(dht11Device);
+                  try {
+                    final dht11Device = DHT11SensorModel(
+                      device.id,
+                      name: name,
+                      roomId: widget.roomId,
+                      lastUpdated: lastUpdated,
+                      temperature:
+                          (data['temperature'] as num?)?.toDouble() ?? 0.0,
+                      humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
+                    );
+                    deviceModels.add(dht11Device);
+                  } catch (e) {
+                    print('解析DHT11设备错误: $e');
+                    // 使用基本的 SwitchModel 作为备用
+                    final fallbackDevice = SwitchModel(
+                      device.id,
+                      name: name,
+                      type: type,
+                      lastUpdated: lastUpdated,
+                      icon: _getIconForType(type),
+                      updateValue: [true, false],
+                      previousValue: [false, true],
+                      status: status,
+                    );
+                    deviceModels.add(fallbackDevice);
+                  }
                   break;
                 default:
-                  // 默认使用基本的SwitchableModel
+                  // 默认使用基本的SwitchModel
                   final switchable = SwitchModel(
                     device.id,
-                    name: data['name'] as String,
+                    name: name,
                     type: type,
-                    lastUpdated:
-                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
+                    lastUpdated: lastUpdated,
                     icon: _getIconForType(type),
                     updateValue: [true, false],
                     previousValue: [false, true],
-                    status: data['status'] as bool? ?? false,
+                    status: status,
                   );
                   deviceModels.add(switchable);
                   break;

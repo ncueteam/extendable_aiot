@@ -99,9 +99,10 @@ abstract class SwitchableModel extends GeneralModel {
 
   @override
   fromJson(Map<String, dynamic> json) {
-    updateValue = json['updateValue'] as List<dynamic>;
-    previousValue = json['previousValue'] as List<dynamic>;
-    status = json['status'] as bool;
+    // 添加空值检查，如果字段为 null，则使用默认的空列表
+    updateValue = json['updateValue'] as List<dynamic>? ?? [];
+    previousValue = json['previousValue'] as List<dynamic>? ?? [];
+    status = json['status'] as bool? ?? false;
     return super.fromJson(json);
   }
 

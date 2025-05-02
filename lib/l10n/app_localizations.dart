@@ -390,6 +390,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get error;
+
+  /// Message when a room cannot be found
+  ///
+  /// In en, this message translates to:
+  /// **'Room not found'**
+  String get roomNotFound;
+
+  /// Confirmation message for room deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete room \"{name}\"? This action cannot be undone and will remove all associated devices.'**
+  String confirmDeleteRoom(String name);
+
+  /// Bedroom label
+  ///
+  /// In en, this message translates to:
+  /// **'Bedroom'**
+  String get bedroom;
+
+  /// Kitchen label
+  ///
+  /// In en, this message translates to:
+  /// **'Kitchen'**
+  String get kitchen;
+
+  /// Bathroom label
+  ///
+  /// In en, this message translates to:
+  /// **'Bathroom'**
+  String get bathroom;
+
+  /// Study room label
+  ///
+  /// In en, this message translates to:
+  /// **'Study Room'**
+  String get studyRoom;
+
+  /// Dining room label
+  ///
+  /// In en, this message translates to:
+  /// **'Dining Room'**
+  String get diningRoom;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

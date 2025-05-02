@@ -105,8 +105,13 @@ class _DeviceCardState extends State<DeviceCard> {
 
   // 空调设备卡片
   Widget _buildAirConditionerCard(AirConditionerModel device) {
-    return GestureDetector(
-      onTap: () => _navigateToDeviceControl(),
+    return InkWell(
+      onTap: () {
+        print("空调卡片被点击: ${device.name}"); // 调试信息
+        _openAirConditionerControl(device);
+      },
+      borderRadius: BorderRadius.circular(15),
+      splashColor: Colors.blue.withOpacity(0.3),
       child: Container(
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.all(8),

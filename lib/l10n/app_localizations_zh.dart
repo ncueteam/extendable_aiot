@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get themeVicky => 'Vicky主題';
+  String get themeVicky => 'Vicky主题';
 
   @override
   String get hello => '您好';
@@ -144,16 +144,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lastUpdated => '最后更新';
 
   @override
-  String get rooms => 'Rooms';
+  String get rooms => '房间';
 
   @override
-  String get devices => 'Devices';
+  String get devices => '设备';
 
   @override
-  String get recentlyUsed => 'Recently Used';
+  String get recentlyUsed => '最近使用';
 
   @override
-  String get error => 'Error';
+  String get error => '错误';
+
+  @override
+  String get roomNotFound => '找不到房间';
+
+  @override
+  String confirmDeleteRoom(String name) {
+    return '确定要删除房间 \"$name\" 吗？此操作无法撤销，且会同时删除所有关联设备。';
+  }
+
+  @override
+  String get bedroom => '卧室';
+
+  @override
+  String get kitchen => '厨房';
+
+  @override
+  String get bathroom => '浴室';
+
+  @override
+  String get studyRoom => '书房';
+
+  @override
+  String get diningRoom => '餐厅';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -294,6 +317,41 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get lastUpdated => '最后更新';
+
+  @override
+  String get rooms => '房间';
+
+  @override
+  String get devices => '设备';
+
+  @override
+  String get recentlyUsed => '最近使用';
+
+  @override
+  String get error => '错误';
+
+  @override
+  String get roomNotFound => '找不到房间';
+
+  @override
+  String confirmDeleteRoom(String name) {
+    return '确定要删除房间 \"$name\" 吗？此操作无法撤销，且会同时删除所有关联设备。';
+  }
+
+  @override
+  String get bedroom => '卧室';
+
+  @override
+  String get kitchen => '厨房';
+
+  @override
+  String get bathroom => '浴室';
+
+  @override
+  String get studyRoom => '书房';
+
+  @override
+  String get diningRoom => '餐厅';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -434,4 +492,39 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get lastUpdated => '最後更新';
+
+  @override
+  String get rooms => '房間';
+
+  @override
+  String get devices => '設備';
+
+  @override
+  String get recentlyUsed => '最近使用';
+
+  @override
+  String get error => '錯誤';
+
+  @override
+  String get roomNotFound => '找不到房間';
+
+  @override
+  String confirmDeleteRoom(String name) {
+    return '確定要刪除房間 \"$name\" 嗎？此操作無法撤銷，且會同時刪除所有關聯設備。';
+  }
+
+  @override
+  String get bedroom => '臥室';
+
+  @override
+  String get kitchen => '廚房';
+
+  @override
+  String get bathroom => '浴室';
+
+  @override
+  String get studyRoom => '書房';
+
+  @override
+  String get diningRoom => '餐廳';
 }

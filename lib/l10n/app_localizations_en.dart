@@ -154,4 +154,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get error => 'Error';
+
+  @override
+  String get roomNotFound => 'Room not found';
+
+  @override
+  String confirmDeleteRoom(String name) {
+    return 'Are you sure you want to delete room \"$name\"? This action cannot be undone and will remove all associated devices.';
+  }
+
+  @override
+  String get bedroom => 'Bedroom';
+
+  @override
+  String get kitchen => 'Kitchen';
+
+  @override
+  String get bathroom => 'Bathroom';
+
+  @override
+  String get studyRoom => 'Study Room';
+
+  @override
+  String get diningRoom => 'Dining Room';
 }

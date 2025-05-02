@@ -26,7 +26,7 @@ class AirConditionerModel extends SwitchableModel {
   AirConditionerModel(
     super.id, {
     required super.name,
-    super.type = "air_conditioner",
+    super.type = "air_conditioner", // 将类型统一为 air_conditioner
     required super.lastUpdated,
     super.icon = Icons.ac_unit,
     this.temperature = 25.0,

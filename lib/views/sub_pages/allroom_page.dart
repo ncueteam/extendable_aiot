@@ -6,7 +6,6 @@ import 'package:extendable_aiot/models/room_model.dart';
 import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 
@@ -18,12 +17,11 @@ class AllRoomPage extends StatefulWidget {
 }
 
 class _AllRoomPageState extends State<AllRoomPage> {
-  final FetchData _fetchData = FetchData();
   final TextEditingController _roomNameController = TextEditingController();
 
   // 设备类型列表用于图标匹配
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'type': '中央空調', 'name': '中央空調', 'icon': Icons.ac_unit},
+    {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': '風扇', 'name': '風扇', 'icon': Icons.wind_power},
     {'type': '燈光', 'name': '燈光', 'icon': Icons.lightbulb},
     {'type': '窗簾', 'name': '窗簾', 'icon': Icons.curtains},
@@ -179,8 +177,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
                     final bool status = data['status'] as bool? ?? false;
 
                     switch (type) {
-                      case '中央空調':
-                      case 'airconditioner':
+                      case 'air_conditioner':
                         try {
                           final acDevice = AirConditionerModel(
                             device.id,

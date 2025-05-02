@@ -195,5 +195,39 @@
     "error": "Error",
     "@error": {
         "description": "Error message"
+    },
+    "roomNotFound": "Room not found",
+    "@roomNotFound": {
+        "description": "Message when a room cannot be found"
+    },
+    "confirmDeleteRoom": "Are you sure you want to delete room \"{name}\"? This action cannot be undone and will remove all associated devices.",
+    "@confirmDeleteRoom": {
+        "description": "Confirmation message for room deletion",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Living Room"
+            }
+        }
+    },
+    "bedroom": "Bedroom",
+    "@bedroom": {
+        "description": "Bedroom label"
+    },
+    "kitchen": "Kitchen",
+    "@kitchen": {
+        "description": "Kitchen label"
+    },
+    "bathroom": "Bathroom",
+    "@bathroom": {
+        "description": "Bathroom label"
+    },
+    "studyRoom": "Study Room",
+    "@studyRoom": {
+        "description": "Study room label"
+    },
+    "diningRoom": "Dining Room",
+    "@diningRoom": {
+        "description": "Dining room label"
     }
 }
