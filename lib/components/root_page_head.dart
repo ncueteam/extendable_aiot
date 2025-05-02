@@ -1,7 +1,4 @@
-import 'package:app_chiseletor/theme/theme_manager.dart';
-import 'package:app_chiseletor/widgets/language_toggle_button.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 
 class RootPageHead extends StatefulWidget {
@@ -25,25 +22,15 @@ class _RootPageHeadState extends State<RootPageHead> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [LanguageToggleButton()],
-              ),
               Text(
                 localizations?.hello ?? "Hello",
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
               ),
               const SizedBox(),
               Text(
                 localizations?.manageSmartHome ??
                     "let's manage your smart home.",
                 style: const TextStyle(
-                  color: Colors.grey,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),

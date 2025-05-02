@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/root_page_head.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
+import 'package:extendable_aiot/pages/user_drawer.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/views/sub_pages/allroom_page.dart';
@@ -47,18 +48,39 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _tabController = TabController(length: tabs.length, vsync: this);
 
         return Scaffold(
-          appBar: AppBar(
-            elevation: 0,
-            toolbarHeight: MediaQuery.of(context).size.height * 0.2,
-            title: const RootPageHead(),
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: tabs,
-              dividerColor: AppColors.page,
-              indicatorColor: AppColors.active,
-              labelColor: AppColors.active,
-              unselectedLabelColor: AppColors.unactive,
-              isScrollable: true,
+          drawer: UserDrawer(),
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(
+              MediaQuery.of(context).size.height * 0.2,
+            ),
+            child: Column(
+              children: [
+                SizedBox.fromSize(
+                  size: Size.fromHeight(
+                    MediaQuery.of(context).size.height * 0.03,
+                  ),
+                ),
+                PreferredSize(
+                  preferredSize: Size.fromHeight(
+                    MediaQuery.of(context).size.height * 0.2,
+                  ),
+                  child: const RootPageHead(),
+                ),
+                PreferredSize(
+                  preferredSize: Size.fromHeight(
+                    MediaQuery.of(context).size.height * 0.1,
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    tabs: tabs,
+                    dividerColor: AppColors.page,
+                    indicatorColor: AppColors.active,
+                    labelColor: AppColors.active,
+                    unselectedLabelColor: AppColors.unactive,
+                    isScrollable: true,
+                  ),
+                ),
+              ],
             ),
           ),
           body: TabBarView(controller: _tabController, children: tabContents),

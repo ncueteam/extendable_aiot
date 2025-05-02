@@ -1,15 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/airconditioner_control.dart';
-import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
-import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/dht11_sensor_model.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class IntegratedDevicesPage extends StatefulWidget {
-  const IntegratedDevicesPage({Key? key}) : super(key: key);
+  const IntegratedDevicesPage({super.key});
 
   @override
   State<IntegratedDevicesPage> createState() => _IntegratedDevicesPageState();
@@ -25,6 +24,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
   late TabController _tabController;
   String? _selectedRoomId;
+  String? _selectedRoomName; // 保存房间名称
   bool _isLoading = false;
   String _operationMessage = '';
   String _deviceType = 'switch'; // 默认为开关设备类型
@@ -33,12 +33,13 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   final List<Map<String, dynamic>> _deviceTypes = [
     {'type': 'switch', 'name': '可切换设备', 'icon': Icons.toggle_on},
     {'type': 'airconditioner', 'name': '空调设备', 'icon': Icons.ac_unit},
+    {'type': 'dht11', 'name': 'DHT11温湿度传感器', 'icon': Icons.thermostat},
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       // 清空设备名称
       if (_tabController.indexIsChanging) {
@@ -70,9 +71,11 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     });
 
     try {
-      await _addData.addRoom(roomId: _roomNameController.text);
+      // 使用修改后的 addRoom 方法，传递 name 参数而不是 roomId
+      final roomRef = await _addData.addRoom(name: _roomNameController.text);
       setState(() {
-        _selectedRoomId = _roomNameController.text;
+        // 使用生成的文档 ID 作为房间 ID
+        _selectedRoomId = roomRef.id;
         _roomNameController.clear();
         _isLoading = false;
         _operationMessage = '房间创建成功: $_selectedRoomId';
@@ -245,6 +248,34 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
         if (mounted) {
           _openAirConditionerControl(airConditioner);
         }
+      } else if (_deviceType == 'dht11') {
+        // 创建DHT11传感器设备
+        String? userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId == null) throw Exception('用户未登录');
+
+        final docRef =
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .collection('devices')
+                .doc();
+
+        final dht11Sensor = DHT11SensorModel(
+          docRef.id,
+          name: _deviceNameController.text,
+          roomId: _selectedRoomId!,
+          lastUpdated: Timestamp.now(),
+          temperature: 0.0,
+          humidity: 0.0,
+        );
+
+        await dht11Sensor.createData();
+
+        setState(() {
+          _deviceNameController.clear();
+          _isLoading = false;
+          _operationMessage = 'DHT11传感器创建成功: ${dht11Sensor.name}';
+        });
       }
     } catch (e) {
       setState(() {
@@ -254,7 +285,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     }
   }
 
-  // 加载指定房间的设备
+  // 加载指定房间的设备，并获取房间名称
   Future<void> _loadDevicesInRoom(String roomId) async {
     setState(() {
       _isLoading = true;
@@ -262,11 +293,27 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     });
 
     try {
-      setState(() {
-        _selectedRoomId = roomId;
-        _isLoading = false;
-        _operationMessage = '已选择房间: $roomId';
-      });
+      // 获取房间详细信息以获取名称
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        final roomDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .collection('rooms')
+                .doc(roomId)
+                .get();
+
+        // 获取房间名称
+        String roomName = roomDoc.data()?['name'] ?? roomId;
+
+        setState(() {
+          _selectedRoomId = roomId;
+          _selectedRoomName = roomName; // 保存房间名称
+          _isLoading = false;
+          _operationMessage = '已选择房间: $roomName';
+        });
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -357,17 +404,16 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations? localizations = AppLocalizations.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设备管理中心'),
+        title: Text(_selectedRoomName ?? '设备管理中心'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: '房间选择'),
             Tab(text: '可切换设备'),
             Tab(text: '空调设备'),
+            Tab(text: 'DHT11传感器'),
           ],
         ),
       ),
@@ -385,6 +431,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
                   // 空调设备页面
                   _buildAirConditionerTab(),
+
+                  // DHT11传感器页面
+                  _buildDHT11SensorTab(),
                 ],
               ),
       bottomNavigationBar: Container(
@@ -548,7 +597,8 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    roomId,
+                                    // 使用房间的name字段而不是ID
+                                    room.id,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -558,6 +608,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                               : Colors.black87,
                                     ),
                                     textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -613,8 +664,8 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _selectedRoomId != null
-                        ? '在房间"$_selectedRoomId"中创建设备'
+                    _selectedRoomName != null
+                        ? '在房间"$_selectedRoomName"中创建设备'
                         : '请先在房间选择标签页中选择房间',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
@@ -667,7 +718,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '房间"$_selectedRoomId"中的可切换设备',
+                              '房间"$_selectedRoomName"中的可切换设备',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -817,8 +868,8 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _selectedRoomId != null
-                        ? '在房间"$_selectedRoomId"中创建空调'
+                    _selectedRoomName != null
+                        ? '在房间"$_selectedRoomName"中创建空调'
                         : '请先在房间选择标签页中选择房间',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
@@ -871,7 +922,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '房间"$_selectedRoomId"中的空调设备',
+                              '房间"$_selectedRoomName"中的空调设备',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1064,6 +1115,221 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                 ),
                                               ],
                                             ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // DHT11传感器标签页
+  Widget _buildDHT11SensorTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 传感器创建区域
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '创建DHT11传感器',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _selectedRoomName != null
+                        ? '在房间"$_selectedRoomName"中创建传感器'
+                        : '请先在房间选择标签页中选择房间',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _deviceNameController,
+                          decoration: const InputDecoration(
+                            labelText: '传感器名称',
+                            border: OutlineInputBorder(),
+                            hintText: '输入传感器名称',
+                          ),
+                          enabled: _selectedRoomId != null,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton.icon(
+                        onPressed:
+                            _selectedRoomId != null
+                                ? () => _showDeviceTypeSelectionDialog()
+                                : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('创建'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 传感器列表区域
+          Expanded(
+            child:
+                _selectedRoomId == null
+                    ? const Center(child: Text('请先在房间选择标签页中选择房间'))
+                    : Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '房间"$_selectedRoomName"中的DHT11传感器',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: StreamBuilder<List<DocumentSnapshot>>(
+                                stream: _fetchData.getRoomDevices(
+                                  _selectedRoomId!,
+                                ),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return Center(
+                                      child: Text('错误: ${snapshot.error}'),
+                                    );
+                                  }
+
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+
+                                  final devices = snapshot.data ?? [];
+                                  final dht11Devices = <DHT11SensorModel>[];
+
+                                  // 筛选出DHT11传感器设备
+                                  for (var device in devices) {
+                                    final data =
+                                        device.data() as Map<String, dynamic>;
+                                    if (data['type'] == 'dht11') {
+                                      try {
+                                        final dht11Device = DHT11SensorModel(
+                                          device.id,
+                                          name: data['name'],
+                                          roomId: _selectedRoomId!,
+                                          lastUpdated: data['lastUpdated'],
+                                          temperature: data['temperature'],
+                                          humidity: data['humidity'],
+                                        );
+                                        dht11Devices.add(dht11Device);
+                                      } catch (e) {
+                                        print('加载设备错误: $e');
+                                      }
+                                    }
+                                  }
+
+                                  if (dht11Devices.isEmpty) {
+                                    return const Center(
+                                      child: Text('该房间还没有DHT11传感器设备'),
+                                    );
+                                  }
+
+                                  return GridView.builder(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          childAspectRatio: 1.0,
+                                          crossAxisSpacing: 10,
+                                          mainAxisSpacing: 10,
+                                        ),
+                                    itemCount: dht11Devices.length,
+                                    itemBuilder: (context, index) {
+                                      final device = dht11Devices[index];
+                                      return Card(
+                                        elevation: 3,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.thermostat,
+                                                size: 36,
+                                                color: Colors.blue,
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Text(
+                                                device.name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                '温度: ${device.temperature.toInt()}°C',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '湿度: ${device.humidity.toInt()}%',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red,
+                                                ),
+                                                onPressed:
+                                                    () => _deleteDevice(
+                                                      device.id,
+                                                    ),
+                                                tooltip: '删除传感器',
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       );

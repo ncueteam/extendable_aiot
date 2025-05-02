@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
-import 'package:extendable_aiot/models/device_data.dart';
+import 'package:extendable_aiot/models/general_model.dart';
+import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/airconditioner_model.dart';
+import 'package:extendable_aiot/models/dht11_sensor_model.dart';
 import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
-import 'package:extendable_aiot/views/card/room_card.dart';
+import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 
@@ -25,10 +28,20 @@ class _RoomPageState extends State<RoomPage>
 
   int page = 1;
   int limit = 10;
-  bool hasMore = true;
   bool loading = true;
   bool error = false;
   String? errorMsg;
+
+  // 设备类型列表
+  final List<Map<String, dynamic>> _deviceTypes = [
+    {'type': '中央空調', 'name': '中央空調', 'icon': Icons.ac_unit},
+    {'type': '風扇', 'name': '風扇', 'icon': Icons.wind_power},
+    {'type': '燈光', 'name': '燈光', 'icon': Icons.lightbulb},
+    {'type': '窗簾', 'name': '窗簾', 'icon': Icons.curtains},
+    {'type': '門鎖', 'name': '門鎖', 'icon': Icons.lock},
+    {'type': '感測器', 'name': '感測器', 'icon': Icons.sensors},
+    {'type': 'dht11', 'name': 'DHT11溫濕度傳感器', 'icon': Icons.thermostat},
+  ];
 
   Future<void> _showAddDeviceDialog() async {
     final localizations = AppLocalizations.of(context);
@@ -49,12 +62,18 @@ class _RoomPageState extends State<RoomPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButton<String>(
-                  value: DeviceData.deviceTypes[0],
+                  value: _selectedDeviceType,
                   items:
-                      DeviceData.deviceTypes.map((String type) {
+                      _deviceTypes.map((Map<String, dynamic> type) {
                         return DropdownMenuItem<String>(
-                          value: type,
-                          child: Text(type),
+                          value: type['type'] as String,
+                          child: Row(
+                            children: [
+                              Icon(type['icon'] as IconData),
+                              const SizedBox(width: 8),
+                              Text(type['name'] as String),
+                            ],
+                          ),
                         );
                       }).toList(),
                   onChanged: (value) {
@@ -116,6 +135,59 @@ class _RoomPageState extends State<RoomPage>
             return Center(child: Text(localizations?.noDevices ?? '此房間還沒有設備'));
           }
 
+          // 将设备数据转换为对应的模型
+          List<GeneralModel> deviceModels = [];
+          for (var device in devices) {
+            try {
+              final data = device.data() as Map<String, dynamic>;
+              final String type = data['type'] as String;
+
+              switch (type) {
+                case '中央空調':
+                  final acDevice = AirConditionerModel(
+                    device.id,
+                    name: data['name'] as String,
+                    roomId: widget.roomId,
+                    lastUpdated:
+                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
+                  );
+                  acDevice.fromJson(data);
+                  deviceModels.add(acDevice);
+                  break;
+                case 'dht11':
+                  final dht11Device = DHT11SensorModel(
+                    device.id,
+                    name: data['name'] as String,
+                    roomId: widget.roomId,
+                    lastUpdated:
+                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
+                    temperature:
+                        (data['temperature'] as num?)?.toDouble() ?? 0.0,
+                    humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
+                  );
+                  deviceModels.add(dht11Device);
+                  break;
+                default:
+                  // 默认使用基本的SwitchableModel
+                  final switchable = SwitchableModel(
+                    device.id,
+                    name: data['name'] as String,
+                    type: type,
+                    lastUpdated:
+                        data['lastUpdated'] as Timestamp? ?? Timestamp.now(),
+                    icon: _getIconForType(type),
+                    updateValue: [true, false],
+                    previousValue: [false, true],
+                    status: data['status'] as bool? ?? false,
+                  );
+                  deviceModels.add(switchable);
+                  break;
+              }
+            } catch (e) {
+              print('設備數據解析錯誤: $e');
+            }
+          }
+
           return EasyRefresh(
             header: const ClassicHeader(),
             footer: const ClassicFooter(),
@@ -124,20 +196,25 @@ class _RoomPageState extends State<RoomPage>
                 crossAxisCount: 2,
                 childAspectRatio: 1.2,
               ),
-              itemCount: devices.length,
+              itemCount: deviceModels.length,
               itemBuilder: (BuildContext context, int index) {
-                return RoomCard(
-                  roomItem: DeviceData.fromJson(
-                    devices[index].id,
-                    devices[index].data() as Map<String, dynamic>,
-                  ),
-                );
+                return DeviceCard(device: deviceModels[index]);
               },
             ),
           );
         },
       ),
     );
+  }
+
+  // 根据设备类型获取对应的图标
+  IconData _getIconForType(String type) {
+    for (var deviceType in _deviceTypes) {
+      if (deviceType['type'] == type) {
+        return deviceType['icon'] as IconData;
+      }
+    }
+    return Icons.device_unknown;
   }
 
   @override

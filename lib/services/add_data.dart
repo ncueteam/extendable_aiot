@@ -44,20 +44,24 @@ class AddData {
   }
 
   // 創建新房間
-  Future<DocumentReference> addRoom({required String roomId}) async {
+  Future<DocumentReference> addRoom({required String name}) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
-    await _firestore
-        .collection('users')
-        .doc(currentUserId)
-        .collection('rooms')
-        .doc(roomId)
-        .set({'devices': [], 'createdAt': FieldValue.serverTimestamp()});
+    // 使用 Firestore 自动生成文档 ID
+    final roomRef =
+        _firestore
+            .collection('users')
+            .doc(currentUserId)
+            .collection('rooms')
+            .doc();
 
-    return _firestore
-        .collection('users')
-        .doc(currentUserId)
-        .collection('rooms')
-        .doc(roomId);
+    // 设置房间数据，添加 name 属性
+    await roomRef.set({
+      'name': name,
+      'devices': [],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    return roomRef;
   }
 }

@@ -67,7 +67,10 @@ class FetchData {
         .doc(currentUserId)
         .collection('devices')
         .snapshots()
-        .map((snapshot) => snapshot.docs);
+        .map((snapshot) {
+          print('設備數量: ${snapshot.docs.length}');
+          return snapshot.docs;
+        });
   }
 
   // 獲取用戶資料
@@ -76,5 +79,4 @@ class FetchData {
 
     return _firestore.collection('users').doc(currentUserId).snapshots();
   }
-
 }
