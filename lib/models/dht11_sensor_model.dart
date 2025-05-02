@@ -7,29 +7,22 @@ class DHT11SensorModel extends SensorModel {
   double temperature;
   double humidity;
   String roomId;
-
-  // 温度读取范围 (0°C-50°C)
   static const double MIN_TEMPERATURE = 0.0;
   static const double MAX_TEMPERATURE = 50.0;
-
-  // 湿度读取范围 (20%-90%)
   static const double MIN_HUMIDITY = 20.0;
   static const double MAX_HUMIDITY = 90.0;
 
   DHT11SensorModel(
-    String id, {
-    required String name,
+    super.id, {
+    required super.name,
     required this.roomId,
-    required Timestamp lastUpdated,
+    required super.lastUpdated,
     this.temperature = 25.0,
     this.humidity = 60.0,
     bool status = false,
   }) : super(
-         id,
          value: [temperature, humidity],
-         name: name,
          type: 'dht11',
-         lastUpdated: lastUpdated,
          icon: Icons.thermostat,
        );
 

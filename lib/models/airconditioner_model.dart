@@ -24,24 +24,16 @@ class AirConditionerModel extends SwitchableModel {
   static const List<String> fanSpeeds = ['Low', 'Mid', 'High'];
 
   AirConditionerModel(
-    String id, {
-    required String name,
-    required this.roomId,
-    required Timestamp lastUpdated,
+    super.id, {
+    required super.name,
+    super.type = "air_conditioner",
+    required super.lastUpdated,
+    super.icon = Icons.ac_unit,
     this.temperature = 25.0,
     this.mode = 'Auto',
     this.fanSpeed = 'Mid',
-    bool status = false,
-  }) : super(
-         id,
-         name: name,
-         type: '冷气',
-         lastUpdated: lastUpdated,
-         icon: Icons.ac_unit,
-         updateValue: [true, false], // 继承自 SwitchableModel
-         previousValue: [false, true], // 继承自 SwitchableModel
-         status: status, // 使用 SwitchableModel 中的状态
-       );
+    this.roomId = '',
+  });
 
   @override
   Future<void> createData() async {

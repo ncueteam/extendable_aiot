@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -10,12 +12,12 @@ abstract class GeneralModel {
   IconData icon; // Icon for the device
 
   GeneralModel(
-    this.id, {
+    String? id, {
     required this.name,
     required this.type,
     required this.lastUpdated,
     required this.icon,
-  });
+  }) : id = id ?? _generateFirebaseId();
   Future<void> createData() async {}
   Future<void> readData() async {}
   Future<void> updateData() async {}
@@ -35,4 +37,16 @@ abstract class GeneralModel {
     'lastUpdated': lastUpdated,
     'icon': icon.codePoint,
   };
+
+  static String _generateFirebaseId() {
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random.secure();
+    return String.fromCharCodes(
+      Iterable.generate(
+        20,
+        (_) => chars.codeUnitAt(random.nextInt(chars.length)),
+      ),
+    );
+  }
 }

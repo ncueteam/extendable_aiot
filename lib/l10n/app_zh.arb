@@ -35,5 +35,14 @@
     "low": "低速",
     "mid": "中速",
     "high": "高速",
-    "power": "电源"
+    "power": "电源",
+    "editRoom": "编辑房间",
+    "deleteRoom": "删除房间",
+    "confirmDelete": "确认删除",
+    "delete": "删除",
+    "temperature": "温度",
+    "humidity": "湿度",
+    "on": "开",
+    "off": "关",
+    "lastUpdated": "最后更新"
 }

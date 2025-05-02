@@ -2,10 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/general_model.dart';
-import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/room_model.dart';
+import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/services/add_data.dart';
 import 'package:extendable_aiot/services/fetch_data.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,6 @@ class AllRoomPage extends StatefulWidget {
 }
 
 class _AllRoomPageState extends State<AllRoomPage> {
-  final AddData _addData = AddData();
   final FetchData _fetchData = FetchData();
   final TextEditingController _roomNameController = TextEditingController();
 
@@ -61,7 +60,12 @@ class _AllRoomPageState extends State<AllRoomPage> {
               TextButton(
                 onPressed: () async {
                   if (_roomNameController.text.isNotEmpty) {
-                    await _addData.addRoom(name: _roomNameController.text);
+                    // 使用 RoomModel 创建房间
+                    RoomModel roomModel = RoomModel(
+                      name: _roomNameController.text,
+                    );
+                    await roomModel.createRoom();
+
                     _roomNameController.clear();
                     if (mounted) Navigator.pop(context);
                   }
@@ -92,8 +96,9 @@ class _AllRoomPageState extends State<AllRoomPage> {
         onPressed: _showAddRoomDialog,
         child: const Icon(Icons.add),
       ),
-      body: StreamBuilder<List<DocumentSnapshot>>(
-        stream: _fetchData.getAllDevices(),
+      body: StreamBuilder<List<RoomModel>>(
+        // 使用 RoomModel.getAllRooms() 替代 _fetchData.getAllDevices()
+        stream: RoomModel.getAllRooms(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('錯誤: ${snapshot.error}'));
@@ -103,117 +108,264 @@ class _AllRoomPageState extends State<AllRoomPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final devices = snapshot.data ?? [];
+          final rooms = snapshot.data ?? [];
 
-          if (devices.isEmpty) {
-            return Center(child: Text(localizations?.noDevices ?? '還沒有創建設備'));
+          if (rooms.isEmpty) {
+            return Center(child: Text(localizations?.noRooms ?? '還沒有創建房間'));
           }
 
-          // 将设备数据转换为对应的模型
-          List<GeneralModel> deviceModels = [];
-          for (var device in devices) {
-            try {
-              final data = device.data() as Map<String, dynamic>;
-              // 防止字段不存在引发错误
-              final String type = data['type'] as String? ?? '未知';
-              final String roomId = data['roomId'] as String? ?? '';
-              final String name = data['name'] as String? ?? '未命名設備';
-              final Timestamp lastUpdated =
-                  data['lastUpdated'] as Timestamp? ?? Timestamp.now();
-              final bool status = data['status'] as bool? ?? false;
-
-              switch (type) {
-                case '中央空調':
-                  try {
-                    final acDevice = AirConditionerModel(
-                      device.id,
-                      name: name,
-                      roomId: roomId,
-                      lastUpdated: lastUpdated,
-                    );
-                    // 安全地调用 fromJson 方法
-                    acDevice.fromJson(data);
-                    deviceModels.add(acDevice);
-                  } catch (e) {
-                    print('解析空調設備錯誤: $e');
-                    // 添加一个基本的设备模型，以防解析失败
-                    final fallbackDevice = SwitchableModel(
-                      device.id,
-                      name: name,
-                      type: type,
-                      lastUpdated: lastUpdated,
-                      icon: _getIconForType(type),
-                      updateValue: [true, false],
-                      previousValue: [false, true],
-                      status: status,
-                    );
-                    deviceModels.add(fallbackDevice);
-                  }
-                  break;
-                case 'dht11':
-                  try {
-                    final dht11Device = DHT11SensorModel(
-                      device.id,
-                      name: name,
-                      roomId: roomId,
-                      lastUpdated: lastUpdated,
-                      temperature:
-                          (data['temperature'] as num?)?.toDouble() ?? 0.0,
-                      humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
-                    );
-                    deviceModels.add(dht11Device);
-                  } catch (e) {
-                    print('解析DHT11設備錯誤: $e');
-                    // 添加一个基本的设备模型，以防解析失败
-                    final fallbackDevice = SwitchableModel(
-                      device.id,
-                      name: name,
-                      type: type,
-                      lastUpdated: lastUpdated,
-                      icon: _getIconForType(type),
-                      updateValue: [true, false],
-                      previousValue: [false, true],
-                      status: status,
-                    );
-                    deviceModels.add(fallbackDevice);
-                  }
-                  break;
-                default:
-                  // 默认使用基本的SwitchableModel
-                  final switchable = SwitchableModel(
-                    device.id,
-                    name: name,
-                    type: type,
-                    lastUpdated: lastUpdated,
-                    icon: _getIconForType(type),
-                    updateValue: [true, false],
-                    previousValue: [false, true],
-                    status: status,
-                  );
-                  deviceModels.add(switchable);
-                  break;
-              }
-            } catch (e) {
-              print('設備數據解析錯誤: $e');
-            }
-          }
-
+          // 使用 ListView 显示房间列表
           return EasyRefresh(
             header: const ClassicHeader(),
             footer: const ClassicFooter(),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.2,
-              ),
-              itemCount: deviceModels.length,
+            child: ListView.builder(
+              itemCount: rooms.length,
               itemBuilder: (BuildContext context, int index) {
-                return DeviceCard(device: deviceModels[index]);
+                final room = rooms[index];
+                return _buildRoomCard(room);
               },
             ),
           );
         },
       ),
+    );
+  }
+
+  // 创建房间卡片组件
+  Widget _buildRoomCard(RoomModel room) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 2.0,
+      child: ExpansionTile(
+        leading: Icon(room.icon, size: 32),
+        title: Text(
+          room.name,
+          style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text('ID: ${room.id} | 设备数: ${room.devices.length}'),
+        children: [
+          if (room.devices.isEmpty)
+            const Padding(padding: EdgeInsets.all(16.0), child: Text('该房间没有设备'))
+          else
+            FutureBuilder<List<DocumentSnapshot>>(
+              future: room.loadDevices(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('加载设备错误: ${snapshot.error}'));
+                }
+
+                final devices = snapshot.data ?? [];
+                if (devices.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('该房间没有设备'),
+                  );
+                }
+
+                // 将设备数据转换为对应的模型
+                List<GeneralModel> deviceModels = [];
+                for (var device in devices) {
+                  try {
+                    final data = device.data() as Map<String, dynamic>;
+                    final String type = data['type'] as String? ?? '未知';
+                    final String roomId = data['roomId'] as String? ?? '';
+                    final String name = data['name'] as String? ?? '未命名設備';
+                    final Timestamp lastUpdated =
+                        data['lastUpdated'] as Timestamp? ?? Timestamp.now();
+                    final bool status = data['status'] as bool? ?? false;
+
+                    switch (type) {
+                      case '中央空調':
+                      case 'airconditioner':
+                        try {
+                          final acDevice = AirConditionerModel(
+                            device.id,
+                            name: name,
+                            roomId: roomId,
+                            lastUpdated: lastUpdated,
+                          );
+                          acDevice.fromJson(data);
+                          deviceModels.add(acDevice);
+                        } catch (e) {
+                          print('解析空調設備錯誤: $e');
+                          final fallbackDevice = SwitchModel(
+                            device.id,
+                            name: name,
+                            type: type,
+                            lastUpdated: lastUpdated,
+                            icon: _getIconForType(type),
+                            updateValue: [true, false],
+                            previousValue: [false, true],
+                            status: status,
+                          );
+                          deviceModels.add(fallbackDevice);
+                        }
+                        break;
+                      case 'dht11':
+                        try {
+                          final dht11Device = DHT11SensorModel(
+                            device.id,
+                            name: name,
+                            roomId: roomId,
+                            lastUpdated: lastUpdated,
+                            temperature:
+                                (data['temperature'] as num?)?.toDouble() ??
+                                0.0,
+                            humidity:
+                                (data['humidity'] as num?)?.toDouble() ?? 0.0,
+                          );
+                          deviceModels.add(dht11Device);
+                        } catch (e) {
+                          print('解析DHT11設備錯誤: $e');
+                          final fallbackDevice = SwitchModel(
+                            device.id,
+                            name: name,
+                            type: type,
+                            lastUpdated: lastUpdated,
+                            icon: _getIconForType(type),
+                            updateValue: [true, false],
+                            previousValue: [false, true],
+                            status: status,
+                          );
+                          deviceModels.add(fallbackDevice);
+                        }
+                        break;
+                      default:
+                        final switchable = SwitchModel(
+                          device.id,
+                          name: name,
+                          type: type,
+                          lastUpdated: lastUpdated,
+                          icon: _getIconForType(type),
+                          updateValue: [true, false],
+                          previousValue: [false, true],
+                          status: status,
+                        );
+                        deviceModels.add(switchable);
+                        break;
+                    }
+                  } catch (e) {
+                    print('設備數據解析錯誤: $e');
+                  }
+                }
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.2,
+                    mainAxisSpacing: 8.0,
+                    crossAxisSpacing: 8.0,
+                  ),
+                  itemCount: deviceModels.length,
+                  padding: const EdgeInsets.all(8.0),
+                  itemBuilder: (BuildContext context, int index) {
+                    return DeviceCard(device: deviceModels[index]);
+                  },
+                );
+              },
+            ),
+          // 房间管理按钮
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.edit),
+                  label: const Text('编辑房间'),
+                  onPressed: () => _showEditRoomDialog(room),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text(
+                    '删除房间',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onPressed: () => _showDeleteRoomConfirmation(room),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 显示编辑房间对话框
+  Future<void> _showEditRoomDialog(RoomModel room) async {
+    final localizations = AppLocalizations.of(context);
+    final TextEditingController nameController = TextEditingController(
+      text: room.name,
+    );
+
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(localizations?.editRoom ?? '编辑房间'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: localizations?.roomName ?? '房间名称',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(localizations?.cancel ?? '取消'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (nameController.text.isNotEmpty) {
+                    room.name = nameController.text;
+                    await room.updateRoom();
+                    if (mounted) Navigator.pop(context);
+                  }
+                },
+                child: Text(localizations?.confirm ?? '确认'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 显示删除房间确认对话框
+  Future<void> _showDeleteRoomConfirmation(RoomModel room) async {
+    final localizations = AppLocalizations.of(context);
+
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(localizations?.confirmDelete ?? '确认删除'),
+            content: Text('确定要删除房间 "${room.name}" 吗？此操作无法撤销，且会同时删除所有关联设备。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(localizations?.cancel ?? '取消'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await room.deleteRoom();
+                  if (mounted) Navigator.pop(context);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(localizations?.delete ?? '删除'),
+              ),
+            ],
+          ),
     );
   }
 }

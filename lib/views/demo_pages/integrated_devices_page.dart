@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/airconditioner_control.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/services/add_data.dart';
-import 'package:extendable_aiot/services/fetch_data.dart';
+import 'package:extendable_aiot/models/room_model.dart';
+import 'package:extendable_aiot/models/switch_model.dart';
+import 'package:extendable_aiot/models/switchable_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -19,20 +20,16 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _roomNameController = TextEditingController();
 
-  final FetchData _fetchData = FetchData();
-  final AddData _addData = AddData();
-
   late TabController _tabController;
   String? _selectedRoomId;
-  String? _selectedRoomName; // 保存房间名称
+  String? _selectedRoomName;
   bool _isLoading = false;
   String _operationMessage = '';
-  String _deviceType = 'switch'; // 默认为开关设备类型
+  String _deviceType = 'switch';
 
-  // 可用设备类型列表
   final List<Map<String, dynamic>> _deviceTypes = [
     {'type': 'switch', 'name': '可切换设备', 'icon': Icons.toggle_on},
-    {'type': 'airconditioner', 'name': '空调设备', 'icon': Icons.ac_unit},
+    {'type': 'air_conditioner', 'name': '空调设备', 'icon': Icons.ac_unit},
     {'type': 'dht11', 'name': 'DHT11温湿度传感器', 'icon': Icons.thermostat},
   ];
 
@@ -41,7 +38,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
-      // 清空设备名称
       if (_tabController.indexIsChanging) {
         _deviceNameController.clear();
       }
@@ -56,39 +52,37 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     super.dispose();
   }
 
-  // 创建新房间
   Future<void> _createRoom() async {
     if (_roomNameController.text.isEmpty) {
       setState(() {
-        _operationMessage = '请输入房间名称';
+        _operationMessage = '請輸入房間名稱';
       });
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _operationMessage = '创建房间中...';
+      _operationMessage = '創建房間中...';
     });
 
     try {
-      // 使用修改后的 addRoom 方法，传递 name 参数而不是 roomId
-      final roomRef = await _addData.addRoom(name: _roomNameController.text);
+      RoomModel roomModel = RoomModel(name: _roomNameController.text);
+      roomModel.createdAt = Timestamp.now();
+      roomModel.createRoom();
       setState(() {
-        // 使用生成的文档 ID 作为房间 ID
-        _selectedRoomId = roomRef.id;
+        _selectedRoomId = roomModel.id;
         _roomNameController.clear();
+        _operationMessage = '房間創建成功: $_selectedRoomId';
         _isLoading = false;
-        _operationMessage = '房间创建成功: $_selectedRoomId';
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _operationMessage = '创建房间错误: $e';
+        _operationMessage = '房間創建錯誤: $e';
       });
     }
   }
 
-  // 显示选择设备类型的对话框
   Future<void> _showDeviceTypeSelectionDialog() async {
     if (_selectedRoomId == null) {
       setState(() {
@@ -110,8 +104,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                     children: [
                       const Text('请选择要创建的设备类型:'),
                       const SizedBox(height: 16),
-
-                      // 设备类型选择
                       DropdownButtonFormField<String>(
                         value: _deviceType,
                         decoration: const InputDecoration(
@@ -178,7 +170,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     );
   }
 
-  // 在选定的房间内创建新设备
   Future<void> _createDeviceInRoom() async {
     if (_deviceNameController.text.isEmpty) {
       setState(() {
@@ -200,120 +191,92 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     });
 
     try {
-      if (_deviceType == 'switch') {
-        // 创建可切换设备
-        final deviceRef = await _addData.addDevice(
-          name: _deviceNameController.text,
-          type: 'switch',
-          roomId: _selectedRoomId!,
-        );
-
-        setState(() {
-          _deviceNameController.clear();
-          _isLoading = false;
-          _operationMessage = '可切换设备创建成功: ${deviceRef.id}';
-        });
-      } else if (_deviceType == 'airconditioner') {
-        // 创建空调设备
-        String? userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId == null) throw Exception('用户未登录');
-
-        final docRef =
-            FirebaseFirestore.instance
-                .collection('users')
-                .doc(userId)
-                .collection('devices')
-                .doc();
-
-        final airConditioner = AirConditionerModel(
-          docRef.id,
-          name: _deviceNameController.text,
-          roomId: _selectedRoomId!,
-          lastUpdated: Timestamp.now(),
-          temperature: 25.0,
-          mode: 'Auto',
-          fanSpeed: 'Mid',
-          status: false,
-        );
-
-        await airConditioner.createData();
-
-        setState(() {
-          _deviceNameController.clear();
-          _isLoading = false;
-          _operationMessage = '空调设备创建成功: ${airConditioner.name}';
-        });
-
-        // 打开控制页面
-        if (mounted) {
-          _openAirConditionerControl(airConditioner);
-        }
-      } else if (_deviceType == 'dht11') {
-        // 创建DHT11传感器设备
-        String? userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId == null) throw Exception('用户未登录');
-
-        final docRef =
-            FirebaseFirestore.instance
-                .collection('users')
-                .doc(userId)
-                .collection('devices')
-                .doc();
-
-        final dht11Sensor = DHT11SensorModel(
-          docRef.id,
-          name: _deviceNameController.text,
-          roomId: _selectedRoomId!,
-          lastUpdated: Timestamp.now(),
-          temperature: 0.0,
-          humidity: 0.0,
-        );
-
-        await dht11Sensor.createData();
-
-        setState(() {
-          _deviceNameController.clear();
-          _isLoading = false;
-          _operationMessage = 'DHT11传感器创建成功: ${dht11Sensor.name}';
-        });
+      RoomModel roomModel = await RoomModel.getRoom(_selectedRoomId!);
+      switch (_deviceType) {
+        case 'switch':
+          {
+            SwitchableModel device = SwitchModel(
+              null,
+              name: _deviceNameController.text,
+              type: 'switch',
+              lastUpdated: Timestamp.now(),
+              icon: Icons.toggle_on,
+              updateValue: [false],
+              previousValue: [false],
+              status: false,
+            );
+            device.createData();
+            roomModel.addDevice(device.id);
+            setState(() {
+              _deviceNameController.clear();
+              _isLoading = false;
+              _operationMessage = '單開關設備創建成功: ${device.name}';
+            });
+            break;
+          }
+        case 'air_conditioner':
+          {
+            final AirConditionerModel device = AirConditionerModel(
+              null,
+              name: _deviceNameController.text,
+              roomId: _selectedRoomId!,
+              lastUpdated: Timestamp.now(),
+              temperature: 25.0,
+              mode: 'Auto',
+              fanSpeed: 'Mid',
+            );
+            device.createData();
+            roomModel.addDevice(device.id);
+            setState(() {
+              _deviceNameController.clear();
+              _isLoading = false;
+              _operationMessage = '空调设备创建成功: ${device.name}';
+            });
+          }
+        case 'dht11':
+          {
+            DHT11SensorModel dht11Sensor = DHT11SensorModel(
+              null,
+              name: _deviceNameController.text,
+              roomId: _selectedRoomId!,
+              lastUpdated: Timestamp.now(),
+              temperature: 0.0,
+              humidity: 0.0,
+            );
+            dht11Sensor.createData();
+            roomModel.addDevice(dht11Sensor.id);
+            setState(() {
+              _deviceNameController.clear();
+              _isLoading = false;
+              _operationMessage = 'DHT11溫溼度計創建成功: ${dht11Sensor.name}';
+            });
+          }
+        default:
+          throw Exception('未知設備類型: $_deviceType');
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _operationMessage = '创建设备错误: $e';
+        _operationMessage = '設備創建錯誤: $e';
       });
     }
   }
 
-  // 加载指定房间的设备，并获取房间名称
   Future<void> _loadDevicesInRoom(String roomId) async {
     setState(() {
       _isLoading = true;
-      _operationMessage = '加载房间设备中...';
+      _operationMessage = '載入房間設備...';
     });
 
     try {
-      // 获取房间详细信息以获取名称
-      String? userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null) {
-        final roomDoc =
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(userId)
-                .collection('rooms')
-                .doc(roomId)
-                .get();
+      RoomModel roomModel = await RoomModel.getRoom(roomId);
 
-        // 获取房间名称
-        String roomName = roomDoc.data()?['name'] ?? roomId;
-
-        setState(() {
-          _selectedRoomId = roomId;
-          _selectedRoomName = roomName; // 保存房间名称
-          _isLoading = false;
-          _operationMessage = '已选择房间: $roomName';
-        });
-      }
+      setState(() {
+        _selectedRoomId = roomId;
+        _selectedRoomName = roomModel.name;
+        _isLoading = false;
+        _operationMessage = '已选择房间: ${roomModel.name}';
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -322,22 +285,43 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     }
   }
 
-  // 更新可切换设备状态
   Future<void> _toggleDeviceStatus(String deviceId, bool currentStatus) async {
     try {
       String? userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return;
 
-      // 更新Firebase中的数据
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('devices')
-          .doc(deviceId)
-          .update({
-            'status': !currentStatus,
-            'lastUpdate': FieldValue.serverTimestamp(),
-          });
+      final docSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .collection('devices')
+              .doc(deviceId)
+              .get();
+
+      if (!docSnapshot.exists) {
+        setState(() {
+          _operationMessage = '设备不存在';
+        });
+        return;
+      }
+
+      final data = docSnapshot.data()!;
+      final SwitchModel device = SwitchModel(
+        deviceId,
+        name: data['name'],
+        type: data['type'],
+        lastUpdated: data['lastUpdated'],
+        icon: IconData(data['icon'] ?? 0xe037, fontFamily: 'MaterialIcons'),
+        updateValue: data['updateValue'] ?? [false],
+        previousValue: data['previousValue'] ?? [false],
+        status: data['status'] ?? false,
+      );
+
+      // 切换状态
+      device.status = !currentStatus;
+
+      // 更新设备
+      await device.updateData();
 
       setState(() {
         _operationMessage = '设备状态已更新';
@@ -349,25 +333,15 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     }
   }
 
-  // 删除设备
   Future<void> _deleteDevice(String deviceId) async {
     if (_selectedRoomId == null) return;
 
     try {
+      RoomModel roomModel = await RoomModel.getRoom(_selectedRoomId!);
+      await roomModel.removeDevice(deviceId);
       String? userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return;
 
-      // 1. 从房间中移除设备引用
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('rooms')
-          .doc(_selectedRoomId)
-          .update({
-            'devices': FieldValue.arrayRemove([deviceId]),
-          });
-
-      // 2. 删除设备文档
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -385,7 +359,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     }
   }
 
-  // 打开空调控制页面
   void _openAirConditionerControl(AirConditionerModel airConditioner) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -439,10 +412,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withAlpha(75),
               spreadRadius: 1,
               blurRadius: 5,
             ),
@@ -454,13 +426,10 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Colors.grey.withAlpha(75),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  _operationMessage,
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
+                child: Text(_operationMessage),
               ),
             ),
           ],
@@ -469,7 +438,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     );
   }
 
-  // 房间选择标签页
   Widget _buildRoomSelectionTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -477,12 +445,11 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '选择或创建房间',
+            '選擇或創建房間',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
-          // 房间创建区域
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -490,7 +457,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '创建新房间',
+                    '創建新房間',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -500,9 +467,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         child: TextField(
                           controller: _roomNameController,
                           decoration: const InputDecoration(
-                            labelText: '房间名称',
+                            labelText: '房間名稱',
                             border: OutlineInputBorder(),
-                            hintText: '输入房间名称',
+                            hintText: '輸入房間名稱',
                           ),
                         ),
                       ),
@@ -510,7 +477,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                       ElevatedButton.icon(
                         onPressed: _createRoom,
                         icon: const Icon(Icons.add),
-                        label: const Text('创建'),
+                        label: const Text('創建'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             vertical: 16,
@@ -526,30 +493,26 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           ),
           const SizedBox(height: 24),
 
-          // 房间列表区域
           const Text(
-            '现有房间',
+            '現有房間',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
-          // 现有房间列表
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _fetchData.getRooms(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('错误: ${snapshot.error}'));
+            child: StreamBuilder<List<RoomModel>>(
+              stream: RoomModel.getAllRooms(),
+              builder: (context, rooms) {
+                if (rooms.hasError) {
+                  return Center(child: Text('錯誤: ${rooms.error}'));
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (rooms.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final rooms = snapshot.data?.docs ?? [];
-
-                if (rooms.isEmpty) {
-                  return const Center(child: Text('还没有创建任何房间，请先创建房间'));
+                if (rooms.data == null || rooms.data!.isEmpty) {
+                  return const Center(child: Text('請先創建房間'));
                 }
 
                 return GridView.builder(
@@ -559,9 +522,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
-                  itemCount: rooms.length,
+                  itemCount: rooms.data!.length,
                   itemBuilder: (context, index) {
-                    final room = rooms[index];
+                    final room = rooms.data![index];
                     final roomId = room.id;
                     final isSelected = roomId == _selectedRoomId;
 
@@ -597,8 +560,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    // 使用房间的name字段而不是ID
-                                    room.id,
+                                    room.name,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -644,14 +606,12 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     );
   }
 
-  // 可切换设备标签页
   Widget _buildSwitchableDevicesTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 设备创建区域
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -711,136 +671,158 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
             child:
                 _selectedRoomId == null
                     ? const Center(child: Text('请先在房间选择标签页中选择房间'))
-                    : Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '房间"$_selectedRoomName"中的可切换设备',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    : FutureBuilder<RoomModel>(
+                      future: RoomModel.getRoom(_selectedRoomId!),
+                      builder: (context, roomSnapshot) {
+                        if (roomSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (roomSnapshot.hasError || !roomSnapshot.hasData) {
+                          return Center(
+                            child: Text(
+                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
                             ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: StreamBuilder<List<DocumentSnapshot>>(
-                                stream: _fetchData.getRoomDevices(
-                                  _selectedRoomId!,
+                          );
+                        }
+
+                        final roomModel = roomSnapshot.data!;
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '房间"${roomModel.name}"中的可切换设备',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasError) {
-                                    return Center(
-                                      child: Text('错误: ${snapshot.error}'),
-                                    );
-                                  }
-
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  final devices = snapshot.data ?? [];
-                                  final switchableDevices =
-                                      devices.where((doc) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        return data['type'] == 'switch';
-                                      }).toList();
-
-                                  if (switchableDevices.isEmpty) {
-                                    return const Center(
-                                      child: Text('该房间还没有可切换设备'),
-                                    );
-                                  }
-
-                                  return ListView.builder(
-                                    itemCount: switchableDevices.length,
-                                    itemBuilder: (context, index) {
-                                      final device = switchableDevices[index];
-                                      final data =
-                                          device.data() as Map<String, dynamic>;
-                                      final deviceId = device.id;
-                                      final deviceName = data['name'] as String;
-                                      final status =
-                                          data['status'] as bool? ?? false;
-
-                                      return Card(
-                                        elevation: 2,
-                                        margin: const EdgeInsets.symmetric(
-                                          vertical: 8,
-                                        ),
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.toggle_on,
-                                            color:
-                                                status
-                                                    ? Colors.blue
-                                                    : Colors.grey,
-                                            size: 30,
-                                          ),
-                                          title: Text(
-                                            deviceName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: StreamBuilder<List<DocumentSnapshot>>(
+                                    stream: roomModel.devicesStream(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return Center(
+                                          child: Text('错误: ${snapshot.error}'),
+                                        );
+                                      }
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      final devices = snapshot.data ?? [];
+                                      final switchableDevices =
+                                          devices.where((doc) {
+                                            final data =
+                                                doc.data()
+                                                    as Map<String, dynamic>;
+                                            return data['type'] == 'switch';
+                                          }).toList();
+                                      if (switchableDevices.isEmpty) {
+                                        return const Center(
+                                          child: Text('该房间还没有可切换设备'),
+                                        );
+                                      }
+                                      return ListView.builder(
+                                        itemCount: switchableDevices.length,
+                                        itemBuilder: (context, index) {
+                                          final device =
+                                              switchableDevices[index];
+                                          final data =
+                                              device.data()
+                                                  as Map<String, dynamic>;
+                                          final deviceId = device.id;
+                                          final deviceName =
+                                              data['name'] as String;
+                                          final status =
+                                              data['status'] as bool? ?? false;
+                                          return Card(
+                                            elevation: 2,
+                                            margin: const EdgeInsets.symmetric(
+                                              vertical: 8,
                                             ),
-                                          ),
-                                          subtitle: Text(
-                                            '最后更新: ${(data['lastUpdate'] as Timestamp?)?.toDate().toString().substring(0, 19) ?? '未知'}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                status ? '开' : '关',
-                                                style: TextStyle(
-                                                  color:
-                                                      status
-                                                          ? Colors.green
-                                                          : Colors.red,
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.toggle_on,
+                                                color:
+                                                    status
+                                                        ? Colors.blue
+                                                        : Colors.grey,
+                                                size: 30,
+                                              ),
+                                              title: Text(
+                                                deviceName,
+                                                style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
-                                              Switch(
-                                                value: status,
-                                                onChanged:
-                                                    (_) => _toggleDeviceStatus(
-                                                      deviceId,
-                                                      status,
-                                                    ),
-                                                activeColor: Colors.blue,
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
+                                              subtitle: Text(
+                                                '最后更新: ${(data['lastUpdated'] as Timestamp?)?.toDate().toString().substring(0, 19) ?? '未知'}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
                                                 ),
-                                                onPressed:
-                                                    () =>
-                                                        _deleteDevice(deviceId),
-                                                tooltip: '删除设备',
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    status ? '开' : '关',
+                                                    style: TextStyle(
+                                                      color:
+                                                          status
+                                                              ? Colors.green
+                                                              : Colors.red,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Switch(
+                                                    value: status,
+                                                    onChanged:
+                                                        (_) =>
+                                                            _toggleDeviceStatus(
+                                                              deviceId,
+                                                              status,
+                                                            ),
+                                                    activeColor: Colors.blue,
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.delete,
+                                                      color: Colors.red,
+                                                    ),
+                                                    onPressed:
+                                                        () => _deleteDevice(
+                                                          deviceId,
+                                                        ),
+                                                    tooltip: '删除设备',
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
-                                  );
-                                },
-                              ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
           ),
         ],
@@ -848,14 +830,12 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     );
   }
 
-  // 空调设备标签页
   Widget _buildAirConditionerTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 设备创建区域
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -910,222 +890,256 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           ),
           const SizedBox(height: 16),
 
-          // 空调设备列表区域
           Expanded(
             child:
                 _selectedRoomId == null
                     ? const Center(child: Text('请先在房间选择标签页中选择房间'))
-                    : Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '房间"$_selectedRoomName"中的空调设备',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    : FutureBuilder<RoomModel>(
+                      future: RoomModel.getRoom(_selectedRoomId!),
+                      builder: (context, roomSnapshot) {
+                        if (roomSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (roomSnapshot.hasError || !roomSnapshot.hasData) {
+                          return Center(
+                            child: Text(
+                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
                             ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: StreamBuilder<List<DocumentSnapshot>>(
-                                stream: _fetchData.getRoomDevices(
-                                  _selectedRoomId!,
+                          );
+                        }
+
+                        final roomModel = roomSnapshot.data!;
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '房间"${roomModel.name}"中的空调设备',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasError) {
-                                    return Center(
-                                      child: Text('错误: ${snapshot.error}'),
-                                    );
-                                  }
-
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  final devices = snapshot.data ?? [];
-                                  final acDevices = <AirConditionerModel>[];
-
-                                  // 筛选出空调设备
-                                  for (var device in devices) {
-                                    final data =
-                                        device.data() as Map<String, dynamic>;
-                                    if (data['type'] == '冷气') {
-                                      try {
-                                        final acDevice = AirConditionerModel(
-                                          device.id,
-                                          name: data['name'],
-                                          roomId: _selectedRoomId!,
-                                          lastUpdated: data['lastUpdated'],
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: StreamBuilder<List<DocumentSnapshot>>(
+                                    stream: roomModel.devicesStream(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return Center(
+                                          child: Text('错误: ${snapshot.error}'),
                                         );
-                                        acDevice.fromJson(data);
-                                        acDevices.add(acDevice);
-                                      } catch (e) {
-                                        print('加载设备错误: $e');
                                       }
-                                    }
-                                  }
-
-                                  if (acDevices.isEmpty) {
-                                    return const Center(
-                                      child: Text('该房间还没有空调设备'),
-                                    );
-                                  }
-
-                                  return GridView.builder(
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          childAspectRatio: 1.0,
-                                          crossAxisSpacing: 10,
-                                          mainAxisSpacing: 10,
-                                        ),
-                                    itemCount: acDevices.length,
-                                    itemBuilder: (context, index) {
-                                      final device = acDevices[index];
-                                      return GestureDetector(
-                                        onTap:
-                                            () => _openAirConditionerControl(
-                                              device,
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      final devices = snapshot.data ?? [];
+                                      final acDevices = <AirConditionerModel>[];
+                                      // 筛选出空调设备
+                                      for (var device in devices) {
+                                        final data =
+                                            device.data()
+                                                as Map<String, dynamic>;
+                                        if (data['type'] == 'air_conditioner') {
+                                          try {
+                                            final acDevice =
+                                                AirConditionerModel(
+                                                  device.id,
+                                                  name: data['name'],
+                                                  roomId: _selectedRoomId!,
+                                                  lastUpdated:
+                                                      data['lastUpdated'],
+                                                  temperature:
+                                                      data['temperature'] ??
+                                                      25.0,
+                                                  mode: data['mode'] ?? 'Auto',
+                                                  fanSpeed:
+                                                      data['fanSpeed'] ?? 'Mid',
+                                                );
+                                            acDevices.add(acDevice);
+                                          } catch (e) {
+                                            print('加载设备错误: $e');
+                                          }
+                                        }
+                                      }
+                                      if (acDevices.isEmpty) {
+                                        return const Center(
+                                          child: Text('该房间还没有空调设备'),
+                                        );
+                                      }
+                                      return GridView.builder(
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: 2,
+                                              childAspectRatio: 1.0,
+                                              crossAxisSpacing: 10,
+                                              mainAxisSpacing: 10,
                                             ),
-                                        child: Card(
-                                          elevation: 3,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              15,
-                                            ),
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.ac_unit,
-                                                  size: 36,
-                                                  color:
-                                                      device.status
-                                                          ? Colors.blue
-                                                          : Colors.grey,
+                                        itemCount: acDevices.length,
+                                        itemBuilder: (context, index) {
+                                          final device = acDevices[index];
+                                          return GestureDetector(
+                                            onTap:
+                                                () =>
+                                                    _openAirConditionerControl(
+                                                      device,
+                                                    ),
+                                            child: Card(
+                                              elevation: 3,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  12,
                                                 ),
-                                                const SizedBox(height: 10),
-                                                Text(
-                                                  device.name,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  '${device.temperature.toInt()}°C',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        device.status
-                                                            ? Colors.blue[700]
-                                                            : Colors.grey[600],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Row(
+                                                child: Column(
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 3,
-                                                          ),
-                                                      decoration: BoxDecoration(
+                                                    Icon(
+                                                      Icons.ac_unit,
+                                                      size: 36,
+                                                      color:
+                                                          device.status
+                                                              ? Colors.blue
+                                                              : Colors.grey,
+                                                    ),
+                                                    const SizedBox(height: 10),
+                                                    Text(
+                                                      device.name,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                      '${device.temperature.toInt()}°C',
+                                                      style: TextStyle(
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         color:
                                                             device.status
                                                                 ? Colors
-                                                                    .green[100]
+                                                                    .blue[700]
                                                                 : Colors
-                                                                    .red[100],
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
-                                                      ),
-                                                      child: Text(
-                                                        device.status
-                                                            ? '开启'
-                                                            : '关闭',
-                                                        style: TextStyle(
-                                                          color:
-                                                              device.status
-                                                                  ? Colors
-                                                                      .green[800]
-                                                                  : Colors
-                                                                      .red[800],
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 12,
-                                                        ),
+                                                                    .grey[600],
                                                       ),
                                                     ),
-                                                    const SizedBox(width: 6),
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 3,
+                                                    const SizedBox(height: 4),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 3,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                device.status
+                                                                    ? Colors
+                                                                        .green[100]
+                                                                    : Colors
+                                                                        .red[100],
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
                                                           ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.blue[50],
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
+                                                          child: Text(
+                                                            device.status
+                                                                ? '开启'
+                                                                : '关闭',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  device.status
+                                                                      ? Colors
+                                                                          .green[800]
+                                                                      : Colors
+                                                                          .red[800],
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 12,
                                                             ),
-                                                      ),
-                                                      child: Text(
-                                                        device.mode,
-                                                        style: TextStyle(
-                                                          color:
-                                                              Colors.blue[800],
-                                                          fontSize: 12,
+                                                          ),
                                                         ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 3,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                Colors.blue[50],
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            device.mode,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors
+                                                                      .blue[800],
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
                                                       ),
+                                                      onPressed:
+                                                          () => _deleteDevice(
+                                                            device.id,
+                                                          ),
+                                                      tooltip: '删除空调',
                                                     ),
                                                   ],
                                                 ),
-                                                IconButton(
-                                                  icon: const Icon(
-                                                    Icons.delete_outline,
-                                                    color: Colors.red,
-                                                  ),
-                                                  onPressed:
-                                                      () => _deleteDevice(
-                                                        device.id,
-                                                      ),
-                                                  tooltip: '删除空调',
-                                                ),
-                                              ],
+                                              ),
                                             ),
-                                          ),
-                                        ),
+                                          );
+                                        },
                                       );
                                     },
-                                  );
-                                },
-                              ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
           ),
         ],
@@ -1133,7 +1147,6 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
     );
   }
 
-  // DHT11传感器标签页
   Widget _buildDHT11SensorTab() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -1200,147 +1213,176 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
             child:
                 _selectedRoomId == null
                     ? const Center(child: Text('请先在房间选择标签页中选择房间'))
-                    : Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '房间"$_selectedRoomName"中的DHT11传感器',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    : FutureBuilder<RoomModel>(
+                      future: RoomModel.getRoom(_selectedRoomId!),
+                      builder: (context, roomSnapshot) {
+                        if (roomSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (roomSnapshot.hasError || !roomSnapshot.hasData) {
+                          return Center(
+                            child: Text(
+                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
                             ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: StreamBuilder<List<DocumentSnapshot>>(
-                                stream: _fetchData.getRoomDevices(
-                                  _selectedRoomId!,
+                          );
+                        }
+
+                        final roomModel = roomSnapshot.data!;
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '房间"${roomModel.name}"中的DHT11传感器',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasError) {
-                                    return Center(
-                                      child: Text('错误: ${snapshot.error}'),
-                                    );
-                                  }
-
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  final devices = snapshot.data ?? [];
-                                  final dht11Devices = <DHT11SensorModel>[];
-
-                                  // 筛选出DHT11传感器设备
-                                  for (var device in devices) {
-                                    final data =
-                                        device.data() as Map<String, dynamic>;
-                                    if (data['type'] == 'dht11') {
-                                      try {
-                                        final dht11Device = DHT11SensorModel(
-                                          device.id,
-                                          name: data['name'],
-                                          roomId: _selectedRoomId!,
-                                          lastUpdated: data['lastUpdated'],
-                                          temperature: data['temperature'],
-                                          humidity: data['humidity'],
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: StreamBuilder<List<DocumentSnapshot>>(
+                                    stream: roomModel.devicesStream(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasError) {
+                                        return Center(
+                                          child: Text('错误: ${snapshot.error}'),
                                         );
-                                        dht11Devices.add(dht11Device);
-                                      } catch (e) {
-                                        print('加载设备错误: $e');
                                       }
-                                    }
-                                  }
 
-                                  if (dht11Devices.isEmpty) {
-                                    return const Center(
-                                      child: Text('该房间还没有DHT11传感器设备'),
-                                    );
-                                  }
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
 
-                                  return GridView.builder(
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          childAspectRatio: 1.0,
-                                          crossAxisSpacing: 10,
-                                          mainAxisSpacing: 10,
-                                        ),
-                                    itemCount: dht11Devices.length,
-                                    itemBuilder: (context, index) {
-                                      final device = dht11Devices[index];
-                                      return Card(
-                                        elevation: 3,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            15,
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.thermostat,
-                                                size: 36,
-                                                color: Colors.blue,
-                                              ),
-                                              const SizedBox(height: 10),
-                                              Text(
-                                                device.name,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                '温度: ${device.temperature.toInt()}°C',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '湿度: ${device.humidity.toInt()}%',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.delete_outline,
-                                                  color: Colors.red,
-                                                ),
-                                                onPressed:
-                                                    () => _deleteDevice(
-                                                      device.id,
+                                      final devices = snapshot.data ?? [];
+                                      final dht11Devices = <DHT11SensorModel>[];
+
+                                      // 筛选出DHT11传感器设备
+                                      for (var device in devices) {
+                                        final data =
+                                            device.data()
+                                                as Map<String, dynamic>;
+                                        if (data['type'] == 'dht11') {
+                                          try {
+                                            final dht11Device =
+                                                DHT11SensorModel(
+                                                  device.id,
+                                                  name: data['name'],
+                                                  roomId: _selectedRoomId!,
+                                                  lastUpdated:
+                                                      data['lastUpdated'],
+                                                  temperature:
+                                                      data['temperature'] ??
+                                                      0.0,
+                                                  humidity:
+                                                      data['humidity'] ?? 0.0,
+                                                );
+                                            dht11Devices.add(dht11Device);
+                                          } catch (e) {
+                                            print('加载设备错误: $e');
+                                          }
+                                        }
+                                      }
+
+                                      if (dht11Devices.isEmpty) {
+                                        return const Center(
+                                          child: Text('该房间还没有DHT11传感器设备'),
+                                        );
+                                      }
+
+                                      return GridView.builder(
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: 2,
+                                              childAspectRatio: 1.0,
+                                              crossAxisSpacing: 10,
+                                              mainAxisSpacing: 10,
+                                            ),
+                                        itemCount: dht11Devices.length,
+                                        itemBuilder: (context, index) {
+                                          final device = dht11Devices[index];
+                                          return Card(
+                                            elevation: 3,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(12),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.thermostat,
+                                                    size: 36,
+                                                    color: Colors.blue,
+                                                  ),
+                                                  const SizedBox(height: 10),
+                                                  Text(
+                                                    device.name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
                                                     ),
-                                                tooltip: '删除传感器',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    '温度: ${device.temperature.toInt()}°C',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    '湿度: ${device.humidity.toInt()}%',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.delete_outline,
+                                                      color: Colors.red,
+                                                    ),
+                                                    onPressed:
+                                                        () => _deleteDevice(
+                                                          device.id,
+                                                        ),
+                                                    tooltip: '删除传感器',
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
-                                  );
-                                },
-                              ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
           ),
         ],

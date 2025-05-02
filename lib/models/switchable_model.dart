@@ -2,7 +2,7 @@ import 'package:extendable_aiot/models/general_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class SwitchableModel extends GeneralModel {
+abstract class SwitchableModel extends GeneralModel {
   List<dynamic> updateValue;
   List<dynamic> previousValue;
   bool status;
@@ -13,14 +13,12 @@ class SwitchableModel extends GeneralModel {
     required super.type,
     required super.lastUpdated,
     required super.icon,
-    required this.updateValue,
-    required this.previousValue,
-    required this.status,
+    this.updateValue = const [],
+    this.previousValue = const [],
+    this.status = false,
   });
-
   @override
   Future<void> createData() async {
-    // 在firebase/userid/device collection裡面創建一個新的device document
     try {
       String? userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId != null) {

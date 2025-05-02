@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/general_model.dart';
+import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/models/switchable_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
@@ -169,7 +170,7 @@ class _RoomPageState extends State<RoomPage>
                   break;
                 default:
                   // 默认使用基本的SwitchableModel
-                  final switchable = SwitchableModel(
+                  final switchable = SwitchModel(
                     device.id,
                     name: data['name'] as String,
                     type: type,

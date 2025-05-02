@@ -115,4 +115,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get power => 'Power';
+
+  @override
+  String get editRoom => 'Edit Room';
+
+  @override
+  String get deleteRoom => 'Delete Room';
+
+  @override
+  String get confirmDelete => 'Confirm Delete';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get humidity => 'Humidity';
+
+  @override
+  String get on => 'On';
+
+  @override
+  String get off => 'Off';
+
+  @override
+  String get lastUpdated => 'Last Updated';
+
+  @override
+  String get rooms => 'Rooms';
+
+  @override
+  String get devices => 'Devices';
+
+  @override
+  String get recentlyUsed => 'Recently Used';
+
+  @override
+  String get error => 'Error';
 }

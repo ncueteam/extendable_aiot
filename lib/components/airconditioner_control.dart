@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AirConditionerControl extends StatefulWidget {
@@ -9,10 +8,10 @@ class AirConditionerControl extends StatefulWidget {
   final VoidCallback? onUpdate;
 
   const AirConditionerControl({
-    Key? key,
+    super.key,
     required this.airConditioner,
     this.onUpdate,
-  }) : super(key: key);
+  });
 
   @override
   State<AirConditionerControl> createState() => _AirConditionerControlState();

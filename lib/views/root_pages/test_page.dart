@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/views/demo_pages/integrated_devices_page.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/models/switchable_model.dart';
@@ -52,7 +53,7 @@ class _TestPageState extends State<TestPage> {
         _devices.clear();
         for (var doc in snapshot.docs) {
           final data = doc.data();
-          final device = SwitchableModel(
+          final device = SwitchModel(
             doc.id,
             name: data['name'],
             type: data['type'],
@@ -105,7 +106,7 @@ class _TestPageState extends State<TestPage> {
 
         final deviceId = docRef.id; // 獲取生成的ID
 
-        final device = SwitchableModel(
+        final device = SwitchModel(
           deviceId,
           name: _deviceNameController.text,
           type: 'switch',
@@ -145,7 +146,7 @@ class _TestPageState extends State<TestPage> {
     });
 
     try {
-      final device = SwitchableModel(
+      final device = SwitchModel(
         deviceId,
         name: '',
         type: '',

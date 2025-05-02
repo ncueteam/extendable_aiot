@@ -115,6 +115,45 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get power => '电源';
+
+  @override
+  String get editRoom => '编辑房间';
+
+  @override
+  String get deleteRoom => '删除房间';
+
+  @override
+  String get confirmDelete => '确认删除';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get temperature => '温度';
+
+  @override
+  String get humidity => '湿度';
+
+  @override
+  String get on => '开';
+
+  @override
+  String get off => '关';
+
+  @override
+  String get lastUpdated => '最后更新';
+
+  @override
+  String get rooms => 'Rooms';
+
+  @override
+  String get devices => 'Devices';
+
+  @override
+  String get recentlyUsed => 'Recently Used';
+
+  @override
+  String get error => 'Error';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -122,7 +161,139 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   AppLocalizationsZhCn(): super('zh_CN');
 
   @override
-  String get themeVicky => 'Vicky主題';
+  String get themeVicky => 'Vicky主题';
+
+  @override
+  String get hello => '您好';
+
+  @override
+  String get manageSmartHome => '让我们管理您的智能家居。';
+
+  @override
+  String get addRoom => '新增房间';
+
+  @override
+  String get addDevice => '新增设备';
+
+  @override
+  String get roomName => '房间名称';
+
+  @override
+  String get deviceName => '设备名称';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get confirm => '确认';
+
+  @override
+  String get allRooms => '所有房间';
+
+  @override
+  String get noDevices => '还没有创建设备';
+
+  @override
+  String get noRooms => '还没有创建房间';
+
+  @override
+  String get profile => '个人资料';
+
+  @override
+  String get settings => '设置';
+
+  @override
+  String get logout => '退出登录';
+
+  @override
+  String get familyList => '家人列表';
+
+  @override
+  String get functions => '功能';
+
+  @override
+  String get changeName => '更改名字';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get enterNewName => '输入新的名字';
+
+  @override
+  String get createdAt => '创建于';
+
+  @override
+  String get id => 'ID';
+
+  @override
+  String get email => '电子邮件';
+
+  @override
+  String get lastLogin => '最后登录';
+
+  @override
+  String get airCondition => '空调';
+
+  @override
+  String get livingRoom => '客厅';
+
+  @override
+  String get celsius => '摄氏';
+
+  @override
+  String get mode => '模式';
+
+  @override
+  String get auto => '自动';
+
+  @override
+  String get cool => '制冷';
+
+  @override
+  String get dry => '除湿';
+
+  @override
+  String get fanSpeed => '风速';
+
+  @override
+  String get low => '低速';
+
+  @override
+  String get mid => '中速';
+
+  @override
+  String get high => '高速';
+
+  @override
+  String get power => '电源';
+
+  @override
+  String get editRoom => '编辑房间';
+
+  @override
+  String get deleteRoom => '删除房间';
+
+  @override
+  String get confirmDelete => '确认删除';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get temperature => '温度';
+
+  @override
+  String get humidity => '湿度';
+
+  @override
+  String get on => '开';
+
+  @override
+  String get off => '关';
+
+  @override
+  String get lastUpdated => '最后更新';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -236,4 +407,31 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get power => '電源';
+
+  @override
+  String get editRoom => '編輯房間';
+
+  @override
+  String get deleteRoom => '刪除房間';
+
+  @override
+  String get confirmDelete => '確認刪除';
+
+  @override
+  String get delete => '刪除';
+
+  @override
+  String get temperature => '溫度';
+
+  @override
+  String get humidity => '濕度';
+
+  @override
+  String get on => '開';
+
+  @override
+  String get off => '關';
+
+  @override
+  String get lastUpdated => '最後更新';
 }

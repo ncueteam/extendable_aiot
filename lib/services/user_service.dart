@@ -7,7 +7,6 @@ class UserService {
 
   String? get currentUserId => _auth.currentUser?.uid;
 
-  // 創建或更新用戶基本資料
   Future<void> createOrUpdateUser({
     required String name,
     required String email,
@@ -22,7 +21,6 @@ class UserService {
     }, SetOptions(merge: true));
   }
 
-  // 更新最後登入時間
   Future<void> updateLastLogin() async {
     if (currentUserId == null) return;
 
@@ -31,14 +29,12 @@ class UserService {
     });
   }
 
-  // 獲取用戶資料
   Stream<DocumentSnapshot> getUserData() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     return _firestore.collection('users').doc(currentUserId).snapshots();
   }
 
-  // 創建新房間 O
   Future<DocumentReference> addRoom({
     required String name,
     required String type,
@@ -57,7 +53,6 @@ class UserService {
         });
   }
 
-  // 獲取所有房間 O
   Stream<QuerySnapshot> getRooms() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
@@ -79,7 +74,6 @@ class UserService {
         .snapshots();
   }
 
-  // 創建新設備 O
   Future<DocumentReference> addDevice({
     required String name,
     required String type,
@@ -87,7 +81,6 @@ class UserService {
   }) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
-    // 創建設備文檔
     final deviceRef = await _firestore
         .collection('users')
         .doc(currentUserId)
@@ -99,7 +92,6 @@ class UserService {
           'lastUpdate': FieldValue.serverTimestamp(),
         });
 
-    // 更新房間的設備列表
     await _firestore
         .collection('users')
         .doc(currentUserId)
@@ -112,7 +104,6 @@ class UserService {
     return deviceRef;
   }
 
-  // 更新設備狀態
   Future<void> updateDeviceStatus({
     required String deviceId,
     required bool status,
@@ -127,7 +118,6 @@ class UserService {
         .update({'status': status, 'lastUpdate': FieldValue.serverTimestamp()});
   }
 
-  // 獲取房間的所有設備 O
   Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 

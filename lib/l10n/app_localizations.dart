@@ -312,6 +312,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Power'**
   String get power;
+
+  /// Button to edit a room
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Room'**
+  String get editRoom;
+
+  /// Button to delete a room
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Room'**
+  String get deleteRoom;
+
+  /// Title for deletion confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Delete'**
+  String get confirmDelete;
+
+  /// Delete button text
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// Temperature label
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperature;
+
+  /// Humidity label
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity'**
+  String get humidity;
+
+  /// On state label
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get on;
+
+  /// Off state label
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get off;
+
+  /// Last updated label
+  ///
+  /// In en, this message translates to:
+  /// **'Last Updated'**
+  String get lastUpdated;
+
+  /// Rooms label
+  ///
+  /// In en, this message translates to:
+  /// **'Rooms'**
+  String get rooms;
+
+  /// Devices label
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get devices;
+
+  /// Recently used label
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Used'**
+  String get recentlyUsed;
+
+  /// Error message
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -56,7 +56,6 @@ class FetchData {
         .map((snapshot) => snapshot.docs);
   }
 
-  // 獲取所有房間的設備
   Stream<List<DocumentSnapshot>> getAllDevices() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
@@ -73,7 +72,6 @@ class FetchData {
         });
   }
 
-  // 獲取用戶資料
   Stream<DocumentSnapshot> getUserData() {
     if (currentUserId == null) throw Exception('User not authenticated');
 

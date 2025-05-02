@@ -143,5 +143,57 @@
     "power": "Power",
     "@power": {
         "description": "Power label"
+    },
+    "editRoom": "Edit Room",
+    "@editRoom": {
+        "description": "Button to edit a room"
+    },
+    "deleteRoom": "Delete Room",
+    "@deleteRoom": {
+        "description": "Button to delete a room"
+    },
+    "confirmDelete": "Confirm Delete",
+    "@confirmDelete": {
+        "description": "Title for deletion confirmation dialog"
+    },
+    "delete": "Delete",
+    "@delete": {
+        "description": "Delete button text"
+    },
+    "temperature": "Temperature",
+    "@temperature": {
+        "description": "Temperature label"
+    },
+    "humidity": "Humidity",
+    "@humidity": {
+        "description": "Humidity label"
+    },
+    "on": "On",
+    "@on": {
+        "description": "On state label"
+    },
+    "off": "Off",
+    "@off": {
+        "description": "Off state label"
+    },
+    "lastUpdated": "Last Updated",
+    "@lastUpdated": {
+        "description": "Last updated label"
+    },
+    "rooms": "Rooms",
+    "@rooms": {
+        "description": "Rooms label"
+    },
+    "devices": "Devices",
+    "@devices": {
+        "description": "Devices label"
+    },
+    "recentlyUsed": "Recently Used",
+    "@recentlyUsed": {
+        "description": "Recently used label"
+    },
+    "error": "Error",
+    "@error": {
+        "description": "Error message"
     }
 }
