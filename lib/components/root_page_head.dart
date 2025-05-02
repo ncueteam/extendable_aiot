@@ -1,12 +1,6 @@
-import 'package:app_chiseletor/auth/auth_button.dart';
 import 'package:app_chiseletor/theme/theme_manager.dart';
-import 'package:app_chiseletor/widgets/language_toggle_button.dart';
-import 'package:app_chiseletor/widgets/theme_selection_button.dart';
-import 'package:app_chiseletor/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../themes/app_colors.dart';
-// import 'dart:async';
 
 class RootPageHead extends StatefulWidget {
   const RootPageHead({super.key});
@@ -16,16 +10,6 @@ class RootPageHead extends StatefulWidget {
 }
 
 class _RootPageHeadState extends State<RootPageHead> {
-  // late String _currentTime;
-
-  @override
-  void initState() {
-    super.initState();
-    // _updateTime();
-    // Update the time every second
-    // Timer.periodic(const Duration(seconds: 1), (timer) => _updateTime());
-  }
-
   @override
   Widget build(BuildContext context) {
     final ThemeManager themeManager = context.read<ThemeManager>();
@@ -33,32 +17,8 @@ class _RootPageHeadState extends State<RootPageHead> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        // Row(
-        //   children: [
-        //     IconButton(
-        //       icon: Icon(
-        //         Icons.menu,
-        //         color:
-        //             themeManager
-        //                 .currentTheme
-        //                 ?.lightTheme
-        //                 .bottomNavigationBarTheme
-        //                 .selectedItemColor,
-        //       ),
-        //       alignment: Alignment.topLeft,
-        //       onPressed: () {
-        //         Scaffold.of(context).openDrawer();
-        //       },
-        //     ),
-        //     ThemeToggleButton(),
-        //     ThemeSelectionButton(),
-        //     LanguageToggleButton(),
-        //     AuthButton(),
-        //   ],
-        // ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          //decoration: BoxDecoration(color: AppColors.nav),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -79,7 +39,6 @@ class _RootPageHeadState extends State<RootPageHead> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              // Text(_currentTime, style: const TextStyle(color: Colors.blue)),
               SizedBox(height: 16),
               //天氣卡
               // Container(

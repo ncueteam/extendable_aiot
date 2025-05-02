@@ -25,8 +25,11 @@ void main() async {
     MultiProvider(
       providers: providers,
       child: const ThemedMaterialApp(
+        title: 'Chiselator',
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AuthWrapper(homepage: RootPage()),
-        localization: AppLocalizations.delegate, // 這裡是多國語言的代理
       ),
     ),
   );
