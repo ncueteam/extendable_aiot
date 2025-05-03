@@ -4,6 +4,7 @@ import 'package:extendable_aiot/models/friend_model.dart';
 import 'package:extendable_aiot/models/room_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:app_chiseletor/widgets/user_avatar.dart'; // 導入 UserAvatar 元件
 import 'dart:async';
 
 class Profile extends StatefulWidget {
@@ -49,14 +50,6 @@ class _ProfileState extends State<Profile> {
     _friendsSubscription?.cancel();
     _roomsSubscription?.cancel();
     super.dispose();
-  }
-
-  Widget getAvatar(String? url) {
-    if (url == null) {
-      return Icon(Icons.person, size: 50, color: Colors.grey);
-    } else {
-      return CircleAvatar(radius: 50, backgroundImage: NetworkImage(url));
-    }
   }
 
   void _loadUserData() {
@@ -170,7 +163,7 @@ class _ProfileState extends State<Profile> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    getAvatar(photoURL),
+                    UserAvatar(imageUrl: photoURL),
                     const SizedBox(height: 12),
                     Text(
                       name,
@@ -254,7 +247,7 @@ class _ProfileState extends State<Profile> {
                   children:
                       _friends.map((friend) {
                         return ListTile(
-                          leading: getAvatar(friend.photoURL),
+                          leading: UserAvatar(imageUrl: friend.photoURL),
                           title: Text(friend.name),
                           subtitle: Text(friend.email),
                           trailing: Row(
@@ -646,14 +639,13 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
-          ),
+        Text(title, style: const TextStyle(fontSize: 16)),
+        Text(
+          value,
+          textAlign: TextAlign.right,
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       ],
     );

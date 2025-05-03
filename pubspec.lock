@@ -13,10 +13,10 @@ packages:
     dependency: "direct main"
     description:
       name: app_chiseletor
-      sha256: e4f7910f0e60013ba93b10ea072cd96a8fdb0db16bc8c303f3b0163773f3f384
+      sha256: "7917c867f19ea43f2913eac59475c79d438b59f7fb5843c3d7945b0630cc19bb"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.5+7"
+    version: "1.1.6+8"
   async:
     dependency: transitive
     description:
