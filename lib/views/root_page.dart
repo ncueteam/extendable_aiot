@@ -23,9 +23,12 @@ class _RootPageState extends State<RootPage> {
   ];
   final List<BottomNavigationBarItem> _bottomNavBarList = [
     BottomNavigationBarItem(icon: const Icon(Icons.home), label: "首頁"),
-    BottomNavigationBarItem(icon: const Icon(Icons.settings), label: "設定"),
-    BottomNavigationBarItem(icon: const Icon(Icons.notifications), label: "通知"),
-    BottomNavigationBarItem(icon: const Icon(Icons.person), label: "我的"),
+    BottomNavigationBarItem(icon: const Icon(Icons.settings), label: "自動化"),
+    BottomNavigationBarItem(
+      icon: const Icon(Icons.notifications),
+      label: "測試頁面",
+    ),
+    BottomNavigationBarItem(icon: const Icon(Icons.person), label: "個人資料"),
   ];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -61,7 +64,10 @@ class _RootPageState extends State<RootPage> {
           ],
         ),
       ),
-      drawer: Profile(),
+      drawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Profile(),
+      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

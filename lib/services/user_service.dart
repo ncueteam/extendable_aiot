@@ -11,13 +11,24 @@ class UserService {
   Future<void> createOrUpdateUser({
     required String name,
     required String email,
+    String? photoURL,
   }) async {
     if (currentUserId == null) return;
 
-    await _firestore.collection('users').doc(currentUserId).set({
+    final userData = {
       'name': name,
       'email': email,
       'lastLogin': FieldValue.serverTimestamp(),
+    };
+
+    // 只有當頭像 URL 存在時才添加到用戶數據中
+    if (photoURL != null) {
+      userData['photoURL'] = photoURL;
+    }
+
+    // 當用戶首次創建時，添加 createdAt 字段
+    await _firestore.collection('users').doc(currentUserId).set({
+      ...userData,
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -184,6 +195,7 @@ class UserService {
         userId: friendUserId,
         name: userResult['name'],
         email: userResult['email'],
+        photoURL: userResult['photoURL'], // 添加頭像URL
       );
 
       return await friendModel.createFriend();

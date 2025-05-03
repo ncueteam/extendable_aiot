@@ -4,6 +4,7 @@ import 'package:extendable_aiot/models/friend_model.dart';
 import 'package:extendable_aiot/models/room_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -16,16 +17,22 @@ class _ProfileState extends State<Profile> {
   final UserService _userService = UserService();
   String name = "";
   String email = "";
+  String? photoURL; // 添加頭像URL
   Timestamp? createdAt;
   Timestamp? lastLogin;
   String userId = "";
   bool isLoading = true;
 
-  // 添加好友相关状态
+  // 新增好友相關狀態
   List<FriendModel> _friends = [];
   bool _loadingFriends = true;
   List<RoomModel> _rooms = [];
   bool _loadingRooms = true;
+
+  // 添加用於保存訂閱的變數
+  StreamSubscription? _userDataSubscription;
+  StreamSubscription? _friendsSubscription;
+  StreamSubscription? _roomsSubscription;
 
   @override
   void initState() {
@@ -35,66 +42,105 @@ class _ProfileState extends State<Profile> {
     _loadRooms();
   }
 
+  @override
+  void dispose() {
+    // 取消所有訂閱以避免內存洩漏和錯誤
+    _userDataSubscription?.cancel();
+    _friendsSubscription?.cancel();
+    _roomsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Widget getAvatar(String? url) {
+    if (url == null) {
+      return Icon(Icons.person, size: 50, color: Colors.grey);
+    } else {
+      return CircleAvatar(radius: 50, backgroundImage: NetworkImage(url));
+    }
+  }
+
   void _loadUserData() {
-    _userService.getUserData().listen(
+    _userDataSubscription = _userService.getUserData().listen(
       (snapshot) {
         if (snapshot.exists) {
           final data = snapshot.data() as Map<String, dynamic>;
-          setState(() {
-            name = data['name'] as String? ?? "未命名用户";
-            email = data['email'] as String? ?? "";
-            createdAt = data['createdAt'] as Timestamp?;
-            lastLogin = data['lastLogin'] as Timestamp?;
-            userId = snapshot.id;
-            isLoading = false;
-          });
+          if (mounted) {
+            // 添加判斷確保組件還在
+            setState(() {
+              name = data['name'] as String? ?? "未命名使用者";
+              email = data['email'] as String? ?? "";
+              photoURL = data['photoURL'] as String?; // 獲取頭像URL
+              createdAt = data['createdAt'] as Timestamp?;
+              lastLogin = data['lastLogin'] as Timestamp?;
+              userId = snapshot.id;
+              isLoading = false;
+            });
+          }
         } else {
+          if (mounted) {
+            // 添加判斷確保組件還在
+            setState(() {
+              isLoading = false;
+            });
+          }
+        }
+      },
+      onError: (error) {
+        print("載入使用者資料錯誤: $error");
+        if (mounted) {
+          // 添加判斷確保組件還在
           setState(() {
             isLoading = false;
           });
         }
       },
-      onError: (error) {
-        print("Error loading user data: $error");
-        setState(() {
-          isLoading = false;
-        });
-      },
     );
   }
 
-  // 加载好友列表
+  // 載入好友列表
   void _loadFriends() {
-    _userService.getFriends().listen(
+    _friendsSubscription = _userService.getFriends().listen(
       (friendsList) {
-        setState(() {
-          _friends = friendsList;
-          _loadingFriends = false;
-        });
+        if (mounted) {
+          // 添加判斷確保組件還在
+          setState(() {
+            _friends = friendsList;
+            _loadingFriends = false;
+          });
+        }
       },
       onError: (error) {
-        print("Error loading friends: $error");
-        setState(() {
-          _loadingFriends = false;
-        });
+        print("載入好友錯誤: $error");
+        if (mounted) {
+          // 添加判斷確保組件還在
+          setState(() {
+            _loadingFriends = false;
+          });
+        }
       },
     );
   }
 
-  // 加载房间列表，用于授权好友访问
+  // 載入房間列表，用於授權好友訪問
   void _loadRooms() {
-    RoomModel.getAllRooms().listen(
+    _roomsSubscription = RoomModel.getAllRooms().listen(
       (roomsList) {
-        setState(() {
-          _rooms = roomsList;
-          _loadingRooms = false;
-        });
+        if (mounted) {
+          // 添加判斷確保組件還在
+          setState(() {
+            _rooms = roomsList;
+            _loadingRooms = false;
+          });
+        }
       },
       onError: (error) {
-        print("Error loading rooms: $error");
-        setState(() {
-          _loadingRooms = false;
-        });
+        print("載入房間錯誤: $error");
+        if (mounted) {
+          // 添加判斷確保組件還在
+          setState(() {
+            _loadingRooms = false;
+          });
+        }
       },
     );
   }
@@ -106,10 +152,9 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          localizations?.profile ?? 'Profile',
+          localizations?.profile ?? '個人資料',
           style: const TextStyle(color: Colors.black),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -118,7 +163,6 @@ class _ProfileState extends State<Profile> {
           },
         ),
       ),
-      backgroundColor: Colors.grey[100],
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -126,12 +170,7 @@ class _ProfileState extends State<Profile> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage(
-                        'assets/avatar_placeholder.png',
-                      ),
-                    ),
+                    getAvatar(photoURL),
                     const SizedBox(height: 12),
                     Text(
                       name,
@@ -163,17 +202,17 @@ class _ProfileState extends State<Profile> {
         child: Column(
           children: [
             _InfoRow(
-              title: localizations?.createdAt ?? "Created At",
-              value: createdAt != null ? "${createdAt!.toDate()}" : "N/A",
+              title: localizations?.createdAt ?? "建立時間",
+              value: createdAt != null ? "${createdAt!.toDate()}" : "無資料",
             ),
             const Divider(),
             _InfoRow(title: localizations?.id ?? "ID", value: userId),
             const Divider(),
-            _InfoRow(title: localizations?.email ?? "Email", value: email),
+            _InfoRow(title: localizations?.email ?? "電子郵件", value: email),
             const Divider(),
             _InfoRow(
-              title: localizations?.lastLogin ?? "Last Login",
-              value: lastLogin != null ? "${lastLogin!.toDate()}" : "N/A",
+              title: localizations?.lastLogin ?? "上次登入",
+              value: lastLogin != null ? "${lastLogin!.toDate()}" : "無資料",
             ),
           ],
         ),
@@ -202,7 +241,7 @@ class _ProfileState extends State<Profile> {
                 IconButton(
                   icon: const Icon(Icons.person_add),
                   onPressed: () => _showAddFriendDialog(localizations),
-                  tooltip: localizations?.addFriend ?? '添加好友',
+                  tooltip: localizations?.addFriend ?? '新增好友',
                 ),
               ],
             ),
@@ -210,14 +249,12 @@ class _ProfileState extends State<Profile> {
             _loadingFriends
                 ? const Center(child: CircularProgressIndicator())
                 : _friends.isEmpty
-                ? Center(child: Text(localizations?.noFriends ?? '还没有添加好友'))
+                ? Center(child: Text(localizations?.noFriends ?? '還沒有新增好友'))
                 : Column(
                   children:
                       _friends.map((friend) {
                         return ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person),
-                          ),
+                          leading: getAvatar(friend.photoURL),
                           title: Text(friend.name),
                           subtitle: Text(friend.email),
                           trailing: Row(
@@ -230,7 +267,7 @@ class _ProfileState extends State<Profile> {
                                       friend,
                                       localizations,
                                     ),
-                                tooltip: localizations?.addToRoom ?? '添加到房间',
+                                tooltip: localizations?.addToRoom ?? '新增至房間',
                               ),
                               IconButton(
                                 icon: const Icon(
@@ -242,7 +279,7 @@ class _ProfileState extends State<Profile> {
                                       friend,
                                       localizations,
                                     ),
-                                tooltip: localizations?.deleteFriend ?? '删除好友',
+                                tooltip: localizations?.deleteFriend ?? '刪除好友',
                               ),
                             ],
                           ),
@@ -315,7 +352,7 @@ class _ProfileState extends State<Profile> {
                       email: email,
                     );
 
-                    // 本地状态更新 (实际上会由监听器更新)
+                    // 本地狀態更新 (實際上會由監聽器更新)
                     setState(() {
                       name = newName;
                     });
@@ -334,7 +371,7 @@ class _ProfileState extends State<Profile> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            '${localizations?.updateError ?? '更新失败'}: $e',
+                            '${localizations?.updateError ?? '更新失敗'}: $e',
                           ),
                         ),
                       );
@@ -350,7 +387,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // 添加好友对话框
+  // 新增好友對話框
   void _showAddFriendDialog(AppLocalizations? localizations) {
     final TextEditingController emailController = TextEditingController();
 
@@ -358,11 +395,11 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.addFriend ?? '添加好友'),
+            title: Text(localizations?.addFriend ?? '新增好友'),
             content: TextField(
               controller: emailController,
               decoration: InputDecoration(
-                hintText: localizations?.enterEmail ?? '请输入好友邮箱',
+                hintText: localizations?.enterEmail ?? '請輸入好友電子郵件',
                 prefixIcon: const Icon(Icons.email),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -378,7 +415,7 @@ class _ProfileState extends State<Profile> {
                   if (email.isNotEmpty && email.contains('@')) {
                     Navigator.pop(context);
 
-                    // 显示加载指示器
+                    // 顯示載入指示器
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -389,7 +426,7 @@ class _ProfileState extends State<Profile> {
                                 const CircularProgressIndicator(),
                                 const SizedBox(width: 20),
                                 Text(
-                                  localizations?.addingFriend ?? '正在添加好友...',
+                                  localizations?.addingFriend ?? '正在新增好友...',
                                 ),
                               ],
                             ),
@@ -400,13 +437,13 @@ class _ProfileState extends State<Profile> {
                       final result = await _userService.addFriend(email);
 
                       if (mounted) {
-                        Navigator.pop(context); // 关闭加载对话框
+                        Navigator.pop(context); // 關閉載入對話框
 
                         if (result) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                localizations?.friendAdded ?? '好友添加成功',
+                                localizations?.friendAdded ?? '好友新增成功',
                               ),
                             ),
                           );
@@ -415,7 +452,7 @@ class _ProfileState extends State<Profile> {
                             SnackBar(
                               content: Text(
                                 localizations?.friendAddFailed ??
-                                    '添加好友失败，该用户可能不存在或已是您的好友',
+                                    '新增好友失敗，該用戶可能不存在或已是您的好友',
                               ),
                             ),
                           );
@@ -423,11 +460,11 @@ class _ProfileState extends State<Profile> {
                       }
                     } catch (e) {
                       if (mounted) {
-                        Navigator.pop(context); // 关闭加载对话框
+                        Navigator.pop(context); // 關閉載入對話框
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '${localizations?.error ?? '错误'}: $e',
+                              '${localizations?.error ?? '錯誤'}: $e',
                             ),
                           ),
                         );
@@ -435,28 +472,28 @@ class _ProfileState extends State<Profile> {
                     }
                   }
                 },
-                child: Text(localizations?.add ?? '添加'),
+                child: Text(localizations?.add ?? '新增'),
               ),
             ],
           ),
     );
   }
 
-  // 显示将好友添加到房间的对话框
+  // 顯示將好友新增到房間的對話框
   void _showAddToRoomDialog(
     FriendModel friend,
     AppLocalizations? localizations,
   ) {
     if (_loadingRooms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations?.loadingRooms ?? '正在加载房间列表...')),
+        SnackBar(content: Text(localizations?.loadingRooms ?? '正在載入房間列表...')),
       );
       return;
     }
 
     if (_rooms.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations?.noRooms ?? '您还没有创建任何房间')),
+        SnackBar(content: Text(localizations?.noRooms ?? '您還沒有建立任何房間')),
       );
       return;
     }
@@ -465,7 +502,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.selectRoom ?? '选择房间'),
+            title: Text(localizations?.selectRoom ?? '選擇房間'),
             content: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
@@ -486,12 +523,12 @@ class _ProfileState extends State<Profile> {
                             : const Icon(Icons.add_circle_outline),
                     onTap: () async {
                       if (isAuthorized) {
-                        // 已经授权，询问是否要移除权限
+                        // 已經授權，詢問是否要移除權限
                         final shouldRemove = await _showConfirmDialog(
                           context,
-                          localizations?.removeAccess ?? '移除访问权限',
+                          localizations?.removeAccess ?? '移除存取權限',
                           localizations?.confirmRemoveAccess ??
-                              '确定要移除该好友对此房间的访问权限吗？',
+                              '確定要移除該好友對此房間的存取權限嗎？',
                           localizations,
                         );
 
@@ -505,21 +542,21 @@ class _ProfileState extends State<Profile> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  localizations?.accessRemoved ?? '访问权限已移除',
+                                  localizations?.accessRemoved ?? '存取權限已移除',
                                 ),
                               ),
                             );
                           }
                         }
                       } else {
-                        // 添加授权
+                        // 新增授權
                         await _userService.addFriendToRoom(friend.id, room.id);
                         if (mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                localizations?.accessGranted ?? '访问权限已授予',
+                                localizations?.accessGranted ?? '存取權限已授予',
                               ),
                             ),
                           );
@@ -533,23 +570,23 @@ class _ProfileState extends State<Profile> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.close ?? '关闭'),
+                child: Text(localizations?.close ?? '關閉'),
               ),
             ],
           ),
     );
   }
 
-  // 确认删除好友对话框
+  // 確認刪除好友對話框
   void _showDeleteFriendDialog(
     FriendModel friend,
     AppLocalizations? localizations,
   ) async {
     final shouldDelete = await _showConfirmDialog(
       context,
-      localizations?.deleteFriend ?? '删除好友',
+      localizations?.deleteFriend ?? '刪除好友',
       localizations?.confirmDeleteFriend(friend.name) ??
-          '确定要删除好友 ${friend.name} 吗？所有相关的房间访问权限也会被删除。',
+          '確定要刪除好友 ${friend.name} 嗎？所有相關的房間存取權限也會被刪除。',
       localizations,
     );
 
@@ -559,20 +596,20 @@ class _ProfileState extends State<Profile> {
 
         if (mounted && result) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(localizations?.friendRemoved ?? '好友已删除')),
+            SnackBar(content: Text(localizations?.friendRemoved ?? '好友已刪除')),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${localizations?.error ?? '错误'}: $e')),
+            SnackBar(content: Text('${localizations?.error ?? '錯誤'}: $e')),
           );
         }
       }
     }
   }
 
-  // 通用确认对话框
+  // 通用確認對話框
   Future<bool?> _showConfirmDialog(
     BuildContext context,
     String title,
@@ -592,7 +629,7 @@ class _ProfileState extends State<Profile> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text(localizations?.confirm ?? '确认'),
+                child: Text(localizations?.confirm ?? '確認'),
               ),
             ],
           ),

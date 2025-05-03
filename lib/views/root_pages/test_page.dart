@@ -276,7 +276,7 @@ class _TestPageState extends State<TestPage> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: const Text(
-                          '整合设备管理页面 (空调+开关)',
+                          '整合裝置管理頁面 (冷氣+開關)',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -285,7 +285,7 @@ class _TestPageState extends State<TestPage> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        '单独的示例页面:',
+                        '獨立的範例頁面:',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

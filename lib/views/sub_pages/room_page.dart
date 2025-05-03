@@ -32,14 +32,14 @@ class _RoomPageState extends State<RoomPage>
   bool error = false;
   String? errorMsg;
 
-  // 添加用户服务和好友列表状态
+  // 新增使用者服務和好友列表狀態
   final UserService _userService = UserService();
   List<FriendModel> _roomFriends = [];
   bool _loadingFriends = true;
   List<FriendModel> _allFriends = [];
   bool _loadingAllFriends = true;
 
-  // 设备类型列表
+  // 裝置類型列表
   final List<Map<String, dynamic>> _deviceTypes = [
     {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': 'fan', 'name': '風扇', 'icon': Icons.wind_power},
@@ -78,7 +78,7 @@ class _RoomPageState extends State<RoomPage>
     }
   }
 
-  // 加载有权限访问该房间的好友
+  // 載入有權限訪問該房間的好友
   Future<void> _loadRoomFriends() async {
     try {
       final friends = await _userService.getFriendsForRoom(widget.roomId);
@@ -89,7 +89,7 @@ class _RoomPageState extends State<RoomPage>
         });
       }
     } catch (e) {
-      print('Error loading room friends: $e');
+      print('載入房間好友錯誤: $e');
       if (mounted) {
         setState(() {
           _loadingFriends = false;
@@ -98,7 +98,7 @@ class _RoomPageState extends State<RoomPage>
     }
   }
 
-  // 加载所有好友，用于添加新好友到房间
+  // 載入所有好友，用於新增新好友到房間
   void _loadAllFriends() {
     _userService.getFriends().listen(
       (friendsList) {
@@ -110,7 +110,7 @@ class _RoomPageState extends State<RoomPage>
         }
       },
       onError: (error) {
-        print("Error loading all friends: $error");
+        print("載入所有好友錯誤: $error");
         if (mounted) {
           setState(() {
             _loadingAllFriends = false;
@@ -185,7 +185,7 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 使用模型来添加设备
+  // 使用模型來新增設備
   Future<void> _addDevice(String name, String type) async {
     if (_roomModel == null) return;
 
@@ -193,7 +193,7 @@ class _RoomPageState extends State<RoomPage>
       switch (type) {
         case 'air_conditioner':
           final acDevice = AirConditionerModel(
-            null, // Firebase 会自动生成 ID
+            null, // Firebase 會自動生成 ID
             name: name,
             roomId: widget.roomId,
             lastUpdated: Timestamp.now(),
@@ -203,7 +203,7 @@ class _RoomPageState extends State<RoomPage>
           break;
         case 'dht11':
           final dht11Device = DHT11SensorModel(
-            null, // Firebase 会自动生成 ID
+            null, // Firebase 會自動生成 ID
             name: name,
             roomId: widget.roomId,
             lastUpdated: Timestamp.now(),
@@ -214,9 +214,9 @@ class _RoomPageState extends State<RoomPage>
           await _roomModel!.addDevice(dht11Device.id);
           break;
         default:
-          // 默认使用基本的 SwitchModel
+          // 預設使用基本的 SwitchModel
           final switchable = SwitchModel(
-            null, // Firebase 会自动生成 ID
+            null, // Firebase 會自動生成 ID
             name: name,
             type: type,
             lastUpdated: Timestamp.now(),
@@ -230,8 +230,8 @@ class _RoomPageState extends State<RoomPage>
           break;
       }
     } catch (e) {
-      print('添加设备错误: $e');
-      // 可以添加错误处理逻辑，如显示错误消息等
+      print('新增設備錯誤: $e');
+      // 可以新增錯誤處理邏輯，如顯示錯誤訊息等
     }
   }
 
@@ -276,7 +276,7 @@ class _RoomPageState extends State<RoomPage>
                   );
                 }
 
-                // 将设备数据转换为对应的模型
+                // 將設備資料轉換為對應的模型
                 List<GeneralModel> deviceModels = [];
                 for (var device in devices) {
                   try {
@@ -299,8 +299,8 @@ class _RoomPageState extends State<RoomPage>
                           acDevice.fromJson(data);
                           deviceModels.add(acDevice);
                         } catch (e) {
-                          print('解析空调设备错误: $e');
-                          // 使用基本的 SwitchModel 作为备用
+                          print('解析空調設備錯誤: $e');
+                          // 使用基本的 SwitchModel 作為備用
                           final fallbackDevice = SwitchModel(
                             device.id,
                             name: name,
@@ -329,8 +329,8 @@ class _RoomPageState extends State<RoomPage>
                           );
                           deviceModels.add(dht11Device);
                         } catch (e) {
-                          print('解析DHT11设备错误: $e');
-                          // 使用基本的 SwitchModel 作为备用
+                          print('解析DHT11設備錯誤: $e');
+                          // 使用基本的 SwitchModel 作為備用
                           final fallbackDevice = SwitchModel(
                             device.id,
                             name: name,
@@ -345,7 +345,7 @@ class _RoomPageState extends State<RoomPage>
                         }
                         break;
                       default:
-                        // 默认使用基本的SwitchModel
+                        // 預設使用基本的SwitchModel
                         final switchable = SwitchModel(
                           device.id,
                           name: name,
@@ -360,7 +360,7 @@ class _RoomPageState extends State<RoomPage>
                         break;
                     }
                   } catch (e) {
-                    print('設備數據解析錯誤: $e');
+                    print('設備資料解析錯誤: $e');
                   }
                 }
 
@@ -390,12 +390,12 @@ class _RoomPageState extends State<RoomPage>
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDeviceDialog(),
         child: const Icon(Icons.add),
-        tooltip: localizations?.addDevice ?? '添加设备',
+        tooltip: localizations?.addDevice ?? '新增設備',
       ),
     );
   }
 
-  // 房间头部信息
+  // 房間頭部資訊
   Widget _buildRoomHeader(AppLocalizations? localizations) {
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -416,12 +416,12 @@ class _RoomPageState extends State<RoomPage>
                   IconButton(
                     icon: const Icon(Icons.group_add),
                     onPressed: () => _showManageFriendsDialog(localizations),
-                    tooltip: localizations?.manageFriends ?? '管理好友访问权限',
+                    tooltip: localizations?.manageFriends ?? '管理好友存取權限',
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () => _showEditRoomDialog(localizations),
-                    tooltip: localizations?.editRoom ?? '编辑房间',
+                    tooltip: localizations?.editRoom ?? '編輯房間',
                   ),
                 ],
               ),
@@ -432,7 +432,7 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 房间底部操作区
+  // 房間底部操作區
   Widget _buildRoomActions(AppLocalizations? localizations) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -448,7 +448,7 @@ class _RoomPageState extends State<RoomPage>
           TextButton.icon(
             icon: const Icon(Icons.delete, color: Colors.red),
             label: Text(
-              localizations?.deleteRoom ?? '删除房间',
+              localizations?.deleteRoom ?? '刪除房間',
               style: const TextStyle(color: Colors.red),
             ),
             onPressed: () => _showDeleteRoomConfirmation(localizations),
@@ -458,18 +458,18 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 显示管理好友访问权限的对话框
+  // 顯示管理好友存取權限的對話框
   void _showManageFriendsDialog(AppLocalizations? localizations) {
     if (_loadingAllFriends || _loadingFriends) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations?.loadingFriends ?? '正在加载好友列表...')),
+        SnackBar(content: Text(localizations?.loadingFriends ?? '正在載入好友列表...')),
       );
       return;
     }
 
     if (_allFriends.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations?.noFriends ?? '您还没有添加任何好友')),
+        SnackBar(content: Text(localizations?.noFriends ?? '您還沒有新增任何好友')),
       );
       return;
     }
@@ -478,7 +478,7 @@ class _RoomPageState extends State<RoomPage>
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.manageFriends ?? '管理好友访问权限'),
+            title: Text(localizations?.manageFriends ?? '管理好友存取權限'),
             content: SizedBox(
               width: double.maxFinite,
               height: 300,
@@ -496,20 +496,20 @@ class _RoomPageState extends State<RoomPage>
                       value: hasAccess,
                       onChanged: (value) async {
                         if (value) {
-                          // 添加访问权限
+                          // 新增存取權限
                           await _userService.addFriendToRoom(
                             friend.id,
                             widget.roomId,
                           );
                         } else {
-                          // 移除访问权限
+                          // 移除存取權限
                           await _userService.removeFriendFromRoom(
                             friend.id,
                             widget.roomId,
                           );
                         }
 
-                        // 重新加载房间好友列表
+                        // 重新載入房間好友列表
                         _loadRoomFriends();
                       },
                     ),
@@ -520,14 +520,14 @@ class _RoomPageState extends State<RoomPage>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.close ?? '关闭'),
+                child: Text(localizations?.close ?? '關閉'),
               ),
             ],
           ),
     );
   }
 
-  // 显示编辑房间对话框
+  // 顯示編輯房間對話框
   void _showEditRoomDialog(AppLocalizations? localizations) {
     final TextEditingController nameController = TextEditingController(
       text: _roomModel?.name,
@@ -537,11 +537,11 @@ class _RoomPageState extends State<RoomPage>
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.editRoom ?? '编辑房间'),
+            title: Text(localizations?.editRoom ?? '編輯房間'),
             content: TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: localizations?.roomName ?? '房间名称',
+                labelText: localizations?.roomName ?? '房間名稱',
               ),
             ),
             actions: [
@@ -560,20 +560,20 @@ class _RoomPageState extends State<RoomPage>
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(localizations?.roomUpdated ?? '房间已更新'),
+                          content: Text(localizations?.roomUpdated ?? '房間已更新'),
                         ),
                       );
                     }
                   }
                 },
-                child: Text(localizations?.save ?? '保存'),
+                child: Text(localizations?.save ?? '儲存'),
               ),
             ],
           ),
     );
   }
 
-  // 确认删除房间
+  // 確認刪除房間
   void _showDeleteRoomConfirmation(AppLocalizations? localizations) {
     if (_roomModel == null) return;
 
@@ -581,10 +581,10 @@ class _RoomPageState extends State<RoomPage>
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.confirmDelete ?? '确认删除'),
+            title: Text(localizations?.confirmDelete ?? '確認刪除'),
             content: Text(
               localizations?.confirmDeleteRoom("") ??
-                  '确定要删除房间吗？此操作无法撤销，且会同时删除所有关联设备。',
+                  '確定要刪除房間嗎？此操作無法撤銷，且會同時刪除所有關聯設備。',
             ),
             actions: [
               TextButton(
@@ -598,18 +598,18 @@ class _RoomPageState extends State<RoomPage>
                     await _roomModel!.deleteRoom();
                     if (mounted) {
                       Navigator.pop(context);
-                      Navigator.pop(context); // 返回上一级页面
+                      Navigator.pop(context); // 返回上一級頁面
                     }
                   }
                 },
-                child: Text(localizations?.delete ?? '删除'),
+                child: Text(localizations?.delete ?? '刪除'),
               ),
             ],
           ),
     );
   }
 
-  // 根据设备类型获取对应的图标
+  // 根據設備類型獲取對應的圖標
   IconData _getIconForType(String type) {
     for (var deviceType in _deviceTypes) {
       if (deviceType['type'] == type) {

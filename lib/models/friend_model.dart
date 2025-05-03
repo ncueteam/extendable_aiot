@@ -8,6 +8,7 @@ class FriendModel {
   String userId; // 好友用户ID
   String name; // 好友名称
   String email; // 好友邮箱
+  String? photoURL; // 好友头像URL
   Timestamp addedAt; // 添加好友的时间
   List<String> sharedRooms = []; // 该好友可以访问的房间ID列表
 
@@ -16,6 +17,7 @@ class FriendModel {
     required this.userId,
     required this.name,
     required this.email,
+    this.photoURL,
     Timestamp? addedAt,
     List<String>? sharedRooms,
   }) : id = id ?? _generateId(),
@@ -34,6 +36,7 @@ class FriendModel {
       userId: data['userId'] as String? ?? '',
       name: data['name'] as String? ?? '未命名好友',
       email: data['email'] as String? ?? '',
+      photoURL: data['photoURL'] as String?,
       addedAt: data['addedAt'] as Timestamp? ?? Timestamp.now(),
       sharedRooms:
           data['sharedRooms'] != null
@@ -44,13 +47,20 @@ class FriendModel {
 
   // 转换为JSON以存储到Firebase
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> json = {
       'userId': userId,
       'name': name,
       'email': email,
       'addedAt': addedAt,
       'sharedRooms': sharedRooms,
     };
+
+    // 只有當頭像URL存在時才添加到JSON中
+    if (photoURL != null) {
+      json['photoURL'] = photoURL;
+    }
+
+    return json;
   }
 
   // 添加此好友到指定房间
@@ -197,10 +207,12 @@ class FriendModel {
 
       if (snapshot.docs.isNotEmpty) {
         final doc = snapshot.docs.first;
+        final userData = doc.data() as Map<String, dynamic>;
         return {
           'userId': doc.id,
-          'name': (doc.data() as Map<String, dynamic>)['name'] ?? '',
-          'email': (doc.data() as Map<String, dynamic>)['email'] ?? '',
+          'name': userData['name'] ?? '',
+          'email': userData['email'] ?? '',
+          'photoURL': userData['photoURL'], // 添加頭像URL
         };
       }
       return null;

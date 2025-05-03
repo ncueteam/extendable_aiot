@@ -19,7 +19,7 @@ class AllRoomPage extends StatefulWidget {
 class _AllRoomPageState extends State<AllRoomPage> {
   final TextEditingController _roomNameController = TextEditingController();
 
-  // 设备类型列表用于图标匹配
+  // 裝置類型列表用於圖標匹配
   final List<Map<String, dynamic>> _deviceTypes = [
     {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': '風扇', 'name': '風扇', 'icon': Icons.wind_power},
@@ -58,7 +58,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
               TextButton(
                 onPressed: () async {
                   if (_roomNameController.text.isNotEmpty) {
-                    // 使用 RoomModel 创建房间
+                    // 使用 RoomModel 創建房間
                     RoomModel roomModel = RoomModel(
                       name: _roomNameController.text,
                     );
@@ -75,7 +75,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
     );
   }
 
-  // 根据设备类型获取对应的图标
+  // 根據裝置類型獲取對應的圖標
   IconData _getIconForType(String type) {
     for (var deviceType in _deviceTypes) {
       if (deviceType['type'] == type) {
@@ -112,7 +112,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
             return Center(child: Text(localizations?.noRooms ?? '還沒有創建房間'));
           }
 
-          // 使用 ListView 显示房间列表
+          // 使用 ListView 顯示房間列表
           return EasyRefresh(
             header: const ClassicHeader(),
             footer: const ClassicFooter(),
@@ -129,7 +129,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
     );
   }
 
-  // 创建房间卡片组件
+  // 創建房間卡片元件
   Widget _buildRoomCard(RoomModel room) {
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -140,10 +140,10 @@ class _AllRoomPageState extends State<AllRoomPage> {
           room.name,
           style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
         ),
-        subtitle: Text('ID: ${room.id} | 设备数: ${room.devices.length}'),
+        subtitle: Text('ID: ${room.id} | 裝置數: ${room.devices.length}'),
         children: [
           if (room.devices.isEmpty)
-            const Padding(padding: EdgeInsets.all(16.0), child: Text('该房间没有设备'))
+            const Padding(padding: EdgeInsets.all(16.0), child: Text('此房間沒有裝置'))
           else
             FutureBuilder<List<DocumentSnapshot>>(
               future: room.loadDevices(),
@@ -153,18 +153,18 @@ class _AllRoomPageState extends State<AllRoomPage> {
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text('加载设备错误: ${snapshot.error}'));
+                  return Center(child: Text('載入裝置錯誤: ${snapshot.error}'));
                 }
 
                 final devices = snapshot.data ?? [];
                 if (devices.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: Text('该房间没有设备'),
+                    child: Text('此房間沒有裝置'),
                   );
                 }
 
-                // 将设备数据转换为对应的模型
+                // 將裝置數據轉換為對應的模型
                 List<GeneralModel> deviceModels = [];
                 for (var device in devices) {
                   try {
@@ -246,7 +246,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
                         break;
                     }
                   } catch (e) {
-                    print('設備數據解析錯誤: $e');
+                    print('裝置數據解析錯誤: $e');
                   }
                 }
 
@@ -267,7 +267,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
                 );
               },
             ),
-          // 房间管理按钮
+          // 房間管理按鈕
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -275,14 +275,14 @@ class _AllRoomPageState extends State<AllRoomPage> {
               children: [
                 TextButton.icon(
                   icon: const Icon(Icons.edit),
-                  label: const Text('编辑房间'),
+                  label: const Text('編輯房間'),
                   onPressed: () => _showEditRoomDialog(room),
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   label: const Text(
-                    '删除房间',
+                    '刪除房間',
                     style: TextStyle(color: Colors.red),
                   ),
                   onPressed: () => _showDeleteRoomConfirmation(room),
@@ -295,7 +295,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
     );
   }
 
-  // 显示编辑房间对话框
+  // 顯示編輯房間對話框
   Future<void> _showEditRoomDialog(RoomModel room) async {
     final localizations = AppLocalizations.of(context);
     final TextEditingController nameController = TextEditingController(
@@ -306,14 +306,14 @@ class _AllRoomPageState extends State<AllRoomPage> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.editRoom ?? '编辑房间'),
+            title: Text(localizations?.editRoom ?? '編輯房間'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    labelText: localizations?.roomName ?? '房间名称',
+                    labelText: localizations?.roomName ?? '房間名稱',
                   ),
                 ),
               ],
@@ -331,14 +331,14 @@ class _AllRoomPageState extends State<AllRoomPage> {
                     if (mounted) Navigator.pop(context);
                   }
                 },
-                child: Text(localizations?.confirm ?? '确认'),
+                child: Text(localizations?.confirm ?? '確認'),
               ),
             ],
           ),
     );
   }
 
-  // 显示删除房间确认对话框
+  // 顯示刪除房間確認對話框
   Future<void> _showDeleteRoomConfirmation(RoomModel room) async {
     final localizations = AppLocalizations.of(context);
 
@@ -346,8 +346,8 @@ class _AllRoomPageState extends State<AllRoomPage> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(localizations?.confirmDelete ?? '确认删除'),
-            content: Text('确定要删除房间 "${room.name}" 吗？此操作无法撤销，且会同时删除所有关联设备。'),
+            title: Text(localizations?.confirmDelete ?? '確認刪除'),
+            content: Text('確定要刪除房間 "${room.name}" 嗎？此操作無法撤銷，且會同時刪除所有關聯裝置。'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -359,7 +359,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
                   if (mounted) Navigator.pop(context);
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(localizations?.delete ?? '删除'),
+                child: Text(localizations?.delete ?? '刪除'),
               ),
             ],
           ),

@@ -18,6 +18,7 @@ void main() async {
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // 等待 Firebase 應用檢查實例的啟動
   // await FirebaseAppCheck.instance.activate(
   //   androidProvider: AndroidProvider.debug,
   // );
@@ -30,7 +31,7 @@ void main() async {
     MultiProvider(
       providers: providers,
       child: const ThemedMaterialApp(
-        title: 'Chiselator',
+        title: '智能家居系統',
         debugShowCheckedModeBanner: false,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

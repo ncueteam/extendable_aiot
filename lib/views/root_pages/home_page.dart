@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return StreamBuilder<List<RoomModel>>(
       stream: RoomModel.getAllRooms(),
       builder: (context, snapshot) {
+        // 創建選項卡和內容
         List<Tab> tabs = [Tab(text: localizations?.allRooms ?? '所有房間')];
         List<Widget> tabContents = [const AllRoomPage()];
 
@@ -40,6 +41,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           }
         }
 
+        // 每次重建都重新初始化 TabController
         _tabController?.dispose();
         _tabController = TabController(length: tabs.length, vsync: this);
 
