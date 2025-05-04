@@ -1,4 +1,4 @@
-import 'package:extendable_aiot/models/general_model.dart';
+import 'package:extendable_aiot/models/abstract/general_model.dart';
 
 abstract class SensorModel extends GeneralModel {
   List<dynamic> value;

@@ -1,35 +1,44 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:extendable_aiot/models/sensor_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class DHT11SensorModel extends SensorModel {
+/// 冷气设备模型
+class AirConditionerModel extends SwitchableModel {
+  // 温度设置 (16°C-30°C)
   double temperature;
-  double humidity;
-  String roomId;
-  static const double MIN_TEMPERATURE = 0.0;
-  static const double MAX_TEMPERATURE = 50.0;
-  static const double MIN_HUMIDITY = 20.0;
-  static const double MAX_HUMIDITY = 90.0;
 
-  DHT11SensorModel(
+  // 模式设置 (Auto, Cool, Dry)
+  String mode;
+
+  // 风速设置 (Low, Mid, High)
+  String fanSpeed;
+
+  // 所属房间ID
+  String roomId;
+
+  // 模式选项
+  static const List<String> modes = ['Auto', 'Cool', 'Dry'];
+
+  // 风速选项
+  static const List<String> fanSpeeds = ['Low', 'Mid', 'High'];
+
+  AirConditionerModel(
     super.id, {
     required super.name,
-    required this.roomId,
+    super.type = "air_conditioner", // 将类型统一为 air_conditioner
     required super.lastUpdated,
+    super.icon = Icons.ac_unit,
     this.temperature = 25.0,
-    this.humidity = 60.0,
-    bool status = false,
-  }) : super(
-         value: [temperature, humidity],
-         type: 'dht11',
-         icon: Icons.thermostat,
-       );
+    this.mode = 'Auto',
+    this.fanSpeed = 'Mid',
+    this.roomId = '',
+  });
 
   @override
   Future<void> createData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
+    if (userId == null) throw Exception('User not authenticated');
 
     // 如果未指定ID，Firebase会自动生成
     final docRef =
@@ -67,8 +76,8 @@ class DHT11SensorModel extends SensorModel {
   @override
   Future<void> readData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
+    if (userId == null) throw Exception('User not authenticated');
+    if (id.isEmpty) throw Exception('Device ID is required');
 
     final doc =
         await FirebaseFirestore.instance
@@ -79,7 +88,7 @@ class DHT11SensorModel extends SensorModel {
             .get();
 
     if (!doc.exists) {
-      throw Exception('设备不存在');
+      throw Exception('Device not found');
     }
 
     // 从文档中读取数据
@@ -89,27 +98,15 @@ class DHT11SensorModel extends SensorModel {
 
   @override
   Future<void> updateData() async {
-    String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
-
-    // 更新值数组
-    value = [temperature, humidity];
-
-    // 更新文档
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('devices')
-        .doc(id)
-        .update(toJson());
+    // 使用 SwitchableModel 的 updateData 方法
+    await super.updateData();
   }
 
   @override
   Future<void> deleteData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
+    if (userId == null) throw Exception('User not authenticated');
+    if (id.isEmpty) throw Exception('Device ID is required');
 
     // 从房间中移除设备引用
     await FirebaseFirestore.instance
@@ -121,43 +118,56 @@ class DHT11SensorModel extends SensorModel {
           'devices': FieldValue.arrayRemove([id]),
         });
 
-    // 删除设备文档
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('devices')
-        .doc(id)
-        .delete();
+    // 删除设备文档 - 使用 SwitchableModel 的方法
+    await super.deleteData();
   }
 
   @override
   fromJson(Map<String, dynamic> json) {
-    super.fromJson(json);
+    super.fromJson(json); // 调用 SwitchableModel 的 fromJson
     temperature = (json['temperature'] as num?)?.toDouble() ?? 25.0;
-    humidity = (json['humidity'] as num?)?.toDouble() ?? 60.0;
+    mode = json['mode'] as String? ?? 'Auto';
+    fanSpeed = json['fanSpeed'] as String? ?? 'Mid';
     roomId = json['roomId'] as String? ?? '';
     return this;
   }
 
   @override
   Map<String, dynamic> toJson() {
-    final json = super.toJson();
+    final json = super.toJson(); // 获取 SwitchableModel 的 json
     json.addAll({
       'temperature': temperature,
-      'humidity': humidity,
+      'mode': mode,
+      'fanSpeed': fanSpeed,
       'roomId': roomId,
     });
     return json;
   }
 
-  // 更新传感器数据
-  void updateSensorData(double newTemp, double newHumidity) {
-    if (newTemp >= MIN_TEMPERATURE && newTemp <= MAX_TEMPERATURE) {
-      temperature = newTemp;
+  // 设置温度
+  void setTemperature(double value) {
+    // 确保温度在有效范围内
+    if (value >= 16 && value <= 30) {
+      temperature = value;
     }
-    if (newHumidity >= MIN_HUMIDITY && newHumidity <= MAX_HUMIDITY) {
-      humidity = newHumidity;
+  }
+
+  // 设置模式
+  void setMode(String value) {
+    if (modes.contains(value)) {
+      mode = value;
     }
-    value = [temperature, humidity];
+  }
+
+  // 设置风速
+  void setFanSpeed(String value) {
+    if (fanSpeeds.contains(value)) {
+      fanSpeed = value;
+    }
+  }
+
+  // 切换电源状态 - 使用继承的 status 字段
+  void togglePower() {
+    status = !status;
   }
 }

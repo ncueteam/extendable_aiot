@@ -1,4 +1,4 @@
-import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 
 class SwitchModel extends SwitchableModel {
   SwitchModel(

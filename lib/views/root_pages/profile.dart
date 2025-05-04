@@ -1,6 +1,6 @@
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/user_model.dart';
-import 'package:extendable_aiot/models/room_model.dart';
+import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:app_chiseletor/widgets/user_avatar.dart'; // 導入 UserAvatar 元件

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
-import 'package:extendable_aiot/models/airconditioner_model.dart';
+import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 import 'package:flutter/material.dart';
 
 class AirConditionerControl extends StatefulWidget {

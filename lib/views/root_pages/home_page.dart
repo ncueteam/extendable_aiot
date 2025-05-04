@@ -1,6 +1,6 @@
 import 'package:extendable_aiot/components/root_page_head.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
-import 'package:extendable_aiot/models/room_model.dart';
+import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:extendable_aiot/themes/app_colors.dart';
 import 'package:extendable_aiot/views/sub_pages/allroom_page.dart';
 import 'package:extendable_aiot/views/sub_pages/room_page.dart';

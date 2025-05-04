@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/airconditioner_control.dart';
-import 'package:extendable_aiot/models/airconditioner_model.dart';
-import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/models/room_model.dart';
-import 'package:extendable_aiot/models/switch_model.dart';
-import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
+import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
+import 'package:extendable_aiot/models/abstract/room_model.dart';
+import 'package:extendable_aiot/models/sub_type/switch_model.dart';
+import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

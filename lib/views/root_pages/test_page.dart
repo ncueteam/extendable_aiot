@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:extendable_aiot/models/switch_model.dart';
+import 'package:extendable_aiot/models/sub_type/switch_model.dart';
 import 'package:extendable_aiot/views/demo_pages/integrated_devices_page.dart';
 import 'package:flutter/material.dart';
-import 'package:extendable_aiot/models/switchable_model.dart';
+import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class TestPage extends StatefulWidget {
