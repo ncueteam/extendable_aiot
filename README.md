@@ -15,6 +15,25 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
+## 變更日誌 (Changelog)
+
+### 2025年5月4日更新
+
+#### 修復的錯誤
+- 修復了設備管理操作後頁面自動跳回「所有房間」頁面的問題
+  - 優化了 `TabController` 的重建邏輯，保留用戶當前選擇的標籤頁
+  - 在 `home_page.dart` 中增加了狀態保存機制，防止 StreamBuilder 重建時重置頁面狀態
+  - 修復了 `room_page.dart` 中刪除房間時的導航邏輯，避免重複彈出頁面
+
+#### 代碼改進
+- 增強了頁面狀態的保持能力
+  - 實現了 `AutomaticKeepAliveClientMixin` 接口，確保頁面狀態在標籤切換時得到保留
+  - 添加了 `_maintainState` 變量來控制頁面狀態的保持邏輯
+- 改進了用戶體驗
+  - 添加了設備操作後的成功提示
+  - 優化了錯誤處理邏輯，提供更清晰的錯誤提示
+  - 使用延遲更新確保用戶界面平穩過渡
+
 ## 資料庫結構
 
 ### 使用者 (Users)
@@ -30,7 +49,7 @@ database/
     ├── friends/: 好友子集合
     │   └── [friendId]: 好友參考 (Reference)
     ├── rooms/: 房間子集合
-    │   ├── [roomId]/
+    │   ├── [roomId]/ 
     │   │   ├── name: 房間名稱 (String)
     │   │   ├── createdAt: 建立時間 (Timestamp)
     │   │   ├── updatedAt: 更新時間 (Timestamp)
