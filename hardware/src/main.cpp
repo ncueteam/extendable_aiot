@@ -11,6 +11,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <Preferences.h>
+#include "DHT11Sensor.h"  // Include our new DHT11Sensor class
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
@@ -72,6 +73,7 @@ const int   daylightOffset_sec = 0;
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "esp32/sensors";
+const char* mqtt_dht11_topic = "esp32/sensors/dht11"; // 添加DHT11特定主題
 const char* client_id = "ESP32_Client_";
 const long mqttIconBlinkInterval = 500;
 
@@ -85,8 +87,8 @@ const long mqttPublishInterval = 5000;
 
 // DHT11 設定
 #define DHTPIN 14
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
+// 使用我們的新DHT11Sensor類
+DHT11Sensor dhtSensor(DHTPIN);
 
 // LED Pin定義
 const int LED_PIN = 2;
@@ -414,15 +416,29 @@ void mqttTask(void *parameter) {
         sharedData.mqttIconBlinkMillis = currentMillis;
         xSemaphoreGive(mutex);
         
-        // 使用較小的JSON文檔
-        StaticJsonDocument<100> doc;
-        doc["temp"] = temp;
-        doc["humid"] = humid;
+        // 取得當前時間字符串
+        char timeStr[24];
+        struct tm timeinfo;
+        if (getLocalTime(&timeinfo)) {
+          strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeinfo);
+        } else {
+          sprintf(timeStr, "%lu", millis());
+        }
         
-        char jsonBuffer[100];
+        // 使用與 SensorData 模型匹配的 JSON 格式
+        StaticJsonDocument<200> doc;
+        doc["temperature"] = temp;
+        doc["humidity"] = humid;
+        doc["timestamp"] = timeStr;
+        
+        char jsonBuffer[200];
         serializeJson(doc, jsonBuffer);
         
         mqtt_client.publish(mqtt_topic, jsonBuffer);
+        mqtt_client.publish(mqtt_dht11_topic, jsonBuffer); // 發布到DHT11特定主題
+        
+        Serial.print("DHT11 數據已發送: ");
+        Serial.println(jsonBuffer);
       }
     }
     
@@ -432,32 +448,21 @@ void mqttTask(void *parameter) {
 
 // DHT11讀取任務
 void dhtTask(void *parameter) {
-  const int maxRetries = 2; // 減少重試次數以節省代碼空間
+  // 初始化 DHT11 感測器
+  dhtSensor.begin();
+  vTaskDelay(2000 / portTICK_PERIOD_MS); // 等待感測器穩定
   
-  vTaskDelay(2000 / portTICK_PERIOD_MS);
-
   while (true) {
-    int retryCount = 0;
-    float newTemp, newHum;
-    bool readSuccess = false;
-
-    while (retryCount < maxRetries && !readSuccess) {
-      newTemp = dht.readTemperature();
-      newHum = dht.readHumidity();
-      
-      if (!isnan(newTemp) && !isnan(newHum)) {
-        readSuccess = true;
-        
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        sharedData.temperature = newTemp;
-        sharedData.humidity = newHum;
-        xSemaphoreGive(mutex);
-      } else {
-        retryCount++;
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-      }
+    // 使用模組化的 DHT11Sensor 類讀取數據
+    if (dhtSensor.read()) {
+      // 讀取成功，更新共享數據
+      xSemaphoreTake(mutex, portMAX_DELAY);
+      sharedData.temperature = dhtSensor.getTemperature();
+      sharedData.humidity = dhtSensor.getHumidity();
+      xSemaphoreGive(mutex);
     }
     
+    // 等待下一次讀取時間
     vTaskDelay(3000 / portTICK_PERIOD_MS);
   }
 }
@@ -527,10 +532,6 @@ void setup() {
   
   // 初始化共享數據
   memset(&sharedData, 0, sizeof(sharedData));
-  
-  // DHT11 初始化
-  pinMode(DHTPIN, INPUT);
-  dht.begin();
   
   // 配置硬體
   ledcSetup(LEDC_CHANNEL, LEDC_BASE_FREQ, LEDC_TIMER_BIT);
