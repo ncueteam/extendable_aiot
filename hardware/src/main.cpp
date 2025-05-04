@@ -10,12 +10,17 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
-#include <Preferences.h>
+#include "ConfigManager.h" // 引入配置管理器
 #include "LED.h" // 加入LED控制類的頭文件
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
 void handleWiFiCredentials(const char* message);
+
+// 定義BLE的UUID常量
+#define SERVICE_UUID           "91bad492-b950-4226-aa2b-4ede9fa42f59"
+#define WIFI_CRED_CHAR_UUID    "0b30ac1c-1c8a-4770-9914-d2abe8351512"
+#define STATUS_CHAR_UUID       "d2936523-52bf-4b76-a873-727d83e2b357"
 
 // BLE相關定義
 BLEServer* pServer = NULL;
@@ -25,18 +30,12 @@ bool deviceConnected = false;
 bool oldDeviceConnected = false;
 bool wifiCredentialsReceived = false;
 
-// Preferences實例 - 用於存儲WiFi憑證
-Preferences preferences;
+// 創建ConfigManager實例
+ConfigManager configManager("wifi_cred");
 
-// 定義UUIDs (自訂)
-#define SERVICE_UUID           "91bad492-b950-4226-aa2b-4ede9fa42f59"
-#define WIFI_CRED_CHAR_UUID    "0b30ac1c-1c8a-4770-9914-d2abe8351512"
-#define STATUS_CHAR_UUID       "d2936523-52bf-4b76-a873-727d83e2b357"
-
-// WiFi設定 - 從Preferences中獲取
+// WiFi設定 - 從ConfigManager中獲取
 char saved_ssid[33] = "";       // 使用字符數組代替String
 char saved_password[65] = "";   // 使用字符數組代替String
-const char* preference_namespace = "wifi_cred";
 bool useStoredCredentials = true; // 使用儲存的憑證
 
 // FreeRTOS相關定義
@@ -224,11 +223,8 @@ void handleWiFiCredentials(const char* message) {
               strncpy(saved_password, passPtr, passLen);
               saved_password[passLen] = '\0';
               
-              // 存儲WiFi憑證
-              preferences.begin(preference_namespace, false);
-              preferences.putString("ssid", saved_ssid);
-              preferences.putString("password", saved_password);
-              preferences.end();
+              // 使用ConfigManager存儲WiFi憑證
+              configManager.saveWiFiCredentials(saved_ssid, saved_password);
               
               // 設置標誌重新連接WiFi
               wifiCredentialsReceived = true;
@@ -242,15 +238,8 @@ void handleWiFiCredentials(const char* message) {
 
 // 加載存儲的WiFi憑證
 void loadWiFiCredentials() {
-  preferences.begin(preference_namespace, true);
-  String temp_ssid = preferences.getString("ssid", "");
-  String temp_pass = preferences.getString("password", "");
-  preferences.end();
-  
-  if (temp_ssid.length() < 33 && temp_pass.length() < 65) {
-    strcpy(saved_ssid, temp_ssid.c_str());
-    strcpy(saved_password, temp_pass.c_str());
-  }
+  // 使用ConfigManager加載WiFi憑證
+  configManager.loadWiFiCredentials(saved_ssid, sizeof(saved_ssid), saved_password, sizeof(saved_password));
 }
 
 // 使用WiFi憑證連接
