@@ -1,29 +1,42 @@
 #include <Arduino.h>
+#include <U8g2lib.h>
 #include <Wire.h>
 #include <WiFi.h>
+#include <DHT.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "time.h"
-#include <Preferences.h>
-#include "DHT11Sensor.h"   // DHT11 传感器模块
-#include "LCDDisplay.h"    // LCD 显示模块
-#include "BLEManager.h"    // BLE 管理器模块
-#include "DataManager.h"   // 数据管理模块
-#include "LEDManager.h"    // LED 管理模块
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+#include "ConfigManager.h" // 引入配置管理器
+#include "LED.h" // 加入LED控制類的頭文件
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
 void handleWiFiCredentials(const char* message);
 
-// Preferences實例 - 用於存儲WiFi憑證
-Preferences preferences;
+// 定義BLE的UUID常量
+#define SERVICE_UUID           "91bad492-b950-4226-aa2b-4ede9fa42f59"
+#define WIFI_CRED_CHAR_UUID    "0b30ac1c-1c8a-4770-9914-d2abe8351512"
+#define STATUS_CHAR_UUID       "d2936523-52bf-4b76-a873-727d83e2b357"
 
-// WiFi設定 - 從Preferences中獲取
+// BLE相關定義
+BLEServer* pServer = NULL;
+BLECharacteristic* pWiFiCredentialChar = NULL;
+BLECharacteristic* pStatusChar = NULL;
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+bool wifiCredentialsReceived = false;
+
+// 創建ConfigManager實例
+ConfigManager configManager("wifi_cred");
+
+// WiFi設定 - 從ConfigManager中獲取
 char saved_ssid[33] = "";       // 使用字符數組代替String
 char saved_password[65] = "";   // 使用字符數組代替String
-const char* preference_namespace = "wifi_cred";
 bool useStoredCredentials = true; // 使用儲存的憑證
-bool wifiCredentialsReceived = false;
 
 // FreeRTOS相關定義
 #define CORE_0 0  // 通訊核心
@@ -33,10 +46,22 @@ bool wifiCredentialsReceived = false;
 #define DISPLAY_PRIORITY 2
 #define DHT_PRIORITY 1
 
+// 互斥鎖用於保護共享數據
+SemaphoreHandle_t mutex = NULL;
+
 // 任務句柄
 TaskHandle_t mqttTaskHandle = NULL;
 TaskHandle_t displayTaskHandle = NULL;
 TaskHandle_t dhtTaskHandle = NULL; 
+
+// 共享數據結構
+struct SharedData {
+  float temperature;
+  float humidity;
+  bool isMqttConnected;
+  bool isMqttTransmitting;
+  unsigned long mqttIconBlinkMillis;
+} sharedData;
 
 // NTP服務器設定
 const char* ntpServer = "pool.ntp.org";
@@ -47,7 +72,6 @@ const int   daylightOffset_sec = 0;
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "esp32/sensors";
-const char* mqtt_dht11_topic = "esp32/sensors/dht11"; // 添加DHT11特定主題
 const char* client_id = "ESP32_Client_";
 const long mqttIconBlinkInterval = 500;
 
@@ -61,27 +85,227 @@ const long mqttPublishInterval = 5000;
 
 // DHT11 設定
 #define DHTPIN 14
-// 使用我們的新DHT11Sensor類
-DHT11Sensor dhtSensor(DHTPIN);
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
 
-// 创建LCD显示对象
-LCDDisplay lcdDisplay;
+// LED Pin定義
+const int LED_PIN = 2;
+const int LEDC_CHANNEL = 0;
+const int LEDC_TIMER_BIT = 8;
+const int LEDC_BASE_FREQ = 5000;
 
-// 创建BLE管理器对象
-BLEManager bleManager;
-
-// 创建数据管理器对象
-DataManager dataManager(mqttIconBlinkInterval);
-
-// 创建LED管理器对象
-#define LED_PIN 2
-LEDManager ledManager(LED_PIN);
+// 創建LED控制器物件
+LEDController ledController(LED_PIN, LEDC_CHANNEL, LEDC_TIMER_BIT, LEDC_BASE_FREQ);
 
 // 時間間隔設定
+unsigned long previousMillis = 0;
 unsigned long displayMillis = 0;
 unsigned long dhtMillis = 0;
+const long interval = 5;
 const long displayInterval = 1000;
 const long dhtInterval = 2000;
+
+// 創建U8g2顯示器物件 (使用硬體I2C)
+U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+
+// 創建BLE伺服器回調類
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+      // 更新狀態消息
+      if(pStatusChar != nullptr) {
+        String status = "Connected to ESP32 BLE";
+        pStatusChar->setValue(status.c_str());
+        pStatusChar->notify();
+      }
+    }
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+      // 重新廣播
+      pServer->getAdvertising()->start();
+    }
+};
+
+// 創建BLE特性回調類
+class WiFiCredentialsCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+      std::string value = pCharacteristic->getValue();
+      
+      if (value.length() > 0) {
+        // 將收到的BLE數據轉換為C風格字符串處理
+        handleWiFiCredentials(value.c_str());
+        
+        if (wifiCredentialsReceived) {
+          wifiCredentialsReceived = false;
+          bool connected = connectToWiFi(true); // 使用存儲的憑證連接
+          
+          // 發送連接結果通知
+          if(pStatusChar != nullptr) {
+            String statusMsg;
+            if (connected) {
+              statusMsg = "WIFI_CONNECTED:" + WiFi.localIP().toString();
+            } else {
+              statusMsg = "WIFI_FAILED";
+            }
+            pStatusChar->setValue(statusMsg.c_str());
+            pStatusChar->notify();
+          }
+        }
+      }
+    }
+};
+
+// 設置BLE服務
+void setupBLE() {
+  // 初始化BLE裝置
+  BLEDevice::init("ESP32_AIOT_BLE");
+  
+  // 創建BLE伺服器
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+  
+  // 創建BLE服務
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  
+  // 創建BLE特性 - WiFi憑證接收
+  pWiFiCredentialChar = pService->createCharacteristic(
+                          WIFI_CRED_CHAR_UUID,
+                          BLECharacteristic::PROPERTY_WRITE
+                        );
+  pWiFiCredentialChar->setCallbacks(new WiFiCredentialsCallbacks());
+  
+  // 創建BLE特性 - 狀態通知
+  pStatusChar = pService->createCharacteristic(
+                  STATUS_CHAR_UUID,
+                  BLECharacteristic::PROPERTY_READ |
+                  BLECharacteristic::PROPERTY_NOTIFY
+                );
+  pStatusChar->addDescriptor(new BLE2902());
+  
+  // 啟動服務
+  pService->start();
+  
+  // 啟動廣播
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);  // 修正：只設置一次參數
+  pAdvertising->setMinInterval(0x20);   // 添加間隔以改善發現性
+  pAdvertising->setMaxInterval(0x40);
+  BLEDevice::startAdvertising();
+  
+  Serial.println("BLE服務已啟動，等待連接...");
+}
+
+// 處理WiFi憑證
+void handleWiFiCredentials(const char* message) {
+  if (strncmp(message, "WIFI:", 5) == 0) {
+    char* ssidPtr = strstr(message, "SSID=");
+    char* passPtr = strstr(message, "PASS=");
+    
+    if (ssidPtr && passPtr) {
+      ssidPtr += 5; // 跳過"SSID="
+      char* ssidEnd = strchr(ssidPtr, ';');
+      
+      if (ssidEnd) {
+        int ssidLen = ssidEnd - ssidPtr;
+        if (ssidLen < 33) {
+          strncpy(saved_ssid, ssidPtr, ssidLen);
+          saved_ssid[ssidLen] = '\0';
+          
+          passPtr += 5; // 跳過"PASS="
+          char* passEnd = strchr(passPtr, ';');
+          
+          if (passEnd) {
+            int passLen = passEnd - passPtr;
+            if (passLen < 65) {
+              strncpy(saved_password, passPtr, passLen);
+              saved_password[passLen] = '\0';
+              
+              // 使用ConfigManager存儲WiFi憑證
+              configManager.saveWiFiCredentials(saved_ssid, saved_password);
+              
+              // 設置標誌重新連接WiFi
+              wifiCredentialsReceived = true;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 加載存儲的WiFi憑證
+void loadWiFiCredentials() {
+  // 使用ConfigManager加載WiFi憑證
+  configManager.loadWiFiCredentials(saved_ssid, sizeof(saved_ssid), saved_password, sizeof(saved_password));
+}
+
+// 使用WiFi憑證連接
+bool connectToWiFi(bool useStored = false) {
+  // 移除對舊變數的引用，只使用存儲的憑證
+  if (strlen(saved_ssid) == 0 || strlen(saved_password) == 0) {
+    Serial.println("無可用的WiFi憑證，等待藍牙設定");
+    
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.setCursor(0, 20);
+    u8g2.print("No WiFi Credentials");
+    u8g2.setCursor(0, 35);
+    u8g2.print("Please use BLE app");
+    u8g2.setCursor(0, 50);
+    u8g2.print("to setup WiFi");
+    u8g2.sendBuffer();
+    
+    return false; // 沒有存儲的憑證
+  }
+  
+  WiFi.disconnect();
+  WiFi.begin(saved_ssid, saved_password);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    u8g2.clearBuffer();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    u8g2.setCursor(0, 20);
+    u8g2.print("Connecting to WiFi");
+    u8g2.setCursor(0, 35);
+    u8g2.print("SSID: ");
+    u8g2.print(saved_ssid);
+    u8g2.setCursor(0, 50);
+    u8g2.print("Attempt: ");
+    u8g2.print(attempts + 1);
+    u8g2.sendBuffer();
+    
+    delay(500);
+    attempts++;
+  }
+  
+  u8g2.clearBuffer();
+  if (WiFi.status() == WL_CONNECTED) {
+    u8g2.setCursor(0, 20);
+    u8g2.print("WiFi Connected!");
+    u8g2.setCursor(0, 35);
+    u8g2.print("SSID: ");
+    u8g2.print(saved_ssid);
+    u8g2.setCursor(0, 50);
+    u8g2.print(WiFi.localIP().toString());
+    u8g2.sendBuffer();
+    
+    return true;
+  } else {
+    u8g2.setCursor(0, 20);
+    u8g2.print("WiFi Connection");
+    u8g2.setCursor(0, 35);
+    u8g2.print("Failed!");
+    u8g2.setCursor(0, 50);
+    u8g2.print("Check credentials");
+    u8g2.sendBuffer();
+    
+    return false;
+  }
+}
 
 // 獲取格式化時間字串
 String getFormattedTime() {
@@ -135,40 +359,6 @@ bool mqtt_connect() {
   return true;
 }
 
-// 使用WiFi憑證連接
-bool connectToWiFi(bool useStored) {
-  // 检查WiFi凭证是否可用
-  if (strlen(saved_ssid) == 0 || strlen(saved_password) == 0) {
-    Serial.println("無可用的WiFi憑證，等待藍牙設定");
-    
-    // 使用 LCD 显示模块显示无凭证信息
-    lcdDisplay.displayNoWiFiCredentials();
-    
-    return false; // 沒有存儲的憑證
-  }
-  
-  WiFi.disconnect();
-  WiFi.begin(saved_ssid, saved_password);
-  
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    // 使用 LCD 显示模块显示连接进度
-    lcdDisplay.displayWiFiConnecting(saved_ssid, attempts + 1);
-    
-    delay(500);
-    attempts++;
-  }
-  
-  // 使用 LCD 显示模块显示连接结果
-  if (WiFi.status() == WL_CONNECTED) {
-    lcdDisplay.displayWiFiResult(true, saved_ssid, WiFi.localIP().toString());
-    return true;
-  } else {
-    lcdDisplay.displayWiFiResult(false, saved_ssid, "");
-    return false;
-  }
-}
-
 // MQTT通訊任務
 void mqttTask(void *parameter) {
   while (true) {
@@ -180,7 +370,9 @@ void mqttTask(void *parameter) {
         lastMqttReconnectAttempt = currentMillis;
         if (mqtt_connect()) {
           lastMqttReconnectAttempt = 0;
-          dataManager.setMqttConnected(true);
+          xSemaphoreTake(mutex, portMAX_DELAY);
+          sharedData.isMqttConnected = true;
+          xSemaphoreGive(mutex);
         }
       }
     } else {
@@ -189,33 +381,22 @@ void mqttTask(void *parameter) {
       if (currentMillis - lastMqttPublish >= mqttPublishInterval) {
         lastMqttPublish = currentMillis;
         
-        float temp = dataManager.getTemperature();
-        float humid = dataManager.getHumidity();
-        dataManager.setMqttTransmitting(true);  // 修正: 删除额外的参数
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        float temp = sharedData.temperature;
+        float humid = sharedData.humidity;
+        sharedData.isMqttTransmitting = true;
+        sharedData.mqttIconBlinkMillis = currentMillis;
+        xSemaphoreGive(mutex);
         
-        // 取得當前時間字符串
-        char timeStr[24];
-        struct tm timeinfo;
-        if (getLocalTime(&timeinfo)) {
-          strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeinfo);
-        } else {
-          sprintf(timeStr, "%lu", millis());
-        }
+        // 使用較小的JSON文檔
+        StaticJsonDocument<100> doc;
+        doc["temp"] = temp;
+        doc["humid"] = humid;
         
-        // 使用與 SensorData 模型匹配的 JSON 格式
-        StaticJsonDocument<200> doc;
-        doc["temperature"] = temp;
-        doc["humidity"] = humid;
-        doc["timestamp"] = timeStr;
-        
-        char jsonBuffer[200];
+        char jsonBuffer[100];
         serializeJson(doc, jsonBuffer);
         
         mqtt_client.publish(mqtt_topic, jsonBuffer);
-        mqtt_client.publish(mqtt_dht11_topic, jsonBuffer); // 發布到DHT11特定主題
-        
-        Serial.print("DHT11 數據已發送: ");
-        Serial.println(jsonBuffer);
       }
     }
     
@@ -225,116 +406,89 @@ void mqttTask(void *parameter) {
 
 // DHT11讀取任務
 void dhtTask(void *parameter) {
-  // 初始化 DHT11 感測器
-  dhtSensor.begin();
-  vTaskDelay(2000 / portTICK_PERIOD_MS); // 等待感測器穩定
+  const int maxRetries = 2; // 減少重試次數以節省代碼空間
   
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
+
   while (true) {
-    // 使用模組化的 DHT11Sensor 類讀取數據
-    if (dhtSensor.read()) {
-      // 讀取成功，更新共享數據
-      dataManager.setTemperature(dhtSensor.getTemperature());
-      dataManager.setHumidity(dhtSensor.getHumidity());
+    int retryCount = 0;
+    float newTemp, newHum;
+    bool readSuccess = false;
+
+    while (retryCount < maxRetries && !readSuccess) {
+      newTemp = dht.readTemperature();
+      newHum = dht.readHumidity();
+      
+      if (!isnan(newTemp) && !isnan(newHum)) {
+        readSuccess = true;
+        
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        sharedData.temperature = newTemp;
+        sharedData.humidity = newHum;
+        xSemaphoreGive(mutex);
+      } else {
+        retryCount++;
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+      }
     }
     
-    // 等待下一次讀取時間
     vTaskDelay(3000 / portTICK_PERIOD_MS);
   }
 }
 
+// 顯示更新函數
+void updateDisplay() {
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  u8g2.clearBuffer();
+  
+  // 顯示標題
+  u8g2.setFont(u8g2_font_ncenB10_tr);
+  u8g2.setCursor(0, 12);
+  u8g2.print("ESP32 AIOT");
+  
+  // 顯示傳輸圖示
+  if (sharedData.isMqttTransmitting) {
+    u8g2.setFont(u8g2_font_open_iconic_embedded_1x_t);
+    u8g2.drawGlyph(115, 12, 64);
+    
+    if (millis() - sharedData.mqttIconBlinkMillis >= mqttIconBlinkInterval) {
+      sharedData.isMqttTransmitting = false;
+    }
+  }
+  
+  // 顯示時間和溫濕度
+  u8g2.setFont(u8g2_font_ncenB08_tr);
+  u8g2.setCursor(0, 25);
+  u8g2.print(getFormattedTime());
+  
+  u8g2.setCursor(0, 38);
+  u8g2.print("T:");
+  u8g2.print(sharedData.temperature, 1);
+  u8g2.print("C H:");
+  u8g2.print(sharedData.humidity, 1);
+  u8g2.print("%");
+  
+  // 顯示WiFi和MQTT狀態
+  u8g2.setCursor(0, 51);
+  u8g2.print("WiFi:");
+  u8g2.print(WiFi.status() == WL_CONNECTED ? "OK" : "X");
+  u8g2.print(" MQTT:");
+  u8g2.print(sharedData.isMqttConnected ? "OK" : "X");
+  
+  // 顯示BLE狀態
+  u8g2.setCursor(0, 64);
+  u8g2.print("BLE:");
+  u8g2.print(deviceConnected ? "OK" : "X");
+  
+  xSemaphoreGive(mutex);
+  u8g2.sendBuffer();
+}
+
 // 顯示更新任務
 void displayTask(void *parameter) {
-  // 初始化显示
-  lcdDisplay.begin();
-  
   while (true) {
-    // 更新 LCDDisplay 对象的数据状态
-    lcdDisplay.setTemperature(dataManager.getTemperature());
-    lcdDisplay.setHumidity(dataManager.getHumidity());
-    lcdDisplay.setMqttConnected(dataManager.getMqttConnected());
-    lcdDisplay.setWiFiConnected(WiFi.status() == WL_CONNECTED);
-    lcdDisplay.setBleConnected(bleManager.isConnected());
-    
-    // 处理 MQTT 传输图标闪烁
-    if(dataManager.getMqttTransmitting()) {
-      lcdDisplay.setMqttTransmitting(true);
-      dataManager.updateMqttTransmittingStatus(); // 使用更新方法替代直接修改
-    }
-    
-    // 刷新显示
-    lcdDisplay.updateDisplay();
-    
+    updateDisplay();
     vTaskDelay(displayInterval / portTICK_PERIOD_MS);
-  }
-}
-
-// 从 Preferences 读取存储的 WiFi 凭证
-void loadWiFiCredentials() {
-  preferences.begin(preference_namespace, true); // 只读模式
-  
-  String ssid = preferences.getString("ssid", "");
-  String password = preferences.getString("password", "");
-  
-  ssid.toCharArray(saved_ssid, sizeof(saved_ssid));
-  password.toCharArray(saved_password, sizeof(saved_password));
-  
-  preferences.end();
-  
-  Serial.print("已加载存储的 WiFi 凭证，SSID: ");
-  Serial.println(saved_ssid);
-}
-
-// 处理从 BLE 接收到的 WiFi 凭证
-void handleWiFiCredentials(const char* message) {
-  // 解析格式: "WIFI:SSID=xxx;PASSWORD=xxx;"
-  String msg = String(message);
-  
-  if (msg.startsWith("WIFI:")) {
-    int ssidStart = msg.indexOf("SSID=");
-    int ssidEnd = msg.indexOf(";", ssidStart);
-    int passwordStart = msg.indexOf("PASSWORD=");
-    int passwordEnd = msg.indexOf(";", passwordStart);
-    
-    if (ssidStart != -1 && ssidEnd != -1 && passwordStart != -1 && passwordEnd != -1) {
-      String ssid = msg.substring(ssidStart + 5, ssidEnd);
-      String password = msg.substring(passwordStart + 9, passwordEnd);
-      
-      // 检查长度以避免缓冲区溢出
-      if (ssid.length() < sizeof(saved_ssid) && password.length() < sizeof(saved_password)) {
-        // 存储到 Preferences
-        preferences.begin(preference_namespace, false); // 读写模式
-        preferences.putString("ssid", ssid);
-        preferences.putString("password", password);
-        preferences.end();
-        
-        // 更新当前的 WiFi 凭证
-        ssid.toCharArray(saved_ssid, sizeof(saved_ssid));
-        password.toCharArray(saved_password, sizeof(saved_password));
-        
-        wifiCredentialsReceived = true;
-        
-        Serial.println("已接收并存储新的 WiFi 凭证");
-      } else {
-        Serial.println("WiFi 凭证太长，无法存储");
-      }
-    }
-  }
-}
-
-// BLE 凭证回调处理函数
-void onWiFiCredentialReceived(const char* value) {
-  handleWiFiCredentials(value);
-  
-  if (wifiCredentialsReceived) {
-    wifiCredentialsReceived = false;
-    bool connected = connectToWiFi(true); // 使用存储的凭证连接
-    
-    // 发送连接结果通知
-    if (connected) {
-      bleManager.sendWiFiConnectedStatus(WiFi.localIP().toString());
-    } else {
-      bleManager.sendWiFiFailedStatus();
-    }
   }
 }
 
@@ -342,13 +496,23 @@ void setup() {
   // 初始化序列通訊
   Serial.begin(115200);
   
-  // 初始化共享數據管理器
-  dataManager.begin();
+  // 創建互斥鎖
+  mutex = xSemaphoreCreateMutex();
   
-  // 初始化 LED 管理器
-  ledManager.begin();
+  // 初始化共享數據
+  memset(&sharedData, 0, sizeof(sharedData));
   
-  // 初始化 LCD 显示模块 (在 displayTask 中执行 begin 方法)
+  // DHT11 初始化
+  pinMode(DHTPIN, INPUT);
+  dht.begin();
+  
+  // LED控制器初始化
+  ledController.begin();
+  ledController.setBreathing(true);
+  
+  // 初始化OLED
+  u8g2.begin();
+  u8g2.setFont(u8g2_font_ncenB08_tr);
   
   // 加載存儲的WiFi憑證
   loadWiFiCredentials();
@@ -371,8 +535,7 @@ void setup() {
   mqtt_client.setCallback(mqtt_callback);
   
   // 初始化BLE
-  bleManager.begin();
-  bleManager.setOnCredentialCallback(onWiFiCredentialReceived); // 使用正确的方法名
+  setupBLE();
   
   // 創建任務
   xTaskCreatePinnedToCore(
@@ -407,8 +570,22 @@ void setup() {
 }
 
 void loop() {
-  // 主任務由FreeRTOS處理，這裡只處理BLE管理器的更新
-  bleManager.checkConnection(); // 使用正确的方法名
-  ledManager.update(); // 更新 LED 管理器状态
+  // 處理BLE連接狀態變化
+  if (deviceConnected != oldDeviceConnected) {
+    if (deviceConnected) {
+      // 新建立的連接
+      Serial.println("BLE裝置已連接");
+    } else {
+      // 連接中斷
+      Serial.println("BLE裝置已斷開");
+      delay(500); // 給客戶端時間接收斷開通知
+    }
+    oldDeviceConnected = deviceConnected;
+  }
+  
+  // 更新LED呼吸效果
+  ledController.updateBreathing();
+  
+  // 主任務由FreeRTOS處理
   delay(10);
 }
