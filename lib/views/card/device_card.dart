@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/airconditioner_control.dart';
 import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
@@ -6,7 +5,6 @@ import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:extendable_aiot/utils/util.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class DeviceCard extends StatefulWidget {

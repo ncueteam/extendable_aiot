@@ -62,14 +62,23 @@ database/
     │   │           ├── lastUpdated: 最近更新時間 (Timestamp)
     │   │           ├── icon: 圖標代碼 (Number)
     │   │           └── data: 特定設備資料 (Map)
-    └── devices/: 設備子集合 (直接關聯到使用者的設備)
-        └── [deviceId]/: 設備文檔
+    ├── devices/: 設備子集合 (直接關聯到使用者的設備)
+    │   └── [deviceId]/: 設備文檔
+    │       ├── name: 設備名稱 (String)
+    │       ├── type: 設備類型 (String)
+    │       ├── status: 設備狀態 (Boolean)
+    │       ├── lastUpdated: 最近更新時間 (Timestamp)
+    │       ├── icon: 圖標代碼 (Number)
+    │       └── data: 特定設備資料 (Map)
+    │
+    ├── autos/: 
+        └──[autoId]/: 設備文檔
             ├── name: 設備名稱 (String)
+            ├── room: 房間名稱 (String)
             ├── type: 設備類型 (String)
             ├── status: 設備狀態 (Boolean)
-            ├── lastUpdated: 最近更新時間 (Timestamp)
-            ├── icon: 圖標代碼 (Number)
             └── data: 特定設備資料 (Map)
+
 ```
 
 ## 模型系統介紹
