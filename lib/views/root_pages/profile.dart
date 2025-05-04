@@ -1,5 +1,5 @@
 import 'package:extendable_aiot/l10n/app_localizations.dart';
-import 'package:extendable_aiot/services/user_service.dart';
+import 'package:extendable_aiot/models/user_model.dart';
 import 'package:extendable_aiot/models/room_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +14,7 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  final UserService _userService = UserService();
+  UserModel? _userModel;
   String name = "";
   String email = "";
   String? photoURL; // 添加頭像URL
@@ -24,7 +24,7 @@ class _ProfileState extends State<Profile> {
   bool isLoading = true;
 
   // 好友相關狀態
-  List<Map<String, dynamic>> _friends = [];
+  List<UserModel> _friends = [];
   bool _loadingFriends = true;
 
   // 房間相關狀態
@@ -57,19 +57,19 @@ class _ProfileState extends State<Profile> {
   }
 
   void _loadUserData() {
-    _userDataSubscription = _userService.getUserData().listen(
-      (snapshot) {
-        if (snapshot.exists) {
-          final data = snapshot.data() as Map<String, dynamic>;
+    _userDataSubscription = UserModel.getCurrentUser().listen(
+      (userModel) {
+        if (userModel != null) {
           if (mounted) {
             // 添加判斷確保組件還在
             setState(() {
-              name = data['name'] as String? ?? "未命名使用者";
-              email = data['email'] as String? ?? "";
-              photoURL = data['photoURL'] as String?; // 獲取頭像URL
-              createdAt = data['createdAt'] as Timestamp?;
-              lastLogin = data['lastLogin'] as Timestamp?;
-              userId = snapshot.id;
+              _userModel = userModel;
+              name = userModel.name;
+              email = userModel.email;
+              photoURL = userModel.photoURL;
+              createdAt = userModel.createdAt;
+              lastLogin = userModel.lastLogin;
+              userId = userModel.id;
               isLoading = false;
             });
           }
@@ -96,12 +96,23 @@ class _ProfileState extends State<Profile> {
 
   // 載入好友列表
   void _loadFriends() {
-    _friendsSubscription = _userService.getFriendsData().listen(
-      (friendsData) {
+    if (UserModel.currentUserId == null) {
+      setState(() {
+        _loadingFriends = false;
+      });
+      return;
+    }
+
+    _friendsSubscription = UserModel(
+      id: UserModel.currentUserId!,
+      name: '',
+      email: '',
+    ).getFriendsStream().listen(
+      (friendModels) {
         if (mounted) {
           // 添加判斷確保組件還在
           setState(() {
-            _friends = friendsData;
+            _friends = friendModels;
             _loadingFriends = false;
           });
         }
@@ -133,7 +144,7 @@ class _ProfileState extends State<Profile> {
             DocumentSnapshot roomDoc =
                 await FirebaseFirestore.instance
                     .collection('users')
-                    .doc(_userService.currentUserId)
+                    .doc(UserModel.currentUserId)
                     .collection('rooms')
                     .doc(room.id)
                     .get();
@@ -283,9 +294,9 @@ class _ProfileState extends State<Profile> {
                   children:
                       _friends.map((friend) {
                         return ListTile(
-                          leading: UserAvatar(imageUrl: friend['photoURL']),
-                          title: Text(friend['name']),
-                          subtitle: Text(friend['email']),
+                          leading: UserAvatar(imageUrl: friend.photoURL),
+                          title: Text(friend.name),
+                          subtitle: Text(friend.email),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -293,8 +304,8 @@ class _ProfileState extends State<Profile> {
                                 icon: const Icon(Icons.home),
                                 onPressed:
                                     () => _showAddToRoomDialog(
-                                      friend['id'],
-                                      friend['name'],
+                                      friend.id,
+                                      friend.name,
                                       localizations,
                                     ),
                                 tooltip: localizations?.addToRoom ?? '新增至房間',
@@ -306,8 +317,8 @@ class _ProfileState extends State<Profile> {
                                 ),
                                 onPressed:
                                     () => _showDeleteFriendDialog(
-                                      friend['id'],
-                                      friend['name'],
+                                      friend.id,
+                                      friend.name,
                                       localizations,
                                     ),
                                 tooltip: localizations?.deleteFriend ?? '刪除好友',
@@ -377,12 +388,10 @@ class _ProfileState extends State<Profile> {
             TextButton(
               onPressed: () async {
                 final newName = controller.text.trim();
-                if (newName.isNotEmpty) {
+                if (newName.isNotEmpty && _userModel != null) {
                   try {
-                    await _userService.createOrUpdateUser(
-                      name: newName,
-                      email: email,
-                    );
+                    _userModel!.name = newName;
+                    await _userModel!.createOrUpdate();
 
                     if (mounted) {
                       Navigator.pop(context);
@@ -463,14 +472,16 @@ class _ProfileState extends State<Profile> {
                           ? null
                           : () async {
                             final email = emailController.text.trim();
-                            if (email.isNotEmpty && email.contains('@')) {
+                            if (email.isNotEmpty &&
+                                email.contains('@') &&
+                                _userModel != null) {
                               // 更新處理狀態
                               setState(() {
                                 isProcessing = true;
                               });
 
                               try {
-                                final result = await _userService.addFriend(
+                                final result = await _userModel!.addFriend(
                                   email,
                                 );
 
@@ -677,9 +688,9 @@ class _ProfileState extends State<Profile> {
       localizations,
     );
 
-    if (shouldDelete == true) {
+    if (shouldDelete == true && _userModel != null) {
       try {
-        final result = await _userService.removeFriend(friendId);
+        final result = await _userModel!.removeFriend(friendId);
 
         if (!mounted) return; // 檢查組件是否仍然掛載
 

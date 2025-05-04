@@ -5,7 +5,7 @@ import 'package:extendable_aiot/models/room_model.dart';
 import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/services/user_service.dart';
+import 'package:extendable_aiot/models/user_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -32,10 +32,10 @@ class _RoomPageState extends State<RoomPage>
   String? errorMsg;
 
   // 修改好友列表狀態的類型
-  final UserService _userService = UserService();
-  List<Map<String, dynamic>> _roomFriends = []; // 更改類型
+  UserModel? _currentUser;
+  List<UserModel> _roomFriends = []; // 更改類型
   bool _loadingFriends = true;
-  List<Map<String, dynamic>> _allFriends = []; // 更改類型
+  List<UserModel> _allFriends = []; // 更改類型
   bool _loadingAllFriends = true;
 
   // 裝置類型列表
@@ -55,6 +55,18 @@ class _RoomPageState extends State<RoomPage>
     _loadRoomModel();
     _loadRoomFriends();
     _loadAllFriends();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    if (UserModel.currentUserId != null) {
+      final userModel = await UserModel.getById(UserModel.currentUserId!);
+      if (mounted && userModel != null) {
+        setState(() {
+          _currentUser = userModel;
+        });
+      }
+    }
   }
 
   Future<void> _loadRoomModel() async {
@@ -80,12 +92,18 @@ class _RoomPageState extends State<RoomPage>
   // 載入有權限訪問該房間的好友
   Future<void> _loadRoomFriends() async {
     try {
-      final friends = await _userService.getFriendsForRoom(widget.roomId);
-      if (mounted) {
-        setState(() {
-          _roomFriends = friends;
-          _loadingFriends = false;
-        });
+      if (_currentUser == null && UserModel.currentUserId != null) {
+        await _loadCurrentUser();
+      }
+
+      if (_currentUser != null) {
+        final friends = await _currentUser!.getFriendsForRoom(widget.roomId);
+        if (mounted) {
+          setState(() {
+            _roomFriends = friends;
+            _loadingFriends = false;
+          });
+        }
       }
     } catch (e) {
       print('載入房間好友錯誤: $e');
@@ -99,7 +117,18 @@ class _RoomPageState extends State<RoomPage>
 
   // 載入所有好友，用於新增新好友到房間
   void _loadAllFriends() {
-    _userService.getFriendsData().listen(
+    if (UserModel.currentUserId == null) {
+      setState(() {
+        _loadingAllFriends = false;
+      });
+      return;
+    }
+
+    UserModel(
+      id: UserModel.currentUserId!,
+      name: '',
+      email: '',
+    ).getFriendsStream().listen(
       (friendsList) {
         if (mounted) {
           setState(() {
@@ -494,7 +523,7 @@ class _RoomPageState extends State<RoomPage>
                   bool hasAccess = false;
 
                   // 使用新方法檢查授權
-                  final friendId = friend['id'] as String;
+                  final friendId = friend.id;
 
                   return FutureBuilder<bool>(
                     future: RoomModel.isUserAuthorized(widget.roomId, friendId),
@@ -503,8 +532,8 @@ class _RoomPageState extends State<RoomPage>
 
                       return ListTile(
                         leading: const CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(friend['name'] as String),
-                        subtitle: Text(friend['email'] as String),
+                        title: Text(friend.name),
+                        subtitle: Text(friend.email),
                         trailing: Switch(
                           value: hasAccess,
                           onChanged: (value) async {

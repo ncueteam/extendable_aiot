@@ -1,39 +1,79 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class UserService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class UserModel {
+  // 屬性
+  String id;
+  String name;
+  String email;
+  String? photoURL;
+  Timestamp? createdAt;
+  Timestamp? lastLogin;
+  List<String> friends;
 
-  String? get currentUserId => _auth.currentUser?.uid;
+  // 靜態實例
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> createOrUpdateUser({
-    required String name,
-    required String email,
-    String? photoURL,
-  }) async {
+  // 靜態獲取當前用戶ID
+  static String? get currentUserId => _auth.currentUser?.uid;
+
+  // 構造函數
+  UserModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.photoURL,
+    this.createdAt,
+    this.lastLogin,
+    this.friends = const [],
+  });
+
+  // 從 Firebase 文檔創建 UserModel 實例
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return UserModel(
+      id: doc.id,
+      name: data['name'] ?? '未命名使用者',
+      email: data['email'] ?? '',
+      photoURL: data['photoURL'],
+      createdAt: data['createdAt'],
+      lastLogin: data['lastLogin'],
+      friends: List<String>.from(data['friends'] ?? []),
+    );
+  }
+
+  // 轉換為 JSON 格式
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'email': email,
+      if (photoURL != null) 'photoURL': photoURL,
+      'friends': friends,
+    };
+  }
+
+  // 創建或更新用戶
+  Future<void> createOrUpdate() async {
     if (currentUserId == null) return;
 
     final userData = {
       'name': name,
       'email': email,
+      if (photoURL != null) 'photoURL': photoURL,
       'lastLogin': FieldValue.serverTimestamp(),
     };
-
-    // 只有當頭像 URL 存在時才添加到用戶數據中
-    if (photoURL != null) {
-      userData['photoURL'] = photoURL;
-    }
 
     // 當用戶首次創建時，添加 createdAt 字段和空的好友列表
     await _firestore.collection('users').doc(currentUserId).set({
       ...userData,
       'createdAt': FieldValue.serverTimestamp(),
-      'friends': [],
+      'friends': friends,
     }, SetOptions(merge: true));
   }
 
-  Future<void> updateLastLogin() async {
+  // 更新最後登入時間
+  static Future<void> updateLastLogin() async {
     if (currentUserId == null) return;
 
     await _firestore.collection('users').doc(currentUserId).update({
@@ -41,12 +81,48 @@ class UserService {
     });
   }
 
-  Stream<DocumentSnapshot> getUserData() {
-    if (currentUserId == null) throw Exception('User not authenticated');
+  // 獲取當前用戶數據流
+  static Stream<UserModel?> getCurrentUser() {
+    if (currentUserId == null) {
+      return Stream.value(null);
+    }
 
-    return _firestore.collection('users').doc(currentUserId).snapshots();
+    return _firestore.collection('users').doc(currentUserId).snapshots().map((
+      snapshot,
+    ) {
+      if (snapshot.exists) {
+        return UserModel.fromFirestore(snapshot);
+      } else {
+        return null;
+      }
+    });
   }
 
+  // 通過 ID 獲取用戶
+  static Future<UserModel?> getById(String userId) async {
+    DocumentSnapshot doc =
+        await _firestore.collection('users').doc(userId).get();
+    if (doc.exists) {
+      return UserModel.fromFirestore(doc);
+    }
+    return null;
+  }
+
+  // 通過 Email 查找用戶
+  static Future<UserModel?> getByEmail(String email) async {
+    QuerySnapshot query =
+        await _firestore
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
+    if (query.docs.isNotEmpty) {
+      return UserModel.fromFirestore(query.docs.first);
+    }
+    return null;
+  }
+
+  // 添加房間
   Future<DocumentReference> addRoom({
     required String name,
     required String type,
@@ -67,7 +143,8 @@ class UserService {
         });
   }
 
-  Stream<QuerySnapshot> getRooms() {
+  // 獲取房間列表
+  static Stream<QuerySnapshot> getRooms() {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     return _firestore
@@ -77,7 +154,8 @@ class UserService {
         .snapshots();
   }
 
-  Stream<DocumentSnapshot> getRoomById(String roomId) {
+  // 獲取指定ID的房間
+  static Stream<DocumentSnapshot> getRoomById(String roomId) {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     return _firestore
@@ -88,6 +166,7 @@ class UserService {
         .snapshots();
   }
 
+  // 添加設備
   Future<DocumentReference> addDevice({
     required String name,
     required String type,
@@ -118,7 +197,8 @@ class UserService {
     return deviceRef;
   }
 
-  Future<void> updateDeviceStatus({
+  // 更新設備狀態
+  static Future<void> updateDeviceStatus({
     required String deviceId,
     required bool status,
   }) async {
@@ -132,7 +212,8 @@ class UserService {
         .update({'status': status, 'lastUpdate': FieldValue.serverTimestamp()});
   }
 
-  Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
+  // 獲取房間設備列表
+  static Stream<List<DocumentSnapshot>> getRoomDevices(String roomId) async* {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     final roomDoc =
@@ -165,33 +246,26 @@ class UserService {
   Future<bool> addFriend(String friendEmail) async {
     try {
       // 獲取當前用戶ID
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return false;
+      if (currentUserId == null) return false;
 
       // 查找要添加的好友
-      final querySnapshot =
-          await _firestore
-              .collection('users')
-              .where('email', isEqualTo: friendEmail)
-              .limit(1)
-              .get();
-
-      if (querySnapshot.docs.isEmpty) {
+      UserModel? friendUser = await UserModel.getByEmail(friendEmail);
+      if (friendUser == null) {
         return false; // 找不到使用者
       }
 
-      final friendDoc = querySnapshot.docs.first;
-      final friendId = friendDoc.id;
-
       // 不能添加自己為好友
-      if (friendId == currentUser.uid) {
+      if (friendUser.id == id) {
         return false;
       }
 
       // 將好友ID添加到使用者的好友列表中
-      await _firestore.collection('users').doc(currentUser.uid).update({
-        'friends': FieldValue.arrayUnion([friendId]),
-      });
+      if (!friends.contains(friendUser.id)) {
+        friends.add(friendUser.id);
+        await _firestore.collection('users').doc(id).update({
+          'friends': friends,
+        });
+      }
 
       return true;
     } catch (e) {
@@ -203,13 +277,15 @@ class UserService {
   // 刪除好友
   Future<bool> removeFriend(String friendId) async {
     try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return false;
+      if (currentUserId == null) return false;
 
       // 從好友列表中移除
-      await _firestore.collection('users').doc(currentUser.uid).update({
-        'friends': FieldValue.arrayRemove([friendId]),
-      });
+      if (friends.contains(friendId)) {
+        friends.remove(friendId);
+        await _firestore.collection('users').doc(id).update({
+          'friends': friends,
+        });
+      }
 
       return true;
     } catch (e) {
@@ -219,16 +295,32 @@ class UserService {
   }
 
   // 獲取好友資料
-  Stream<List<Map<String, dynamic>>> getFriendsData() {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      return Stream.value([]);
+  Future<List<UserModel>> getFriends() async {
+    if (friends.isEmpty) {
+      return [];
     }
 
-    // 從使用者文件中獲取好友ID列表，然後獲取每個好友的資料
-    return _firestore
+    List<UserModel> friendModels = [];
+    for (String friendId in friends) {
+      UserModel? friendUser = await UserModel.getById(friendId);
+      if (friendUser != null) {
+        friendModels.add(friendUser);
+      }
+    }
+
+    return friendModels;
+  }
+
+  // 獲取好友資料流
+  Stream<List<UserModel>> getFriendsStream() async* {
+    if (currentUserId == null) {
+      yield [];
+      return;
+    }
+
+    yield* _firestore
         .collection('users')
-        .doc(currentUser.uid)
+        .doc(currentUserId)
         .snapshots()
         .asyncMap((userDoc) async {
           if (!userDoc.exists) {
@@ -245,24 +337,16 @@ class UserService {
           }
 
           // 獲取所有好友的詳細資料
-          List<Map<String, dynamic>> friendsData = [];
+          List<UserModel> friendModels = [];
 
           for (String friendId in friendIds) {
-            DocumentSnapshot friendDoc =
-                await _firestore.collection('users').doc(friendId).get();
-            if (friendDoc.exists) {
-              Map<String, dynamic> data =
-                  friendDoc.data() as Map<String, dynamic>;
-              friendsData.add({
-                'id': friendId,
-                'name': data['name'] ?? '未命名使用者',
-                'email': data['email'] ?? '',
-                'photoURL': data['photoURL'],
-              });
+            UserModel? friend = await UserModel.getById(friendId);
+            if (friend != null) {
+              friendModels.add(friend);
             }
           }
 
-          return friendsData;
+          return friendModels;
         });
   }
 
@@ -333,7 +417,7 @@ class UserService {
   }
 
   // 获取有权限访问指定房间的好友
-  Future<List<Map<String, dynamic>>> getFriendsForRoom(String roomId) async {
+  Future<List<UserModel>> getFriendsForRoom(String roomId) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     try {
@@ -357,26 +441,24 @@ class UserService {
         return [];
       }
 
-      List<Map<String, dynamic>> friendsData = [];
+      List<UserModel> friendModels = [];
 
       for (String friendId in friendIds) {
-        DocumentSnapshot friendDoc =
-            await _firestore.collection('users').doc(friendId).get();
-        if (friendDoc.exists) {
-          Map<String, dynamic> data = friendDoc.data() as Map<String, dynamic>;
-          friendsData.add({
-            'id': friendId,
-            'name': data['name'] ?? '未命名使用者',
-            'email': data['email'] ?? '',
-            'photoURL': data['photoURL'],
-          });
+        UserModel? friend = await UserModel.getById(friendId);
+        if (friend != null) {
+          friendModels.add(friend);
         }
       }
 
-      return friendsData;
+      return friendModels;
     } catch (e) {
       print('Error getting friends for room: $e');
       return [];
     }
+  }
+
+  // 刪除用戶
+  Future<void> delete() async {
+    await _firestore.collection('users').doc(id).delete();
   }
 }
