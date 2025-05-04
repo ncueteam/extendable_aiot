@@ -11,6 +11,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <Preferences.h>
+#include "LED.h" // 加入LED控制類的頭文件
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
@@ -94,6 +95,9 @@ const int LEDC_CHANNEL = 0;
 const int LEDC_TIMER_BIT = 8;
 const int LEDC_BASE_FREQ = 5000;
 
+// 創建LED控制器物件
+LEDController ledController(LED_PIN, LEDC_CHANNEL, LEDC_TIMER_BIT, LEDC_BASE_FREQ);
+
 // 時間間隔設定
 unsigned long previousMillis = 0;
 unsigned long displayMillis = 0;
@@ -101,10 +105,6 @@ unsigned long dhtMillis = 0;
 const long interval = 5;
 const long displayInterval = 1000;
 const long dhtInterval = 2000;
-
-// LED呼吸燈變數
-int breatheValue = 0;
-bool increasing = true;
 
 // 創建U8g2顯示器物件 (使用硬體I2C)
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
@@ -340,21 +340,6 @@ String getFormattedDate() {
   return String(dateString);
 }
 
-void updateLEDBreathing() {
-  if (increasing) {
-    breatheValue++;
-    if (breatheValue >= 255) {
-      increasing = false;
-    }
-  } else {
-    breatheValue--;
-    if (breatheValue <= 0) {
-      increasing = true;
-    }
-  }
-  ledcWrite(LEDC_CHANNEL, breatheValue);
-}
-
 // MQTT回調函數
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   // 簡化處理方式，減少內存使用
@@ -532,9 +517,9 @@ void setup() {
   pinMode(DHTPIN, INPUT);
   dht.begin();
   
-  // 配置硬體
-  ledcSetup(LEDC_CHANNEL, LEDC_BASE_FREQ, LEDC_TIMER_BIT);
-  ledcAttachPin(LED_PIN, LEDC_CHANNEL);
+  // LED控制器初始化
+  ledController.begin();
+  ledController.setBreathing(true);
   
   // 初始化OLED
   u8g2.begin();
@@ -609,6 +594,9 @@ void loop() {
     oldDeviceConnected = deviceConnected;
   }
   
-  // 主任務由FreeRTOS處理，這裡只處理BLE連接狀態
+  // 更新LED呼吸效果
+  ledController.updateBreathing();
+  
+  // 主任務由FreeRTOS處理
   delay(10);
 }
