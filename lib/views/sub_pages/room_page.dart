@@ -384,13 +384,13 @@ class _RoomPageState extends State<RoomPage>
               },
             ),
           ),
-          _buildRoomActions(localizations),
+          //_buildRoomActions(localizations),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDeviceDialog(),
-        child: const Icon(Icons.add),
         tooltip: localizations?.addDevice ?? '新增設備',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -422,6 +422,11 @@ class _RoomPageState extends State<RoomPage>
                     icon: const Icon(Icons.edit),
                     onPressed: () => _showEditRoomDialog(localizations),
                     tooltip: localizations?.editRoom ?? '編輯房間',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _showDeleteRoomConfirmation(localizations),
+                    tooltip: localizations?.deleteRoom ?? '刪除房間',
                   ),
                 ],
               ),

@@ -140,7 +140,7 @@ class _AllRoomPageState extends State<AllRoomPage> {
           room.name,
           style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
         ),
-        subtitle: Text('ID: ${room.id} | 裝置數: ${room.devices.length}'),
+        subtitle: Text('裝置數: ${room.devices.length}'), //ID: ${room.id} | 
         children: [
           if (room.devices.isEmpty)
             const Padding(padding: EdgeInsets.all(16.0), child: Text('此房間沒有裝置'))

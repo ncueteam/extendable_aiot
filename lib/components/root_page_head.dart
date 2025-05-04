@@ -77,7 +77,7 @@ class _RootPageHeadState extends State<RootPageHead> {
                   // ),
                 ],
               ),
-              ClockWidget(color: Colors.white),
+              //ClockWidget(color: Colors.white),
             ],
           ),
         ),
