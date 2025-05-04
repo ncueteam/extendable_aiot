@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/airconditioner_control.dart';
+import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
@@ -21,20 +22,11 @@ class _DeviceCardState extends State<DeviceCard> {
   // 更新设备状态
   Future<void> _toggleDeviceStatus(bool currentStatus) async {
     try {
-      String? userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) return;
-
-      // 更新Firebase中的数据
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('devices')
-          .doc(widget.device.id)
-          .update({
-            'status': !currentStatus,
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
-
+      // 使用 DeviceModel 的靜態方法更新設備狀態
+      await DeviceModel.updateDeviceStatus(
+        deviceId: widget.device.id,
+        status: currentStatus,
+      );
       setState(() {});
     } catch (e) {
       if (context.mounted) {

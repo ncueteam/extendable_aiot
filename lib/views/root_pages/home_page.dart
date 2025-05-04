@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   TabController? _tabController;
+  int _currentTabIndex = 0; // 保存当前选中的标签索引
 
   @override
   void dispose() {
@@ -41,9 +42,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           }
         }
 
-        // 每次重建都重新初始化 TabController
+        // 保存当前索引
+        int previousIndex = _currentTabIndex;
+
+        // 检查当前索引是否超出范围（例如删除了一个房间）
+        if (previousIndex >= tabs.length) {
+          previousIndex = 0;
+        }
+
+        // 每次重建都重新初始化 TabController，但保持当前选中索引
+        _tabController?.removeListener(_handleTabChange);
         _tabController?.dispose();
-        _tabController = TabController(length: tabs.length, vsync: this);
+        _tabController = TabController(
+          length: tabs.length,
+          vsync: this,
+          initialIndex: previousIndex, // 使用之前保存的索引
+        );
+
+        // 添加监听器保存索引变化
+        _tabController!.addListener(_handleTabChange);
 
         return Scaffold(
           appBar: PreferredSize(
@@ -84,5 +101,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         );
       },
     );
+  }
+
+  // 监听和保存标签变化
+  void _handleTabChange() {
+    if (_tabController!.index != _currentTabIndex) {
+      setState(() {
+        _currentTabIndex = _tabController!.index;
+      });
+    }
   }
 }

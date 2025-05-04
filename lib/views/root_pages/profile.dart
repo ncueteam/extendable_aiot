@@ -556,120 +556,164 @@ class _ProfileState extends State<Profile> {
       return;
     }
 
+    // 创建本地状态来存储授权状态，避免重新加载整个列表
+    Map<String, bool> localAuthStatus = {};
+    // 初始化本地状态
+    for (var room in _rooms) {
+      final isAuthorized =
+          _roomAuthorizations.containsKey(room.id) &&
+          _roomAuthorizations[room.id]!.contains(friendId);
+      localAuthStatus[room.id] = isAuthorized;
+    }
+
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.selectRoom ?? '選擇房間'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _rooms.length,
-                itemBuilder: (context, index) {
-                  final room = _rooms[index];
-                  final isAuthorized =
-                      _roomAuthorizations.containsKey(room.id) &&
-                      _roomAuthorizations[room.id]!.contains(friendId);
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: Text(localizations?.selectRoom ?? '選擇房間'),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _rooms.length,
+                      itemBuilder: (context, index) {
+                        final room = _rooms[index];
+                        final isAuthorized = localAuthStatus[room.id] ?? false;
 
-                  return ListTile(
-                    title: Text(room.name),
-                    trailing:
-                        isAuthorized
-                            ? const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                            )
-                            : const Icon(Icons.add_circle_outline),
-                    onTap: () async {
-                      if (isAuthorized) {
-                        // 已授權，詢問是否移除權限
-                        final shouldRemove = await _showConfirmDialog(
-                          context,
-                          localizations?.removeAccess ?? '移除存取權限',
-                          localizations?.confirmRemoveAccess ??
-                              '確定要移除該好友對此房間的存取權限嗎？',
-                          localizations,
-                        );
-
-                        // 檢查是否還掛載
-                        if (!mounted) return;
-
-                        if (shouldRemove == true) {
-                          try {
-                            await RoomModel.removeAuthorizedUser(
-                              room.id,
-                              friendId,
-                            );
-
-                            // 再次檢查是否還掛載
-                            if (!mounted) return;
-
-                            Navigator.pop(context);
-                            // 刷新房間授權數據
-                            _loadRooms();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  localizations?.accessRemoved ?? '存取權限已移除',
-                                ),
-                              ),
-                            );
-                          } catch (e) {
-                            print("移除用戶授權錯誤: $e");
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    '${localizations?.error ?? '錯誤'}: $e',
-                                  ),
-                                ),
+                        return ListTile(
+                          title: Text(room.name),
+                          trailing:
+                              isAuthorized
+                                  ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                  )
+                                  : const Icon(Icons.add_circle_outline),
+                          onTap: () async {
+                            if (isAuthorized) {
+                              // 已授權，詢問是否移除權限
+                              final shouldRemove = await _showConfirmDialog(
+                                context,
+                                localizations?.removeAccess ?? '移除存取權限',
+                                localizations?.confirmRemoveAccess ??
+                                    '確定要移除該好友對此房間的存取權限嗎？',
+                                localizations,
                               );
+
+                              // 檢查是否還掛載
+                              if (!mounted) return;
+
+                              if (shouldRemove == true) {
+                                try {
+                                  await RoomModel.removeAuthorizedUser(
+                                    room.id,
+                                    friendId,
+                                  );
+
+                                  // 更新本地狀態而不是重新加載整個列表
+                                  setDialogState(() {
+                                    localAuthStatus[room.id] = false;
+                                  });
+
+                                  // 更新外部狀態但不觸發整頁重載
+                                  if (mounted) {
+                                    setState(() {
+                                      if (_roomAuthorizations.containsKey(
+                                        room.id,
+                                      )) {
+                                        _roomAuthorizations[room.id]!.remove(
+                                          friendId,
+                                        );
+                                      }
+                                    });
+                                  }
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        localizations?.accessRemoved ??
+                                            '存取權限已移除',
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  print("移除用戶授權錯誤: $e");
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${localizations?.error ?? '錯誤'}: $e',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
+                            } else {
+                              // 新增授權
+                              try {
+                                await RoomModel.addAuthorizedUser(
+                                  room.id,
+                                  friendId,
+                                );
+
+                                // 更新本地狀態而不是重新加載整個列表
+                                setDialogState(() {
+                                  localAuthStatus[room.id] = true;
+                                });
+
+                                // 更新外部狀態但不觸發整頁重載
+                                if (mounted) {
+                                  setState(() {
+                                    if (_roomAuthorizations.containsKey(
+                                      room.id,
+                                    )) {
+                                      if (!_roomAuthorizations[room.id]!
+                                          .contains(friendId)) {
+                                        _roomAuthorizations[room.id]!.add(
+                                          friendId,
+                                        );
+                                      }
+                                    } else {
+                                      _roomAuthorizations[room.id] = [friendId];
+                                    }
+                                  });
+                                }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      localizations?.accessGranted ?? '存取權限已授予',
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                print("授予用戶權限錯誤: $e");
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations?.error ?? '錯誤'}: $e',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
                             }
-                          }
-                        }
-                      } else {
-                        // 新增授權
-                        try {
-                          await RoomModel.addAuthorizedUser(room.id, friendId);
-
-                          // 檢查是否還掛載
-                          if (!mounted) return;
-
-                          Navigator.pop(context);
-                          // 刷新房間授權數據
-                          _loadRooms();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                localizations?.accessGranted ?? '存取權限已授予',
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          print("授予用戶權限錯誤: $e");
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${localizations?.error ?? '錯誤'}: $e',
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.close ?? '關閉'),
-              ),
-            ],
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(localizations?.close ?? '關閉'),
+                    ),
+                  ],
+                ),
           ),
     );
   }

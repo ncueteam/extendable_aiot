@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
+import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
-import 'package:extendable_aiot/models/sub_type/switch_model.dart';
-import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
-import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 
@@ -13,10 +11,10 @@ class AllRoomPage extends StatefulWidget {
   const AllRoomPage({super.key});
 
   @override
-  State<AllRoomPage> createState() => _AllRoomPageState();
+  State<AllRoomPage> createState() => _AllRoomPageSate();
 }
 
-class _AllRoomPageState extends State<AllRoomPage> {
+class _AllRoomPageSate extends State<AllRoomPage> {
   final TextEditingController _roomNameController = TextEditingController();
 
   // 裝置類型列表用於圖標匹配
@@ -168,82 +166,14 @@ class _AllRoomPageState extends State<AllRoomPage> {
                 List<GeneralModel> deviceModels = [];
                 for (var device in devices) {
                   try {
-                    final data = device.data() as Map<String, dynamic>;
-                    final String type = data['type'] as String? ?? '未知';
-                    final String roomId = data['roomId'] as String? ?? '';
-                    final String name = data['name'] as String? ?? '未命名設備';
-                    final Timestamp lastUpdated =
-                        data['lastUpdated'] as Timestamp? ?? Timestamp.now();
-                    final bool status = data['status'] as bool? ?? false;
-
-                    switch (type) {
-                      case 'air_conditioner':
-                        try {
-                          final acDevice = AirConditionerModel(
-                            device.id,
-                            name: name,
-                            roomId: roomId,
-                            lastUpdated: lastUpdated,
-                          );
-                          acDevice.fromJson(data);
-                          deviceModels.add(acDevice);
-                        } catch (e) {
-                          print('解析空調設備錯誤: $e');
-                          final fallbackDevice = SwitchModel(
-                            device.id,
-                            name: name,
-                            type: type,
-                            lastUpdated: lastUpdated,
-                            icon: _getIconForType(type),
-                            updateValue: [true, false],
-                            previousValue: [false, true],
-                            status: status,
-                          );
-                          deviceModels.add(fallbackDevice);
-                        }
-                        break;
-                      case 'dht11':
-                        try {
-                          final dht11Device = DHT11SensorModel(
-                            device.id,
-                            name: name,
-                            roomId: roomId,
-                            lastUpdated: lastUpdated,
-                            temperature:
-                                (data['temperature'] as num?)?.toDouble() ??
-                                0.0,
-                            humidity:
-                                (data['humidity'] as num?)?.toDouble() ?? 0.0,
-                          );
-                          deviceModels.add(dht11Device);
-                        } catch (e) {
-                          print('解析DHT11設備錯誤: $e');
-                          final fallbackDevice = SwitchModel(
-                            device.id,
-                            name: name,
-                            type: type,
-                            lastUpdated: lastUpdated,
-                            icon: _getIconForType(type),
-                            updateValue: [true, false],
-                            previousValue: [false, true],
-                            status: status,
-                          );
-                          deviceModels.add(fallbackDevice);
-                        }
-                        break;
-                      default:
-                        final switchable = SwitchModel(
-                          device.id,
-                          name: name,
-                          type: type,
-                          lastUpdated: lastUpdated,
-                          icon: _getIconForType(type),
-                          updateValue: [true, false],
-                          previousValue: [false, true],
-                          status: status,
+                    // 使用 DeviceModel.fromDocumentSnapshot 處理設備數據
+                    GeneralModel? deviceModel =
+                        DeviceModel.fromDocumentSnapshot(
+                          device,
+                          _getIconForType,
                         );
-                        deviceModels.add(switchable);
-                        break;
+                    if (deviceModel != null) {
+                      deviceModels.add(deviceModel);
                     }
                   } catch (e) {
                     print('裝置數據解析錯誤: $e');

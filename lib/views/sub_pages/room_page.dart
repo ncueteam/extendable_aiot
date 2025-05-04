@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
+import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:extendable_aiot/models/sub_type/switch_model.dart';
@@ -24,6 +25,7 @@ class _RoomPageState extends State<RoomPage>
   final TextEditingController _deviceNameController = TextEditingController();
   String _selectedDeviceType = 'air_conditioner';
   RoomModel? _roomModel;
+  bool _maintainState = true;
 
   int page = 1;
   int limit = 10;
@@ -56,6 +58,12 @@ class _RoomPageState extends State<RoomPage>
     _loadRoomFriends();
     _loadAllFriends();
     _loadCurrentUser();
+  }
+
+  @override
+  void dispose() {
+    _deviceNameController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -213,11 +221,13 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 使用模型來新增設備
+  // 使用 DeviceModel 來新增設備
   Future<void> _addDevice(String name, String type) async {
     if (_roomModel == null) return;
 
     try {
+      setState(() => _maintainState = true); // 确保状态保持
+
       switch (type) {
         case 'air_conditioner':
           final acDevice = AirConditionerModel(
@@ -226,8 +236,7 @@ class _RoomPageState extends State<RoomPage>
             roomId: widget.roomId,
             lastUpdated: Timestamp.now(),
           );
-          await acDevice.createData();
-          await _roomModel!.addDevice(acDevice.id);
+          await DeviceModel.addDeviceToRoom(acDevice, widget.roomId);
           break;
         case 'dht11':
           final dht11Device = DHT11SensorModel(
@@ -238,8 +247,7 @@ class _RoomPageState extends State<RoomPage>
             temperature: 0.0,
             humidity: 0.0,
           );
-          await dht11Device.createData();
-          await _roomModel!.addDevice(dht11Device.id);
+          await DeviceModel.addDeviceToRoom(dht11Device, widget.roomId);
           break;
         default:
           // 預設使用基本的 SwitchModel
@@ -253,13 +261,26 @@ class _RoomPageState extends State<RoomPage>
             previousValue: [false, true],
             status: false,
           );
-          await switchable.createData();
-          await _roomModel!.addDevice(switchable.id);
+          await DeviceModel.addDeviceToRoom(switchable, widget.roomId);
           break;
+      }
+
+      // 添加成功提示
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('已成功添加設備：$name')));
       }
     } catch (e) {
       print('新增設備錯誤: $e');
-      // 可以新增錯誤處理邏輯，如顯示錯誤訊息等
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('添加設備失敗：${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -304,7 +325,7 @@ class _RoomPageState extends State<RoomPage>
                   );
                 }
 
-                // 將設備資料轉換為對應的模型
+                // 使用 DeviceModel 處理設備資料
                 List<GeneralModel> deviceModels = [];
                 for (var device in devices) {
                   try {
@@ -507,68 +528,162 @@ class _RoomPageState extends State<RoomPage>
       return;
     }
 
+    // 使用本地状态表示好友访问权限，避免频繁查询数据库
+    Map<String, bool> friendAccessState = {};
+
+    // 预先加载所有好友的权限状态
+    Future<void> preloadFriendsAccessStatus() async {
+      for (final friend in _allFriends) {
+        final hasAccess = await RoomModel.isUserAuthorized(
+          widget.roomId,
+          friend.id,
+        );
+        friendAccessState[friend.id] = hasAccess;
+      }
+      return;
+    }
+
+    // 显示带有加载指示器的对话框
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.manageFriends ?? '管理好友存取權限'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: ListView.builder(
-                itemCount: _allFriends.length,
-                itemBuilder: (context, index) {
-                  final friend = _allFriends[index];
-                  // 檢查房間授權 - 使用 RoomModel 的靜態方法檢查
-                  bool hasAccess = false;
-
-                  // 使用新方法檢查授權
-                  final friendId = friend.id;
-
-                  return FutureBuilder<bool>(
-                    future: RoomModel.isUserAuthorized(widget.roomId, friendId),
-                    builder: (context, snapshot) {
-                      hasAccess = snapshot.data ?? false;
-
-                      return ListTile(
-                        leading: const CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(friend.name),
-                        subtitle: Text(friend.email),
-                        trailing: Switch(
-                          value: hasAccess,
-                          onChanged: (value) async {
-                            if (value) {
-                              // 新增存取權限
-                              await RoomModel.addAuthorizedUser(
-                                widget.roomId,
-                                friendId,
-                              );
-                            } else {
-                              // 移除存取權限
-                              await RoomModel.removeAuthorizedUser(
-                                widget.roomId,
-                                friendId,
-                              );
-                            }
-
-                            // 重新載入房間好友列表
-                            _loadRoomFriends();
-                          },
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.close ?? '關閉'),
-              ),
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('载入好友权限状态...'),
             ],
           ),
+        );
+      },
     );
+
+    // 预加载所有权限状态
+    preloadFriendsAccessStatus().then((_) {
+      // 关闭加载对话框
+      Navigator.of(context).pop();
+
+      // 显示真正的权限管理对话框
+      showDialog(
+        context: context,
+        builder: (context) {
+          // 使用StatefulBuilder允许更新对话框内部状态而不重载整个页面
+          return StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: Text(localizations?.manageFriends ?? '管理好友存取權限'),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    height: 300,
+                    child: ListView.builder(
+                      itemCount: _allFriends.length,
+                      itemBuilder: (context, index) {
+                        final friend = _allFriends[index];
+                        final friendId = friend.id;
+                        final hasAccess = friendAccessState[friendId] ?? false;
+
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.person),
+                          ),
+                          title: Text(friend.name),
+                          subtitle: Text(friend.email),
+                          trailing: Switch(
+                            value: hasAccess,
+                            onChanged: (value) async {
+                              try {
+                                // 立即更新UI状态
+                                setDialogState(() {
+                                  friendAccessState[friendId] = value;
+                                });
+
+                                if (value) {
+                                  // 添加访问权限
+                                  await RoomModel.addAuthorizedUser(
+                                    widget.roomId,
+                                    friendId,
+                                  );
+                                  // 显示成功消息
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '已授予 ${friend.name} 訪問此房間的權限',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  // 移除访问权限
+                                  await RoomModel.removeAuthorizedUser(
+                                    widget.roomId,
+                                    friendId,
+                                  );
+                                  // 显示移除消息
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '已移除 ${friend.name} 訪問此房間的權限',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+
+                                // 更新外部状态但不触发整个页面重载
+                                if (mounted) {
+                                  setState(() {
+                                    // 只更新本地房间好友列表，不重新加载或导航
+                                    if (value) {
+                                      if (!_roomFriends.any(
+                                        (f) => f.id == friendId,
+                                      )) {
+                                        _roomFriends.add(friend);
+                                      }
+                                    } else {
+                                      _roomFriends.removeWhere(
+                                        (f) => f.id == friendId,
+                                      );
+                                    }
+                                  });
+                                }
+                              } catch (e) {
+                                print('更新好友权限错误: $e');
+                                // 发生错误时恢复状态
+                                setDialogState(() {
+                                  friendAccessState[friendId] = !value;
+                                });
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('出现错误: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(localizations?.close ?? '關閉'),
+                    ),
+                  ],
+                ),
+          );
+        },
+      );
+    });
   }
 
   // 顯示編輯房間對話框
@@ -639,10 +754,33 @@ class _RoomPageState extends State<RoomPage>
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                 onPressed: () async {
                   if (_roomModel != null) {
-                    await _roomModel!.deleteRoom();
-                    if (mounted) {
-                      Navigator.pop(context);
-                      Navigator.pop(context); // 返回上一級頁面
+                    try {
+                      await _roomModel!.deleteRoom();
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('房間已刪除')));
+
+                        Future.delayed(Duration(milliseconds: 500), () {
+                          if (mounted) {
+                            setState(() {
+                              _maintainState = false;
+                            });
+                          }
+                        });
+                      }
+                    } catch (e) {
+                      print('删除房间错误: $e');
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('刪除房間失敗: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   }
                 },
@@ -664,5 +802,5 @@ class _RoomPageState extends State<RoomPage>
   }
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => _maintainState;
 }
