@@ -24,6 +24,10 @@ dependencies:
   mqtt_client: ^10.8.0
   json_annotation: ^4.9.0
   firebase_auth: 5.5.2
+  # 使用 flutter_blue_plus 替換 flutter_bluetooth_serial
+  # flutter_bluetooth_serial: ^0.4.0 
+  flutter_blue_plus: ^1.31.15
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:

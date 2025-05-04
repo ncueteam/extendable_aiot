@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/components/wifi_credential_trasmitter.dart';
 import 'package:extendable_aiot/models/sub_type/switch_model.dart';
 import 'package:extendable_aiot/views/demo_pages/integrated_devices_page.dart';
 import 'package:flutter/material.dart';
@@ -284,6 +285,34 @@ class _TestPageState extends State<TestPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Add WiFi Credential Transmitter button
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const WifiCredentialTransmitter(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          'WiFi 認證傳輸器 (藍牙連接)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       const Text(
                         '獨立的範例頁面:',
                         style: TextStyle(

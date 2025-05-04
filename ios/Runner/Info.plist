@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- 藍牙權限描述 -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>應用程式需要使用藍牙來連接ESP32裝置並傳送WiFi認證資訊</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>應用程式需要使用藍牙來連接ESP32裝置並傳送WiFi認證資訊</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>掃描藍牙設備需要使用位置權限</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>掃描藍牙設備需要使用位置權限</string>
 </dict>
 </plist>
