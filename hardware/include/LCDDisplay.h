@@ -26,6 +26,9 @@ private:
     
     // 获取格式化日期
     String getFormattedDate();
+    
+    // 测试显示屏功能
+    void testDisplay();
 
 public:
     // 构造函数

@@ -5,9 +5,11 @@
 #include <ArduinoJson.h>
 #include "time.h"
 #include <Preferences.h>
-#include "DHT11Sensor.h"  // DHT11 传感器模块
-#include "LCDDisplay.h"   // LCD 显示模块
-#include "BLEManager.h"   // BLE 管理器模块
+#include "DHT11Sensor.h"   // DHT11 传感器模块
+#include "LCDDisplay.h"    // LCD 显示模块
+#include "BLEManager.h"    // BLE 管理器模块
+#include "DataManager.h"   // 数据管理模块
+#include "LEDManager.h"    // LED 管理模块
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
@@ -31,22 +33,10 @@ bool wifiCredentialsReceived = false;
 #define DISPLAY_PRIORITY 2
 #define DHT_PRIORITY 1
 
-// 互斥鎖用於保護共享數據
-SemaphoreHandle_t mutex = NULL;
-
 // 任務句柄
 TaskHandle_t mqttTaskHandle = NULL;
 TaskHandle_t displayTaskHandle = NULL;
 TaskHandle_t dhtTaskHandle = NULL; 
-
-// 共享數據結構
-struct SharedData {
-  float temperature;
-  float humidity;
-  bool isMqttConnected;
-  bool isMqttTransmitting;
-  unsigned long mqttIconBlinkMillis;
-} sharedData;
 
 // NTP服務器設定
 const char* ntpServer = "pool.ntp.org";
@@ -80,23 +70,18 @@ LCDDisplay lcdDisplay;
 // 创建BLE管理器对象
 BLEManager bleManager;
 
-// LED Pin定義
-const int LED_PIN = 2;
-const int LEDC_CHANNEL = 0;
-const int LEDC_TIMER_BIT = 8;
-const int LEDC_BASE_FREQ = 5000;
+// 创建数据管理器对象
+DataManager dataManager(mqttIconBlinkInterval);
+
+// 创建LED管理器对象
+#define LED_PIN 2
+LEDManager ledManager(LED_PIN);
 
 // 時間間隔設定
-unsigned long previousMillis = 0;
 unsigned long displayMillis = 0;
 unsigned long dhtMillis = 0;
-const long interval = 5;
 const long displayInterval = 1000;
 const long dhtInterval = 2000;
-
-// LED呼吸燈變數
-int breatheValue = 0;
-bool increasing = true;
 
 // 獲取格式化時間字串
 String getFormattedTime() {
@@ -118,21 +103,6 @@ String getFormattedDate() {
   char dateString[20];
   strftime(dateString, sizeof(dateString), "%Y-%m-%d", &timeinfo);
   return String(dateString);
-}
-
-void updateLEDBreathing() {
-  if (increasing) {
-    breatheValue++;
-    if (breatheValue >= 255) {
-      increasing = false;
-    }
-  } else {
-    breatheValue--;
-    if (breatheValue <= 0) {
-      increasing = true;
-    }
-  }
-  ledcWrite(LEDC_CHANNEL, breatheValue);
 }
 
 // MQTT回調函數
@@ -210,9 +180,7 @@ void mqttTask(void *parameter) {
         lastMqttReconnectAttempt = currentMillis;
         if (mqtt_connect()) {
           lastMqttReconnectAttempt = 0;
-          xSemaphoreTake(mutex, portMAX_DELAY);
-          sharedData.isMqttConnected = true;
-          xSemaphoreGive(mutex);
+          dataManager.setMqttConnected(true);
         }
       }
     } else {
@@ -221,12 +189,9 @@ void mqttTask(void *parameter) {
       if (currentMillis - lastMqttPublish >= mqttPublishInterval) {
         lastMqttPublish = currentMillis;
         
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        float temp = sharedData.temperature;
-        float humid = sharedData.humidity;
-        sharedData.isMqttTransmitting = true;
-        sharedData.mqttIconBlinkMillis = currentMillis;
-        xSemaphoreGive(mutex);
+        float temp = dataManager.getTemperature();
+        float humid = dataManager.getHumidity();
+        dataManager.setMqttTransmitting(true);  // 修正: 删除额外的参数
         
         // 取得當前時間字符串
         char timeStr[24];
@@ -268,10 +233,8 @@ void dhtTask(void *parameter) {
     // 使用模組化的 DHT11Sensor 類讀取數據
     if (dhtSensor.read()) {
       // 讀取成功，更新共享數據
-      xSemaphoreTake(mutex, portMAX_DELAY);
-      sharedData.temperature = dhtSensor.getTemperature();
-      sharedData.humidity = dhtSensor.getHumidity();
-      xSemaphoreGive(mutex);
+      dataManager.setTemperature(dhtSensor.getTemperature());
+      dataManager.setHumidity(dhtSensor.getHumidity());
     }
     
     // 等待下一次讀取時間
@@ -286,21 +249,17 @@ void displayTask(void *parameter) {
   
   while (true) {
     // 更新 LCDDisplay 对象的数据状态
-    xSemaphoreTake(mutex, portMAX_DELAY);
-    lcdDisplay.setTemperature(sharedData.temperature);
-    lcdDisplay.setHumidity(sharedData.humidity);
-    lcdDisplay.setMqttConnected(sharedData.isMqttConnected);
+    lcdDisplay.setTemperature(dataManager.getTemperature());
+    lcdDisplay.setHumidity(dataManager.getHumidity());
+    lcdDisplay.setMqttConnected(dataManager.getMqttConnected());
     lcdDisplay.setWiFiConnected(WiFi.status() == WL_CONNECTED);
-    lcdDisplay.setBleConnected(bleManager.isConnected());  // 修正为正确的方法名
+    lcdDisplay.setBleConnected(bleManager.isConnected());
     
     // 处理 MQTT 传输图标闪烁
-    if(sharedData.isMqttTransmitting) {
+    if(dataManager.getMqttTransmitting()) {
       lcdDisplay.setMqttTransmitting(true);
-      if (millis() - sharedData.mqttIconBlinkMillis >= mqttIconBlinkInterval) {
-        sharedData.isMqttTransmitting = false;
-      }
+      dataManager.updateMqttTransmittingStatus(); // 使用更新方法替代直接修改
     }
-    xSemaphoreGive(mutex);
     
     // 刷新显示
     lcdDisplay.updateDisplay();
@@ -383,15 +342,11 @@ void setup() {
   // 初始化序列通訊
   Serial.begin(115200);
   
-  // 創建互斥鎖
-  mutex = xSemaphoreCreateMutex();
+  // 初始化共享數據管理器
+  dataManager.begin();
   
-  // 初始化共享數據
-  memset(&sharedData, 0, sizeof(sharedData));
-  
-  // 配置硬體
-  ledcSetup(LEDC_CHANNEL, LEDC_BASE_FREQ, LEDC_TIMER_BIT);
-  ledcAttachPin(LED_PIN, LEDC_CHANNEL);
+  // 初始化 LED 管理器
+  ledManager.begin();
   
   // 初始化 LCD 显示模块 (在 displayTask 中执行 begin 方法)
   
@@ -454,5 +409,6 @@ void setup() {
 void loop() {
   // 主任務由FreeRTOS處理，這裡只處理BLE管理器的更新
   bleManager.checkConnection(); // 使用正确的方法名
+  ledManager.update(); // 更新 LED 管理器状态
   delay(10);
 }

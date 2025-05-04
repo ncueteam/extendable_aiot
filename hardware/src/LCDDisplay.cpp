@@ -1,5 +1,6 @@
 #include "../include/LCDDisplay.h"
 #include "time.h"
+#include <Wire.h>
 
 LCDDisplay::LCDDisplay() : 
     u8g2(U8G2_R0, U8X8_PIN_NONE),
@@ -13,9 +14,102 @@ LCDDisplay::LCDDisplay() :
     mqttIconBlinkInterval(500) {
 }
 
+// 扫描I2C设备的辅助函数
+void scanI2CDevices() {
+    Serial.println("扫描I2C设备...");
+    byte error, address;
+    int deviceCount = 0;
+    
+    for(address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        error = Wire.endTransmission();
+        
+        if (error == 0) {
+            Serial.print("I2C设备找到，地址: 0x");
+            if (address < 16) {
+                Serial.print("0");
+            }
+            Serial.println(address, HEX);
+            deviceCount++;
+        } else if (error == 4) {
+            Serial.print("地址0x");
+            if (address < 16) {
+                Serial.print("0");
+            }
+            Serial.print(address, HEX);
+            Serial.println("出现未知错误");
+        }
+    }
+    
+    if (deviceCount == 0) {
+        Serial.println("未找到I2C设备，请检查连线");
+    } else {
+        Serial.print("找到");
+        Serial.print(deviceCount);
+        Serial.println("个I2C设备");
+    }
+}
+
+// 添加一个测试显示屏的函数
+void LCDDisplay::testDisplay() {
+    // 测试1：全屏填充
+    u8g2.clearBuffer();
+    u8g2.drawBox(0, 0, 128, 64);
+    u8g2.sendBuffer();
+    delay(500);
+    
+    // 测试2：水平线
+    u8g2.clearBuffer();
+    for(int i = 0; i < 64; i += 8) {
+        u8g2.drawHLine(0, i, 128);
+    }
+    u8g2.sendBuffer();
+    delay(500);
+    
+    // 测试3：垂直线
+    u8g2.clearBuffer();
+    for(int i = 0; i < 128; i += 8) {
+        u8g2.drawVLine(i, 0, 64);
+    }
+    u8g2.sendBuffer();
+    delay(500);
+    
+    // 清屏
+    u8g2.clearBuffer();
+    u8g2.sendBuffer();
+}
+
 void LCDDisplay::begin() {
-    u8g2.begin();
+    Wire.begin();
+    scanI2CDevices();
+    Serial.println("尝试初始化OLED显示器...");
+    bool initSuccess = u8g2.begin();
+    
+    if (initSuccess) {
+        Serial.println("OLED显示器初始化成功!");
+    } else {
+        Serial.println("OLED显示器初始化失败! 请检查连接或尝试不同的I2C地址");
+        delay(1000);
+        u8g2.initDisplay();
+        if (u8g2.getU8x8()->display_cb != 0) {
+            Serial.println("第二次尝试成功");
+            u8g2.setPowerSave(0);
+        } else {
+            Serial.println("第二次尝试也失败，可能是硬件问题");
+        }
+    }
+    
     u8g2.setFont(u8g2_font_ncenB08_tr);
+    
+    u8g2.clearBuffer();
+    u8g2.setCursor(0, 20);
+    u8g2.print("LCD Test");
+    u8g2.setCursor(0, 40);
+    u8g2.print("Initializing...");
+    u8g2.sendBuffer();
+    delay(1000);
+    
+    testDisplay();
 }
 
 void LCDDisplay::updateDisplay() {
