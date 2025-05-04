@@ -10,7 +10,7 @@ class RoomModel {
   List<String> devices = [];
   Timestamp createdAt;
   IconData icon;
-  List<String> authorizedFriends = []; // 添加授权好友列表
+  List<String> authorizedUsers = []; // 修改為 authorizedUsers
 
   RoomModel({
     required this.name,
@@ -18,12 +18,12 @@ class RoomModel {
     List<String>? devices,
     Timestamp? createdAt,
     IconData? icon,
-    List<String>? authorizedFriends,
+    List<String>? authorizedUsers, // 修改參數名
   }) : id = id ?? _generateFirebaseId(),
        devices = devices ?? [],
        createdAt = createdAt ?? Timestamp.now(),
        icon = icon ?? Icons.meeting_room,
-       authorizedFriends = authorizedFriends ?? [];
+       authorizedUsers = authorizedUsers ?? []; // 修改賦值
 
   static String _generateFirebaseId() {
     const chars =
@@ -48,9 +48,9 @@ class RoomModel {
           json['icon'] != null
               ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
               : Icons.meeting_room,
-      authorizedFriends:
-          json['authorizedFriends'] != null
-              ? List<String>.from(json['authorizedFriends'])
+      authorizedUsers: // 修改為 authorizedUsers
+          json['authorizedUsers'] != null
+              ? List<String>.from(json['authorizedUsers'])
               : [],
     );
   }
@@ -69,7 +69,7 @@ class RoomModel {
       'devices': devices,
       'createdAt': createdAt,
       'icon': icon.codePoint,
-      'authorizedFriends': authorizedFriends,
+      'authorizedUsers': authorizedUsers, // 修改為 authorizedUsers
     };
   }
 
@@ -293,30 +293,72 @@ class RoomModel {
     }
   }
 
-  // 添加授权好友
-  Future<bool> addAuthorizedFriend(String friendUserId) async {
+  // 添加授權使用者
+  static Future<bool> addAuthorizedUser(String roomId, String userId) async {
     try {
-      if (authorizedFriends.contains(friendUserId)) {
-        return true; // 已经授权
-      }
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
 
-      authorizedFriends.add(friendUserId);
-      await updateRoom();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+            'authorizedUsers': FieldValue.arrayUnion([userId]),
+          });
       return true;
     } catch (e) {
-      print('Error adding authorized friend: $e');
+      print('添加授權使用者錯誤: $e');
       return false;
     }
   }
 
-  // 移除授权好友
-  Future<bool> removeAuthorizedFriend(String friendUserId) async {
+  // 移除授權使用者
+  static Future<bool> removeAuthorizedUser(String roomId, String userId) async {
     try {
-      authorizedFriends.remove(friendUserId);
-      await updateRoom();
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+            'authorizedUsers': FieldValue.arrayRemove([userId]),
+          });
       return true;
     } catch (e) {
-      print('Error removing authorized friend: $e');
+      print('移除授權使用者錯誤: $e');
+      return false;
+    }
+  }
+
+  // 檢查使用者是否有房間授權
+  static Future<bool> isUserAuthorized(String roomId, String userId) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return false;
+
+      DocumentSnapshot roomDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .collection('rooms')
+              .doc(roomId)
+              .get();
+
+      if (roomDoc.exists) {
+        Map<String, dynamic> data = roomDoc.data() as Map<String, dynamic>;
+        List<String> authorizedUsers = List<String>.from(
+          data['authorizedUsers'] ?? [],
+        );
+        return authorizedUsers.contains(userId);
+      }
+      return false;
+    } catch (e) {
+      print('檢查使用者授權錯誤: $e');
       return false;
     }
   }

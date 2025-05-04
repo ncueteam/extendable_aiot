@@ -5,7 +5,6 @@ import 'package:extendable_aiot/models/room_model.dart';
 import 'package:extendable_aiot/models/switch_model.dart';
 import 'package:extendable_aiot/models/airconditioner_model.dart';
 import 'package:extendable_aiot/models/dht11_sensor_model.dart';
-import 'package:extendable_aiot/models/friend_model.dart';
 import 'package:extendable_aiot/services/user_service.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
@@ -32,11 +31,11 @@ class _RoomPageState extends State<RoomPage>
   bool error = false;
   String? errorMsg;
 
-  // 新增使用者服務和好友列表狀態
+  // 修改好友列表狀態的類型
   final UserService _userService = UserService();
-  List<FriendModel> _roomFriends = [];
+  List<Map<String, dynamic>> _roomFriends = []; // 更改類型
   bool _loadingFriends = true;
-  List<FriendModel> _allFriends = [];
+  List<Map<String, dynamic>> _allFriends = []; // 更改類型
   bool _loadingAllFriends = true;
 
   // 裝置類型列表
@@ -100,7 +99,7 @@ class _RoomPageState extends State<RoomPage>
 
   // 載入所有好友，用於新增新好友到房間
   void _loadAllFriends() {
-    _userService.getFriends().listen(
+    _userService.getFriendsData().listen(
       (friendsList) {
         if (mounted) {
           setState(() {
@@ -491,33 +490,44 @@ class _RoomPageState extends State<RoomPage>
                 itemCount: _allFriends.length,
                 itemBuilder: (context, index) {
                   final friend = _allFriends[index];
-                  final hasAccess = friend.sharedRooms.contains(widget.roomId);
+                  // 檢查房間授權 - 使用 RoomModel 的靜態方法檢查
+                  bool hasAccess = false;
 
-                  return ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text(friend.name),
-                    subtitle: Text(friend.email),
-                    trailing: Switch(
-                      value: hasAccess,
-                      onChanged: (value) async {
-                        if (value) {
-                          // 新增存取權限
-                          await _userService.addFriendToRoom(
-                            friend.id,
-                            widget.roomId,
-                          );
-                        } else {
-                          // 移除存取權限
-                          await _userService.removeFriendFromRoom(
-                            friend.id,
-                            widget.roomId,
-                          );
-                        }
+                  // 使用新方法檢查授權
+                  final friendId = friend['id'] as String;
 
-                        // 重新載入房間好友列表
-                        _loadRoomFriends();
-                      },
-                    ),
+                  return FutureBuilder<bool>(
+                    future: RoomModel.isUserAuthorized(widget.roomId, friendId),
+                    builder: (context, snapshot) {
+                      hasAccess = snapshot.data ?? false;
+
+                      return ListTile(
+                        leading: const CircleAvatar(child: Icon(Icons.person)),
+                        title: Text(friend['name'] as String),
+                        subtitle: Text(friend['email'] as String),
+                        trailing: Switch(
+                          value: hasAccess,
+                          onChanged: (value) async {
+                            if (value) {
+                              // 新增存取權限
+                              await RoomModel.addAuthorizedUser(
+                                widget.roomId,
+                                friendId,
+                              );
+                            } else {
+                              // 移除存取權限
+                              await RoomModel.removeAuthorizedUser(
+                                widget.roomId,
+                                friendId,
+                              );
+                            }
+
+                            // 重新載入房間好友列表
+                            _loadRoomFriends();
+                          },
+                        ),
+                      );
+                    },
                   );
                 },
               ),

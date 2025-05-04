@@ -1,6 +1,5 @@
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/services/user_service.dart';
-import 'package:extendable_aiot/models/friend_model.dart';
 import 'package:extendable_aiot/models/room_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -24,13 +23,18 @@ class _ProfileState extends State<Profile> {
   String userId = "";
   bool isLoading = true;
 
-  // 新增好友相關狀態
-  List<FriendModel> _friends = [];
+  // 好友相關狀態
+  List<Map<String, dynamic>> _friends = [];
   bool _loadingFriends = true;
+
+  // 房間相關狀態
   List<RoomModel> _rooms = [];
   bool _loadingRooms = true;
 
-  // 添加用於保存訂閱的變數
+  // 房間授權狀態 - 儲存每個房間授權的使用者ID
+  Map<String, List<String>> _roomAuthorizations = {};
+
+  // 保存訂閱
   StreamSubscription? _userDataSubscription;
   StreamSubscription? _friendsSubscription;
   StreamSubscription? _roomsSubscription;
@@ -92,12 +96,12 @@ class _ProfileState extends State<Profile> {
 
   // 載入好友列表
   void _loadFriends() {
-    _friendsSubscription = _userService.getFriends().listen(
-      (friendsList) {
+    _friendsSubscription = _userService.getFriendsData().listen(
+      (friendsData) {
         if (mounted) {
           // 添加判斷確保組件還在
           setState(() {
-            _friends = friendsList;
+            _friends = friendsData;
             _loadingFriends = false;
           });
         }
@@ -114,14 +118,49 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // 載入房間列表，用於授權好友訪問
+  // 載入房間列表並獲取每個房間的授權用戶
   void _loadRooms() {
     _roomsSubscription = RoomModel.getAllRooms().listen(
-      (roomsList) {
+      (roomsList) async {
+        Map<String, List<String>> authorizations = {};
+
+        // 獲取每個房間的授權用戶
+        for (var room in roomsList) {
+          // 每次迴圈開始前檢查 mounted 狀態
+          if (!mounted) return;
+
+          try {
+            DocumentSnapshot roomDoc =
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(_userService.currentUserId)
+                    .collection('rooms')
+                    .doc(room.id)
+                    .get();
+
+            // 再次檢查 mounted 狀態
+            if (!mounted) return;
+
+            if (roomDoc.exists) {
+              Map<String, dynamic> data =
+                  roomDoc.data() as Map<String, dynamic>;
+              authorizations[room.id] = List<String>.from(
+                data['authorizedUsers'] ?? [],
+              );
+            } else {
+              authorizations[room.id] = [];
+            }
+          } catch (error) {
+            print("獲取房間授權用戶錯誤: $error");
+            // 出錯也檢查 mounted 狀態
+            if (!mounted) return;
+          }
+        }
+
         if (mounted) {
-          // 添加判斷確保組件還在
           setState(() {
             _rooms = roomsList;
+            _roomAuthorizations = authorizations;
             _loadingRooms = false;
           });
         }
@@ -173,12 +212,9 @@ class _ProfileState extends State<Profile> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
                     _buildInfoCard(localizations),
-
                     const SizedBox(height: 20),
                     _buildFriendsCard(localizations),
-
                     const SizedBox(height: 20),
                     _buildFunctionList(localizations),
                   ],
@@ -247,9 +283,9 @@ class _ProfileState extends State<Profile> {
                   children:
                       _friends.map((friend) {
                         return ListTile(
-                          leading: UserAvatar(imageUrl: friend.photoURL),
-                          title: Text(friend.name),
-                          subtitle: Text(friend.email),
+                          leading: UserAvatar(imageUrl: friend['photoURL']),
+                          title: Text(friend['name']),
+                          subtitle: Text(friend['email']),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -257,7 +293,8 @@ class _ProfileState extends State<Profile> {
                                 icon: const Icon(Icons.home),
                                 onPressed:
                                     () => _showAddToRoomDialog(
-                                      friend,
+                                      friend['id'],
+                                      friend['name'],
                                       localizations,
                                     ),
                                 tooltip: localizations?.addToRoom ?? '新增至房間',
@@ -269,7 +306,8 @@ class _ProfileState extends State<Profile> {
                                 ),
                                 onPressed:
                                     () => _showDeleteFriendDialog(
-                                      friend,
+                                      friend['id'],
+                                      friend['name'],
                                       localizations,
                                     ),
                                 tooltip: localizations?.deleteFriend ?? '刪除好友',
@@ -286,6 +324,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget _buildFunctionList(AppLocalizations? localizations) {
+    // 與原來相同
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -317,6 +356,7 @@ class _ProfileState extends State<Profile> {
   }
 
   void _changeNameDialog(AppLocalizations? localizations) {
+    // 與原來相同
     TextEditingController controller = TextEditingController(text: name);
     showDialog(
       context: context,
@@ -339,16 +379,10 @@ class _ProfileState extends State<Profile> {
                 final newName = controller.text.trim();
                 if (newName.isNotEmpty) {
                   try {
-                    // 更新到Firebase
                     await _userService.createOrUpdateUser(
                       name: newName,
                       email: email,
                     );
-
-                    // 本地狀態更新 (實際上會由監聽器更新)
-                    setState(() {
-                      name = newName;
-                    });
 
                     if (mounted) {
                       Navigator.pop(context);
@@ -383,98 +417,118 @@ class _ProfileState extends State<Profile> {
   // 新增好友對話框
   void _showAddFriendDialog(AppLocalizations? localizations) {
     final TextEditingController emailController = TextEditingController();
+    bool isProcessing = false; // 添加處理狀態標誌
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.addFriend ?? '新增好友'),
-            content: TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                hintText: localizations?.enterEmail ?? '請輸入好友電子郵件',
-                prefixIcon: const Icon(Icons.email),
+      barrierDismissible: false, // 防止用戶點擊對話框外關閉
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          // 使用StatefulBuilder來更新對話框UI狀態
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(localizations?.addFriend ?? '新增好友'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      hintText: localizations?.enterEmail ?? '請輸入好友電子郵件',
+                      prefixIcon: const Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isProcessing, // 處理中禁用輸入
+                  ),
+                  if (isProcessing) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(width: 20),
+                        Text(localizations?.addingFriend ?? '正在新增好友...'),
+                      ],
+                    ),
+                  ],
+                ],
               ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final email = emailController.text.trim();
-                  if (email.isNotEmpty && email.contains('@')) {
-                    Navigator.pop(context);
+              actions: [
+                TextButton(
+                  onPressed: isProcessing ? null : () => Navigator.pop(context),
+                  child: Text(localizations?.cancel ?? '取消'),
+                ),
+                TextButton(
+                  onPressed:
+                      isProcessing
+                          ? null
+                          : () async {
+                            final email = emailController.text.trim();
+                            if (email.isNotEmpty && email.contains('@')) {
+                              // 更新處理狀態
+                              setState(() {
+                                isProcessing = true;
+                              });
 
-                    // 顯示載入指示器
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder:
-                          (context) => AlertDialog(
-                            content: Row(
-                              children: [
-                                const CircularProgressIndicator(),
-                                const SizedBox(width: 20),
-                                Text(
-                                  localizations?.addingFriend ?? '正在新增好友...',
-                                ),
-                              ],
-                            ),
-                          ),
-                    );
+                              try {
+                                final result = await _userService.addFriend(
+                                  email,
+                                );
 
-                    try {
-                      final result = await _userService.addFriend(email);
+                                if (mounted) {
+                                  Navigator.pop(context); // 操作完成後關閉對話框
 
-                      if (mounted) {
-                        Navigator.pop(context); // 關閉載入對話框
+                                  if (result) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          localizations?.friendAdded ??
+                                              '好友新增成功',
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          localizations?.friendAddFailed ??
+                                              '新增好友失敗，該用戶可能不存在或已是您的好友',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  // 發生錯誤時，重設處理狀態，允許用戶重試
+                                  setState(() {
+                                    isProcessing = false;
+                                  });
 
-                        if (result) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                localizations?.friendAdded ?? '好友新增成功',
-                              ),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                localizations?.friendAddFailed ??
-                                    '新增好友失敗，該用戶可能不存在或已是您的好友',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        Navigator.pop(context); // 關閉載入對話框
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${localizations?.error ?? '錯誤'}: $e',
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: Text(localizations?.add ?? '新增'),
-              ),
-            ],
-          ),
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${localizations?.error ?? '錯誤'}: $e',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                  child: Text(localizations?.add ?? '新增'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
   // 顯示將好友新增到房間的對話框
   void _showAddToRoomDialog(
-    FriendModel friend,
+    String friendId,
+    String friendName,
     AppLocalizations? localizations,
   ) {
     if (_loadingRooms) {
@@ -503,7 +557,9 @@ class _ProfileState extends State<Profile> {
                 itemCount: _rooms.length,
                 itemBuilder: (context, index) {
                   final room = _rooms[index];
-                  final isAuthorized = friend.sharedRooms.contains(room.id);
+                  final isAuthorized =
+                      _roomAuthorizations.containsKey(room.id) &&
+                      _roomAuthorizations[room.id]!.contains(friendId);
 
                   return ListTile(
                     title: Text(room.name),
@@ -516,7 +572,7 @@ class _ProfileState extends State<Profile> {
                             : const Icon(Icons.add_circle_outline),
                     onTap: () async {
                       if (isAuthorized) {
-                        // 已經授權，詢問是否要移除權限
+                        // 已授權，詢問是否移除權限
                         final shouldRemove = await _showConfirmDialog(
                           context,
                           localizations?.removeAccess ?? '移除存取權限',
@@ -525,13 +581,22 @@ class _ProfileState extends State<Profile> {
                           localizations,
                         );
 
+                        // 檢查是否還掛載
+                        if (!mounted) return;
+
                         if (shouldRemove == true) {
-                          await _userService.removeFriendFromRoom(
-                            friend.id,
-                            room.id,
-                          );
-                          if (mounted) {
+                          try {
+                            await RoomModel.removeAuthorizedUser(
+                              room.id,
+                              friendId,
+                            );
+
+                            // 再次檢查是否還掛載
+                            if (!mounted) return;
+
                             Navigator.pop(context);
+                            // 刷新房間授權數據
+                            _loadRooms();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -539,13 +604,30 @@ class _ProfileState extends State<Profile> {
                                 ),
                               ),
                             );
+                          } catch (e) {
+                            print("移除用戶授權錯誤: $e");
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${localizations?.error ?? '錯誤'}: $e',
+                                  ),
+                                ),
+                              );
+                            }
                           }
                         }
                       } else {
                         // 新增授權
-                        await _userService.addFriendToRoom(friend.id, room.id);
-                        if (mounted) {
+                        try {
+                          await RoomModel.addAuthorizedUser(room.id, friendId);
+
+                          // 檢查是否還掛載
+                          if (!mounted) return;
+
                           Navigator.pop(context);
+                          // 刷新房間授權數據
+                          _loadRooms();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -553,6 +635,17 @@ class _ProfileState extends State<Profile> {
                               ),
                             ),
                           );
+                        } catch (e) {
+                          print("授予用戶權限錯誤: $e");
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${localizations?.error ?? '錯誤'}: $e',
+                                ),
+                              ),
+                            );
+                          }
                         }
                       }
                     },
@@ -572,25 +665,42 @@ class _ProfileState extends State<Profile> {
 
   // 確認刪除好友對話框
   void _showDeleteFriendDialog(
-    FriendModel friend,
+    String friendId,
+    String friendName,
     AppLocalizations? localizations,
   ) async {
     final shouldDelete = await _showConfirmDialog(
       context,
       localizations?.deleteFriend ?? '刪除好友',
-      localizations?.confirmDeleteFriend(friend.name) ??
-          '確定要刪除好友 ${friend.name} 嗎？所有相關的房間存取權限也會被刪除。',
+      localizations?.confirmDeleteFriend(friendName) ??
+          '確定要刪除好友 $friendName 嗎？',
       localizations,
     );
 
     if (shouldDelete == true) {
       try {
-        final result = await _userService.removeFriend(friend.id);
+        final result = await _userService.removeFriend(friendId);
 
-        if (mounted && result) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(localizations?.friendRemoved ?? '好友已刪除')),
-          );
+        if (!mounted) return; // 檢查組件是否仍然掛載
+
+        if (result) {
+          // 從所有房間移除授權
+          for (var room in _rooms) {
+            // 在每次迴圈中檢查組件是否仍然掛載
+            if (!mounted) return;
+
+            try {
+              await RoomModel.removeAuthorizedUser(room.id, friendId);
+            } catch (e) {
+              print("從房間移除用戶授權錯誤: $e");
+            }
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(localizations?.friendRemoved ?? '好友已刪除')),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

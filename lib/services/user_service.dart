@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:extendable_aiot/models/friend_model.dart';
 
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -26,10 +25,11 @@ class UserService {
       userData['photoURL'] = photoURL;
     }
 
-    // 當用戶首次創建時，添加 createdAt 字段
+    // 當用戶首次創建時，添加 createdAt 字段和空的好友列表
     await _firestore.collection('users').doc(currentUserId).set({
       ...userData,
       'createdAt': FieldValue.serverTimestamp(),
+      'friends': [],
     }, SetOptions(merge: true));
   }
 
@@ -53,6 +53,7 @@ class UserService {
   }) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
+    // 創建房間時初始化一個空的授權用戶列表
     return await _firestore
         .collection('users')
         .doc(currentUserId)
@@ -61,6 +62,7 @@ class UserService {
           'name': name,
           'type': type,
           'devices': [],
+          'authorizedUsers': [],
           'createdAt': FieldValue.serverTimestamp(),
         });
   }
@@ -160,100 +162,137 @@ class UserService {
   }
 
   // 添加好友
-  Future<bool> addFriend(String email) async {
-    if (currentUserId == null) throw Exception('User not authenticated');
-
+  Future<bool> addFriend(String friendEmail) async {
     try {
-      // 检查用户是否存在
-      final userResult = await FriendModel.findUserByEmail(email);
-      if (userResult == null) {
-        return false; // 用户不存在
-      }
+      // 獲取當前用戶ID
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
 
-      final friendUserId = userResult['userId'];
-
-      // 检查是否添加自己
-      if (friendUserId == currentUserId) {
-        return false; // 不能添加自己为好友
-      }
-
-      // 检查是否已经是好友
-      final existingFriends =
+      // 查找要添加的好友
+      final querySnapshot =
           await _firestore
               .collection('users')
-              .doc(currentUserId)
-              .collection('friends')
-              .where('userId', isEqualTo: friendUserId)
+              .where('email', isEqualTo: friendEmail)
+              .limit(1)
               .get();
 
-      if (existingFriends.docs.isNotEmpty) {
-        return false; // 已经是好友了
+      if (querySnapshot.docs.isEmpty) {
+        return false; // 找不到使用者
       }
 
-      // 创建新的好友关系
-      final friendModel = FriendModel(
-        userId: friendUserId,
-        name: userResult['name'],
-        email: userResult['email'],
-        photoURL: userResult['photoURL'], // 添加頭像URL
-      );
+      final friendDoc = querySnapshot.docs.first;
+      final friendId = friendDoc.id;
 
-      return await friendModel.createFriend();
-    } catch (e) {
-      print('Error adding friend: $e');
-      return false;
-    }
-  }
-
-  // 删除好友
-  Future<bool> removeFriend(String friendId) async {
-    if (currentUserId == null) throw Exception('User not authenticated');
-
-    try {
-      final friendDoc =
-          await _firestore
-              .collection('users')
-              .doc(currentUserId)
-              .collection('friends')
-              .doc(friendId)
-              .get();
-
-      if (!friendDoc.exists) {
+      // 不能添加自己為好友
+      if (friendId == currentUser.uid) {
         return false;
       }
 
-      final friendModel = FriendModel.fromSnapshot(friendDoc);
-      return await friendModel.deleteFriend();
+      // 將好友ID添加到使用者的好友列表中
+      await _firestore.collection('users').doc(currentUser.uid).update({
+        'friends': FieldValue.arrayUnion([friendId]),
+      });
+
+      return true;
     } catch (e) {
-      print('Error removing friend: $e');
+      print('添加好友錯誤: $e');
       return false;
     }
   }
 
-  // 获取所有好友
-  Stream<List<FriendModel>> getFriends() {
-    return FriendModel.getAllFriends();
+  // 刪除好友
+  Future<bool> removeFriend(String friendId) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
+
+      // 從好友列表中移除
+      await _firestore.collection('users').doc(currentUser.uid).update({
+        'friends': FieldValue.arrayRemove([friendId]),
+      });
+
+      return true;
+    } catch (e) {
+      print('刪除好友錯誤: $e');
+      return false;
+    }
   }
 
-  // 添加好友到房间
+  // 獲取好友資料
+  Stream<List<Map<String, dynamic>>> getFriendsData() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      return Stream.value([]);
+    }
+
+    // 從使用者文件中獲取好友ID列表，然後獲取每個好友的資料
+    return _firestore
+        .collection('users')
+        .doc(currentUser.uid)
+        .snapshots()
+        .asyncMap((userDoc) async {
+          if (!userDoc.exists) {
+            return [];
+          }
+
+          // 從使用者文件中讀取好友ID列表
+          List<String> friendIds = List<String>.from(
+            userDoc.data()?['friends'] ?? [],
+          );
+
+          if (friendIds.isEmpty) {
+            return [];
+          }
+
+          // 獲取所有好友的詳細資料
+          List<Map<String, dynamic>> friendsData = [];
+
+          for (String friendId in friendIds) {
+            DocumentSnapshot friendDoc =
+                await _firestore.collection('users').doc(friendId).get();
+            if (friendDoc.exists) {
+              Map<String, dynamic> data =
+                  friendDoc.data() as Map<String, dynamic>;
+              friendsData.add({
+                'id': friendId,
+                'name': data['name'] ?? '未命名使用者',
+                'email': data['email'] ?? '',
+                'photoURL': data['photoURL'],
+              });
+            }
+          }
+
+          return friendsData;
+        });
+  }
+
+  // 添加好友到房間
   Future<bool> addFriendToRoom(String friendId, String roomId) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     try {
-      final friendDoc =
+      final roomDoc =
           await _firestore
               .collection('users')
               .doc(currentUserId)
-              .collection('friends')
-              .doc(friendId)
+              .collection('rooms')
+              .doc(roomId)
               .get();
 
-      if (!friendDoc.exists) {
+      if (!roomDoc.exists) {
         return false;
       }
 
-      final friendModel = FriendModel.fromSnapshot(friendDoc);
-      return await friendModel.addToRoom(roomId);
+      await _firestore
+          .collection('users')
+          .doc(currentUserId)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+            'authorizedUsers': FieldValue.arrayUnion([friendId]),
+          });
+
+      return true;
     } catch (e) {
       print('Error adding friend to room: $e');
       return false;
@@ -265,20 +304,28 @@ class UserService {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     try {
-      final friendDoc =
+      final roomDoc =
           await _firestore
               .collection('users')
               .doc(currentUserId)
-              .collection('friends')
-              .doc(friendId)
+              .collection('rooms')
+              .doc(roomId)
               .get();
 
-      if (!friendDoc.exists) {
+      if (!roomDoc.exists) {
         return false;
       }
 
-      final friendModel = FriendModel.fromSnapshot(friendDoc);
-      return await friendModel.removeFromRoom(roomId);
+      await _firestore
+          .collection('users')
+          .doc(currentUserId)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+            'authorizedUsers': FieldValue.arrayRemove([friendId]),
+          });
+
+      return true;
     } catch (e) {
       print('Error removing friend from room: $e');
       return false;
@@ -286,21 +333,47 @@ class UserService {
   }
 
   // 获取有权限访问指定房间的好友
-  Future<List<FriendModel>> getFriendsForRoom(String roomId) async {
+  Future<List<Map<String, dynamic>>> getFriendsForRoom(String roomId) async {
     if (currentUserId == null) throw Exception('User not authenticated');
 
     try {
-      final friendsSnapshot =
+      final roomDoc =
           await _firestore
               .collection('users')
               .doc(currentUserId)
-              .collection('friends')
-              .where('sharedRooms', arrayContains: roomId)
+              .collection('rooms')
+              .doc(roomId)
               .get();
 
-      return friendsSnapshot.docs
-          .map((doc) => FriendModel.fromSnapshot(doc))
-          .toList();
+      if (!roomDoc.exists) {
+        return [];
+      }
+
+      List<String> friendIds = List<String>.from(
+        roomDoc.data()?['authorizedUsers'] ?? [],
+      );
+
+      if (friendIds.isEmpty) {
+        return [];
+      }
+
+      List<Map<String, dynamic>> friendsData = [];
+
+      for (String friendId in friendIds) {
+        DocumentSnapshot friendDoc =
+            await _firestore.collection('users').doc(friendId).get();
+        if (friendDoc.exists) {
+          Map<String, dynamic> data = friendDoc.data() as Map<String, dynamic>;
+          friendsData.add({
+            'id': friendId,
+            'name': data['name'] ?? '未命名使用者',
+            'email': data['email'] ?? '',
+            'photoURL': data['photoURL'],
+          });
+        }
+      }
+
+      return friendsData;
     } catch (e) {
       print('Error getting friends for room: $e');
       return [];
