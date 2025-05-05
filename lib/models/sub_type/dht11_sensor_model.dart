@@ -29,9 +29,9 @@ class DHT11SensorModel extends SensorModel {
   @override
   Future<void> createData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
+    if (userId == null) throw Exception('使用者未登入');
 
-    // 如果未指定ID，Firebase会自动生成
+    // 如果未指定ID，Firebase會自動生成
     final docRef =
         id.isEmpty
             ? FirebaseFirestore.instance
@@ -45,15 +45,15 @@ class DHT11SensorModel extends SensorModel {
                 .collection('devices')
                 .doc(id);
 
-    // 更新ID（如果是自动生成的）
+    // 更新ID（如果是自動生成的）
     if (id.isEmpty) {
       id = docRef.id;
     }
 
-    // 保存设备数据
+    // 儲存設備資料
     await docRef.set(toJson());
 
-    // 更新房间的设备列表
+    // 更新房間的設備列表
     await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -67,8 +67,8 @@ class DHT11SensorModel extends SensorModel {
   @override
   Future<void> readData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
+    if (userId == null) throw Exception('使用者未登入');
+    if (id.isEmpty) throw Exception('設備ID不能為空');
 
     final doc =
         await FirebaseFirestore.instance
@@ -79,10 +79,10 @@ class DHT11SensorModel extends SensorModel {
             .get();
 
     if (!doc.exists) {
-      throw Exception('设备不存在');
+      throw Exception('設備不存在');
     }
 
-    // 从文档中读取数据
+    // 從文檔中讀取數據
     final data = doc.data()!;
     fromJson(data);
   }
@@ -90,13 +90,13 @@ class DHT11SensorModel extends SensorModel {
   @override
   Future<void> updateData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
+    if (userId == null) throw Exception('使用者未登入');
+    if (id.isEmpty) throw Exception('設備ID不能為空');
 
-    // 更新值数组
+    // 更新值數組
     value = [temperature, humidity];
 
-    // 更新文档
+    // 更新文檔
     await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -108,10 +108,10 @@ class DHT11SensorModel extends SensorModel {
   @override
   Future<void> deleteData() async {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) throw Exception('用户未登录');
-    if (id.isEmpty) throw Exception('设备ID不能为空');
+    if (userId == null) throw Exception('使用者未登入');
+    if (id.isEmpty) throw Exception('設備ID不能為空');
 
-    // 从房间中移除设备引用
+    // 從房間中移除設備引用
     await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -121,7 +121,7 @@ class DHT11SensorModel extends SensorModel {
           'devices': FieldValue.arrayRemove([id]),
         });
 
-    // 删除设备文档
+    // 刪除設備文檔
     await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -150,7 +150,7 @@ class DHT11SensorModel extends SensorModel {
     return json;
   }
 
-  // 更新传感器数据
+  // 更新感測器資料
   void updateSensorData(double newTemp, double newHumidity) {
     if (newTemp >= MIN_TEMPERATURE && newTemp <= MAX_TEMPERATURE) {
       temperature = newTemp;

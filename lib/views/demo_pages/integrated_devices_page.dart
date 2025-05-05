@@ -28,9 +28,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   String _deviceType = 'switch';
 
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'type': 'switch', 'name': '可切换设备', 'icon': Icons.toggle_on},
-    {'type': 'air_conditioner', 'name': '空调设备', 'icon': Icons.ac_unit},
-    {'type': 'dht11', 'name': 'DHT11温湿度传感器', 'icon': Icons.thermostat},
+    {'type': 'switch', 'name': '可切換設備', 'icon': Icons.toggle_on},
+    {'type': 'air_conditioner', 'name': '空調設備', 'icon': Icons.ac_unit},
+    {'type': 'dht11', 'name': 'DHT11溫濕度傳感器', 'icon': Icons.thermostat},
   ];
 
   @override
@@ -86,7 +86,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   Future<void> _showDeviceTypeSelectionDialog() async {
     if (_selectedRoomId == null) {
       setState(() {
-        _operationMessage = '请先选择或创建一个房间';
+        _operationMessage = '請先選擇或創建一個房間';
       });
       return;
     }
@@ -95,19 +95,19 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('创建新设备'),
+            title: const Text('創建新設備'),
             content: StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
                 return SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('请选择要创建的设备类型:'),
+                      const Text('請選擇要創建的設備類型:'),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: _deviceType,
                         decoration: const InputDecoration(
-                          labelText: '设备类型',
+                          labelText: '設備類型',
                           border: OutlineInputBorder(),
                         ),
                         items:
@@ -132,13 +132,13 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
                       const SizedBox(height: 16),
 
-                      // 设备名称输入
+                      // 設備名稱輸入
                       TextField(
                         controller: _deviceNameController,
                         decoration: const InputDecoration(
-                          labelText: '设备名称',
+                          labelText: '設備名稱',
                           border: OutlineInputBorder(),
-                          hintText: '输入设备名称',
+                          hintText: '輸入設備名稱',
                         ),
                       ),
                     ],
@@ -155,7 +155,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                 onPressed: () {
                   if (_deviceNameController.text.isEmpty) {
                     setState(() {
-                      _operationMessage = '请输入设备名称';
+                      _operationMessage = '請輸入設備名稱';
                     });
                     return;
                   }
@@ -163,7 +163,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                   Navigator.pop(context);
                   _createDeviceInRoom();
                 },
-                child: const Text('创建'),
+                child: const Text('創建'),
               ),
             ],
           ),
@@ -173,21 +173,21 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   Future<void> _createDeviceInRoom() async {
     if (_deviceNameController.text.isEmpty) {
       setState(() {
-        _operationMessage = '请输入设备名称';
+        _operationMessage = '請輸入設備名稱';
       });
       return;
     }
 
     if (_selectedRoomId == null) {
       setState(() {
-        _operationMessage = '请先选择或创建一个房间';
+        _operationMessage = '請先選擇或創建一個房間';
       });
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _operationMessage = '创建设备中...';
+      _operationMessage = '創建設備中...';
     });
 
     try {
@@ -230,7 +230,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
             setState(() {
               _deviceNameController.clear();
               _isLoading = false;
-              _operationMessage = '空调设备创建成功: ${device.name}';
+              _operationMessage = '空調設備創建成功: ${device.name}';
             });
           }
         case 'dht11':
@@ -275,12 +275,12 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
         _selectedRoomId = roomId;
         _selectedRoomName = roomModel.name;
         _isLoading = false;
-        _operationMessage = '已选择房间: ${roomModel.name}';
+        _operationMessage = '已選擇房間: ${roomModel.name}';
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _operationMessage = '加载房间设备错误: $e';
+        _operationMessage = '載入房間設備錯誤: $e';
       });
     }
   }
@@ -300,7 +300,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
       if (!docSnapshot.exists) {
         setState(() {
-          _operationMessage = '设备不存在';
+          _operationMessage = '設備不存在';
         });
         return;
       }
@@ -317,18 +317,18 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
         status: data['status'] ?? false,
       );
 
-      // 切换状态
+      // 切換狀態
       device.status = !currentStatus;
 
-      // 更新设备
+      // 更新設備
       await device.updateData();
 
       setState(() {
-        _operationMessage = '设备状态已更新';
+        _operationMessage = '設備狀態已更新';
       });
     } catch (e) {
       setState(() {
-        _operationMessage = '更新设备状态失败: $e';
+        _operationMessage = '更新設備狀態失敗: $e';
       });
     }
   }
@@ -350,11 +350,11 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           .delete();
 
       setState(() {
-        _operationMessage = '设备已删除';
+        _operationMessage = '設備已刪除';
       });
     } catch (e) {
       setState(() {
-        _operationMessage = '删除设备失败: $e';
+        _operationMessage = '刪除設備失敗: $e';
       });
     }
   }
@@ -367,7 +367,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
               airConditioner: airConditioner,
               onUpdate: () {
                 setState(() {
-                  _operationMessage = '空调设备已更新: ${airConditioner.name}';
+                  _operationMessage = '空調設備已更新: ${airConditioner.name}';
                 });
               },
             ),
@@ -379,14 +379,14 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedRoomName ?? '设备管理中心'),
+        title: Text(_selectedRoomName ?? '設備管理中心'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: '房间选择'),
-            Tab(text: '可切换设备'),
-            Tab(text: '空调设备'),
-            Tab(text: 'DHT11传感器'),
+            Tab(text: '房間選擇'),
+            Tab(text: '可切換設備'),
+            Tab(text: '空調設備'),
+            Tab(text: 'DHT11傳感器'),
           ],
         ),
       ),
@@ -396,16 +396,16 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
               : TabBarView(
                 controller: _tabController,
                 children: [
-                  // 房间选择页面
+                  // 房間選擇页面
                   _buildRoomSelectionTab(),
 
-                  // 可切换设备页面
+                  // 可切換設備页面
                   _buildSwitchableDevicesTab(),
 
-                  // 空调设备页面
+                  // 空調設備页面
                   _buildAirConditionerTab(),
 
-                  // DHT11传感器页面
+                  // DHT11傳感器页面
                   _buildDHT11SensorTab(),
                 ],
               ),
@@ -619,14 +619,14 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '创建可切换设备',
+                    '創建可切換設備',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _selectedRoomName != null
-                        ? '在房间"$_selectedRoomName"中创建设备'
-                        : '请先在房间选择标签页中选择房间',
+                        ? '在房間"$_selectedRoomName"中創建設備'
+                        : '請先在房間選擇標籤頁中選擇房間',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   const SizedBox(height: 16),
@@ -636,9 +636,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         child: TextField(
                           controller: _deviceNameController,
                           decoration: const InputDecoration(
-                            labelText: '设备名称',
+                            labelText: '設備名稱',
                             border: OutlineInputBorder(),
-                            hintText: '输入设备名称',
+                            hintText: '輸入設備名稱',
                           ),
                           enabled: _selectedRoomId != null,
                         ),
@@ -650,7 +650,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                 ? () => _showDeviceTypeSelectionDialog()
                                 : null,
                         icon: const Icon(Icons.add),
-                        label: const Text('创建'),
+                        label: const Text('創建'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             vertical: 16,
@@ -666,11 +666,11 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           ),
           const SizedBox(height: 16),
 
-          // 设备列表区域
+          // 設備列表區域
           Expanded(
             child:
                 _selectedRoomId == null
-                    ? const Center(child: Text('请先在房间选择标签页中选择房间'))
+                    ? const Center(child: Text('請先在房間選擇標籤頁中選擇房間'))
                     : FutureBuilder<RoomModel>(
                       future: RoomModel.getRoom(_selectedRoomId!),
                       builder: (context, roomSnapshot) {
@@ -684,7 +684,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         if (roomSnapshot.hasError || !roomSnapshot.hasData) {
                           return Center(
                             child: Text(
-                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
+                              '載入房間錯誤: ${roomSnapshot.error ?? "未知錯誤"}',
                             ),
                           );
                         }
@@ -698,7 +698,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '房间"${roomModel.name}"中的可切换设备',
+                                  '房間"${roomModel.name}"中的可切換設備',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -711,7 +711,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                     builder: (context, snapshot) {
                                       if (snapshot.hasError) {
                                         return Center(
-                                          child: Text('错误: ${snapshot.error}'),
+                                          child: Text('錯誤: ${snapshot.error}'),
                                         );
                                       }
                                       if (snapshot.connectionState ==
@@ -730,7 +730,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                           }).toList();
                                       if (switchableDevices.isEmpty) {
                                         return const Center(
-                                          child: Text('该房间还没有可切换设备'),
+                                          child: Text('該房間還沒有可切換設備'),
                                         );
                                       }
                                       return ListView.builder(
@@ -767,7 +767,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                 ),
                                               ),
                                               subtitle: Text(
-                                                '最后更新: ${(data['lastUpdated'] as Timestamp?)?.toDate().toString().substring(0, 19) ?? '未知'}',
+                                                '最後更新: ${(data['lastUpdated'] as Timestamp?)?.toDate().toString().substring(0, 19) ?? '未知'}',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey[600],
@@ -777,7 +777,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Text(
-                                                    status ? '开' : '关',
+                                                    status ? '開' : '關',
                                                     style: TextStyle(
                                                       color:
                                                           status
@@ -807,7 +807,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                         () => _deleteDevice(
                                                           deviceId,
                                                         ),
-                                                    tooltip: '删除设备',
+                                                    tooltip: '刪除設備',
                                                   ),
                                                 ],
                                               ),
@@ -843,14 +843,14 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '创建空调设备',
+                    '創建空調設備',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _selectedRoomName != null
-                        ? '在房间"$_selectedRoomName"中创建空调'
-                        : '请先在房间选择标签页中选择房间',
+                        ? '在房間"$_selectedRoomName"中創建空調'
+                        : '請先在房間選擇標籤頁中選擇房間',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   const SizedBox(height: 16),
@@ -860,9 +860,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         child: TextField(
                           controller: _deviceNameController,
                           decoration: const InputDecoration(
-                            labelText: '空调设备名称',
+                            labelText: '空調設備名稱',
                             border: OutlineInputBorder(),
-                            hintText: '输入空调名称',
+                            hintText: '輸入空調名稱',
                           ),
                           enabled: _selectedRoomId != null,
                         ),
@@ -874,7 +874,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                 ? () => _showDeviceTypeSelectionDialog()
                                 : null,
                         icon: const Icon(Icons.add),
-                        label: const Text('创建'),
+                        label: const Text('創建'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             vertical: 16,
@@ -893,7 +893,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           Expanded(
             child:
                 _selectedRoomId == null
-                    ? const Center(child: Text('请先在房间选择标签页中选择房间'))
+                    ? const Center(child: Text('請先在房間選擇標籤頁中選擇房間'))
                     : FutureBuilder<RoomModel>(
                       future: RoomModel.getRoom(_selectedRoomId!),
                       builder: (context, roomSnapshot) {
@@ -907,7 +907,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         if (roomSnapshot.hasError || !roomSnapshot.hasData) {
                           return Center(
                             child: Text(
-                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
+                              '載入房間錯誤: ${roomSnapshot.error ?? "未知錯誤"}',
                             ),
                           );
                         }
@@ -921,7 +921,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '房间"${roomModel.name}"中的空调设备',
+                                  '房間"${roomModel.name}"中的空調設備',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -934,7 +934,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                     builder: (context, snapshot) {
                                       if (snapshot.hasError) {
                                         return Center(
-                                          child: Text('错误: ${snapshot.error}'),
+                                          child: Text('錯誤: ${snapshot.error}'),
                                         );
                                       }
                                       if (snapshot.connectionState ==
@@ -945,7 +945,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                       }
                                       final devices = snapshot.data ?? [];
                                       final acDevices = <AirConditionerModel>[];
-                                      // 筛选出空调设备
+                                      // 篩選出空調設備
                                       for (var device in devices) {
                                         final data =
                                             device.data()
@@ -968,13 +968,13 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                 );
                                             acDevices.add(acDevice);
                                           } catch (e) {
-                                            print('加载设备错误: $e');
+                                            print('載入設備錯誤: $e');
                                           }
                                         }
                                       }
                                       if (acDevices.isEmpty) {
                                         return const Center(
-                                          child: Text('该房间还没有空调设备'),
+                                          child: Text('該房間還沒有空調設備'),
                                         );
                                       }
                                       return GridView.builder(
@@ -1069,8 +1069,8 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                           ),
                                                           child: Text(
                                                             device.status
-                                                                ? '开启'
-                                                                : '关闭',
+                                                                ? '開啟'
+                                                                : '關閉',
                                                             style: TextStyle(
                                                               color:
                                                                   device.status
@@ -1123,7 +1123,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                           () => _deleteDevice(
                                                             device.id,
                                                           ),
-                                                      tooltip: '删除空调',
+                                                      tooltip: '刪除空調',
                                                     ),
                                                   ],
                                                 ),
@@ -1153,7 +1153,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 传感器创建区域
+          // 傳感器創建區域
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -1161,14 +1161,14 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '创建DHT11传感器',
+                    '創建DHT11傳感器',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _selectedRoomName != null
-                        ? '在房间"$_selectedRoomName"中创建传感器'
-                        : '请先在房间选择标签页中选择房间',
+                        ? '在房間"$_selectedRoomName"中創建傳感器'
+                        : '請先在房間選擇標籤頁中選擇房間',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   const SizedBox(height: 16),
@@ -1178,9 +1178,9 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         child: TextField(
                           controller: _deviceNameController,
                           decoration: const InputDecoration(
-                            labelText: '传感器名称',
+                            labelText: '傳感器名稱',
                             border: OutlineInputBorder(),
-                            hintText: '输入传感器名称',
+                            hintText: '輸入傳感器名稱',
                           ),
                           enabled: _selectedRoomId != null,
                         ),
@@ -1192,7 +1192,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                 ? () => _showDeviceTypeSelectionDialog()
                                 : null,
                         icon: const Icon(Icons.add),
-                        label: const Text('创建'),
+                        label: const Text('創建'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             vertical: 16,
@@ -1208,11 +1208,11 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
           ),
           const SizedBox(height: 16),
 
-          // 传感器列表区域
+          // 傳感器列表區域
           Expanded(
             child:
                 _selectedRoomId == null
-                    ? const Center(child: Text('请先在房间选择标签页中选择房间'))
+                    ? const Center(child: Text('請先在房間選擇標籤頁中選擇房間'))
                     : FutureBuilder<RoomModel>(
                       future: RoomModel.getRoom(_selectedRoomId!),
                       builder: (context, roomSnapshot) {
@@ -1226,7 +1226,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                         if (roomSnapshot.hasError || !roomSnapshot.hasData) {
                           return Center(
                             child: Text(
-                              '加载房间错误: ${roomSnapshot.error ?? "未知错误"}',
+                              '載入房間錯誤: ${roomSnapshot.error ?? "未知錯誤"}',
                             ),
                           );
                         }
@@ -1240,7 +1240,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '房间"${roomModel.name}"中的DHT11传感器',
+                                  '房間"${roomModel.name}"中的DHT11傳感器',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -1253,7 +1253,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                     builder: (context, snapshot) {
                                       if (snapshot.hasError) {
                                         return Center(
-                                          child: Text('错误: ${snapshot.error}'),
+                                          child: Text('錯誤: ${snapshot.error}'),
                                         );
                                       }
 
@@ -1267,7 +1267,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                       final devices = snapshot.data ?? [];
                                       final dht11Devices = <DHT11SensorModel>[];
 
-                                      // 筛选出DHT11传感器设备
+                                      // 篩選出DHT11傳感器設備
                                       for (var device in devices) {
                                         final data =
                                             device.data()
@@ -1289,14 +1289,14 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                 );
                                             dht11Devices.add(dht11Device);
                                           } catch (e) {
-                                            print('加载设备错误: $e');
+                                            print('載入設備錯誤: $e');
                                           }
                                         }
                                       }
 
                                       if (dht11Devices.isEmpty) {
                                         return const Center(
-                                          child: Text('该房间还没有DHT11传感器设备'),
+                                          child: Text('該房間還沒有DHT11傳感器設備'),
                                         );
                                       }
 
@@ -1342,7 +1342,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                   ),
                                                   const SizedBox(height: 6),
                                                   Text(
-                                                    '温度: ${device.temperature.toInt()}°C',
+                                                    '溫度: ${device.temperature.toInt()}°C',
                                                     style: const TextStyle(
                                                       fontSize: 14,
                                                       fontWeight:
@@ -1351,7 +1351,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
-                                                    '湿度: ${device.humidity.toInt()}%',
+                                                    '濕度: ${device.humidity.toInt()}%',
                                                     style: const TextStyle(
                                                       fontSize: 14,
                                                       fontWeight:
@@ -1367,7 +1367,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
                                                         () => _deleteDevice(
                                                           device.id,
                                                         ),
-                                                    tooltip: '删除传感器',
+                                                    tooltip: '刪除傳感器',
                                                   ),
                                                 ],
                                               ),

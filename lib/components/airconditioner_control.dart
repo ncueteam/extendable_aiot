@@ -27,14 +27,14 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
   @override
   void initState() {
     super.initState();
-    // 初始化状态
+    // 初始化狀態
     temperature = widget.airConditioner.temperature;
     mode = widget.airConditioner.mode;
     fanSpeed = widget.airConditioner.fanSpeed;
     powerOn = widget.airConditioner.status;
   }
 
-  // 更新空调设置到Firebase
+  // 更新空調設置到Firebase
   Future<void> _updateAirConditioner() async {
     if (_isUpdating) return;
 
@@ -43,7 +43,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
     });
 
     try {
-      // 更新本地模型数据
+      // 更新本地模型數據
       widget.airConditioner.temperature = temperature;
       widget.airConditioner.mode = mode;
       widget.airConditioner.fanSpeed = fanSpeed;
@@ -53,7 +53,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
       // 保存到Firebase
       await widget.airConditioner.updateData();
 
-      // 回调通知父组件已更新
+      // 回調通知父元件已更新
       if (widget.onUpdate != null) {
         widget.onUpdate!();
       }
@@ -61,13 +61,13 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('空调设置已更新')));
+        ).showSnackBar(const SnackBar(content: Text('空調設置已更新')));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('更新失败: $e')));
+        ).showSnackBar(SnackBar(content: Text('更新失敗: $e')));
       }
     } finally {
       if (mounted) {
@@ -88,13 +88,13 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(localizations?.airCondition ?? '空调'),
+        title: Text(localizations?.airCondition ?? '空調'),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _updateAirConditioner,
-            tooltip: '保存设置',
+            tooltip: '保存設置',
           ),
         ],
       ),
@@ -106,7 +106,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      // 设备名称
+                      // 設備名稱
                       Text(
                         widget.airConditioner.name,
                         style: const TextStyle(
@@ -116,7 +116,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 10),
 
-                      // 房间信息
+                      // 房間信息
                       Text(
                         '位置: ${widget.airConditioner.roomId}',
                         style: const TextStyle(
@@ -126,7 +126,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 温度显示
+                      // 溫度顯示
                       Text(
                         '${temperature.toInt()}°',
                         style: const TextStyle(
@@ -135,7 +135,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                         ),
                       ),
                       Text(
-                        localizations?.celsius ?? '摄氏度',
+                        localizations?.celsius ?? '攝氏度',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -143,7 +143,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 温度调节滑块
+                      // 溫度調節滑塊
                       Slider(
                         value: temperature,
                         min: 16,
@@ -160,7 +160,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 30),
 
-                      // 模式选择
+                      // 模式選擇
                       _buildSectionTitle(localizations?.mode ?? '模式'),
                       const SizedBox(height: 10),
                       Row(
@@ -187,8 +187,8 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 30),
 
-                      // 风速选择
-                      _buildSectionTitle(localizations?.fanSpeed ?? '风速'),
+                      // 風速選擇
+                      _buildSectionTitle(localizations?.fanSpeed ?? '風速'),
                       const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -214,7 +214,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       ),
                       const SizedBox(height: 60),
 
-                      // 电源开关
+                      // 電源開關
                       Container(
                         decoration: BoxDecoration(
                           color: powerOn ? Colors.blue : Colors.grey[300],
@@ -228,7 +228,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              localizations?.power ?? '电源',
+                              localizations?.power ?? '電源',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: powerOn ? Colors.white : Colors.black87,
@@ -247,10 +247,10 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                         ),
                       ),
 
-                      // 最后更新时间
+                      // 最後更新時間
                       const SizedBox(height: 20),
                       Text(
-                        '最后更新: ${widget.airConditioner.lastUpdated.toDate().toString().substring(0, 19)}',
+                        '最後更新: ${widget.airConditioner.lastUpdated.toDate().toString().substring(0, 19)}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
@@ -267,7 +267,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
     );
   }
 
-  // 构建标题组件
+  // 構建標題元件
   Widget _buildSectionTitle(String title) {
     return Align(
       alignment: Alignment.centerLeft,
@@ -278,7 +278,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
     );
   }
 
-  // 构建选项按钮
+  // 構建選項按鈕
   Widget _buildOptionButton({
     required String label,
     required bool selected,
@@ -321,21 +321,21 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
     );
   }
 
-  // 获取本地化的模式文本
+  // 獲取本地化的模式文本
   String _getModeText(String mode, AppLocalizations? localizations) {
     switch (mode) {
       case 'Auto':
-        return localizations?.auto ?? '自动';
+        return localizations?.auto ?? '自動';
       case 'Cool':
-        return localizations?.cool ?? '制冷';
+        return localizations?.cool ?? '製冷';
       case 'Dry':
-        return localizations?.dry ?? '除湿';
+        return localizations?.dry ?? '除濕';
       default:
         return mode;
     }
   }
 
-  // 获取本地化的风速文本
+  // 獲取本地化的風速文本
   String _getFanSpeedText(String speed, AppLocalizations? localizations) {
     switch (speed) {
       case 'Low':

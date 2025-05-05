@@ -229,7 +229,7 @@ class _RoomPageState extends State<RoomPage>
     if (_roomModel == null) return;
 
     try {
-      setState(() => _maintainState = true); // 确保状态保持
+      setState(() => _maintainState = true); // 確保狀態保持
 
       switch (type) {
         case 'air_conditioner':
@@ -542,10 +542,10 @@ class _RoomPageState extends State<RoomPage>
       return;
     }
 
-    // 使用本地状态表示好友访问权限，避免频繁查询数据库
+    // 使用本地狀態表示好友訪問權限，避免頻繁查詢資料庫
     Map<String, bool> friendAccessState = {};
 
-    // 预先加载所有好友的权限状态
+    // 預先載入所有好友的權限狀態
     Future<void> preloadFriendsAccessStatus() async {
       for (final friend in _allFriends) {
         final hasAccess = await RoomModel.isUserAuthorized(
@@ -557,7 +557,7 @@ class _RoomPageState extends State<RoomPage>
       return;
     }
 
-    // 显示带有加载指示器的对话框
+    // 顯示帶有載入指示器的對話框
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -568,23 +568,23 @@ class _RoomPageState extends State<RoomPage>
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('载入好友权限状态...'),
+              Text('載入好友權限狀態...'),
             ],
           ),
         );
       },
     );
 
-    // 预加载所有权限状态
+    // 預載入所有權限狀態
     preloadFriendsAccessStatus().then((_) {
-      // 关闭加载对话框
+      // 關閉載入對話框
       Navigator.of(context).pop();
 
-      // 显示真正的权限管理对话框
+      // 顯示真正的權限管理對話框
       showDialog(
         context: context,
         builder: (context) {
-          // 使用StatefulBuilder允许更新对话框内部状态而不重载整个页面
+          // 使用StatefulBuilder允許更新對話框內部狀態而不重新載入整個頁面
           return StatefulBuilder(
             builder:
                 (context, setDialogState) => AlertDialog(
@@ -609,18 +609,18 @@ class _RoomPageState extends State<RoomPage>
                             value: hasAccess,
                             onChanged: (value) async {
                               try {
-                                // 立即更新UI状态
+                                // 立即更新UI狀態
                                 setDialogState(() {
                                   friendAccessState[friendId] = value;
                                 });
 
                                 if (value) {
-                                  // 添加访问权限
+                                  // 添加訪問權限
                                   await RoomModel.addAuthorizedUser(
                                     widget.roomId,
                                     friendId,
                                   );
-                                  // 显示成功消息
+                                  // 顯示成功消息
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -631,12 +631,12 @@ class _RoomPageState extends State<RoomPage>
                                     );
                                   }
                                 } else {
-                                  // 移除访问权限
+                                  // 移除訪問權限
                                   await RoomModel.removeAuthorizedUser(
                                     widget.roomId,
                                     friendId,
                                   );
-                                  // 显示移除消息
+                                  // 顯示移除消息
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -648,10 +648,10 @@ class _RoomPageState extends State<RoomPage>
                                   }
                                 }
 
-                                // 更新外部状态但不触发整个页面重载
+                                // 更新外部狀態但不觸發整個頁面重載
                                 if (mounted) {
                                   setState(() {
-                                    // 只更新本地房间好友列表，不重新加载或导航
+                                    // 只更新本地房間好友列表，不重新載入或導航
                                     if (value) {
                                       if (!_roomFriends.any(
                                         (f) => f.id == friendId,
@@ -666,8 +666,8 @@ class _RoomPageState extends State<RoomPage>
                                   });
                                 }
                               } catch (e) {
-                                print('更新好友权限错误: $e');
-                                // 发生错误时恢复状态
+                                print('更新好友權限錯誤: $e');
+                                // 發生錯誤時恢復狀態
                                 setDialogState(() {
                                   friendAccessState[friendId] = !value;
                                 });
@@ -675,7 +675,7 @@ class _RoomPageState extends State<RoomPage>
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('出现错误: $e'),
+                                      content: Text('出現錯誤: $e'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -785,7 +785,7 @@ class _RoomPageState extends State<RoomPage>
                         });
                       }
                     } catch (e) {
-                      print('删除房间错误: $e');
+                      print('刪除房間錯誤: $e');
                       if (mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(

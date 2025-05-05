@@ -17,7 +17,7 @@ class DeviceCard extends StatefulWidget {
 }
 
 class _DeviceCardState extends State<DeviceCard> {
-  // 更新设备状态
+  // 更新設備狀態
   Future<void> _toggleDeviceStatus(bool currentStatus) async {
     try {
       // 使用 DeviceModel 的靜態方法更新設備狀態，傳入與當前狀態相反的值
@@ -35,19 +35,19 @@ class _DeviceCardState extends State<DeviceCard> {
     }
   }
 
-  // 根据设备类型导航到相应的控制页面
+  // 根據設備類型導航到相應的控制頁面
   void _navigateToDeviceControl() {
     if (widget.device is AirConditionerModel) {
       _openAirConditionerControl(widget.device as AirConditionerModel);
     } else if (widget.device is DHT11SensorModel) {
       _openSensorDetails(widget.device as DHT11SensorModel);
     } else if (widget.device is SwitchableModel) {
-      // 可以根据需要为其他类型的设备实现具体的页面导航
+      // 可以根據需要為其他類型的設備實現具體的頁面導航
       _openGenericDeviceControl(widget.device);
     }
   }
 
-  // 打开空调控制页面
+  // 打開空調控制頁面
   void _openAirConditionerControl(AirConditionerModel airConditioner) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -62,17 +62,17 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 打开DHT11传感器详情页面
+  // 打開DHT11傳感器詳情頁面
   void _openSensorDetails(DHT11SensorModel sensor) {
-    // 这里可以替换为具体的传感器详情页面
+    // 這裡可以替換為具體的傳感器詳情頁面
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('DHT11傳感器: ${sensor.name}')));
   }
 
-  // 打开通用设备控制页面
+  // 打開通用設備控制頁面
   void _openGenericDeviceControl(GeneralModel device) {
-    // 这里可以替换为通用设备控制页面
+    // 這裡可以替換為通用設備控制頁面
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('設備: ${device.name}')));
@@ -80,7 +80,7 @@ class _DeviceCardState extends State<DeviceCard> {
 
   @override
   Widget build(BuildContext context) {
-    // 根据设备类型选择不同的显示方式
+    // 根據設備類型選擇不同的顯示方式
     if (widget.device is AirConditionerModel) {
       return _buildAirConditionerCard(widget.device as AirConditionerModel);
     } else if (widget.device is DHT11SensorModel) {
@@ -105,16 +105,16 @@ class _DeviceCardState extends State<DeviceCard> {
           return _buildSwitchableCard(widget.device as SwitchableModel);
       }
     } else {
-      // 默认卡片
+      // 預設卡片
       return _buildDefaultCard(widget.device);
     }
   }
 
-  // 空调设备卡片
+  // 空調設備卡片
   Widget _buildAirConditionerCard(AirConditionerModel device) {
     return InkWell(
       onTap: () {
-        print("空调卡片被点击: ${device.name}"); // 调试信息
+        print("空調卡片被點擊: ${device.name}"); // 調試信息
         _openAirConditionerControl(device);
       },
       borderRadius: BorderRadius.circular(15),
@@ -197,7 +197,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // DHT11 温湿度传感器卡片
+  // DHT11 溫濕度傳感器卡片
   Widget _buildDHT11SensorCard(DHT11SensorModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -273,7 +273,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 可切换设备卡片
+  // 可切換設備卡片
   Widget _buildSwitchableCard(SwitchableModel device) {
     Color cardColor = device.status ? Colors.blue.shade50 : Colors.grey[100]!;
     Color iconColor = device.status ? Colors.blue : Colors.grey;
@@ -333,7 +333,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 风扇设备卡片
+  // 風扇設備卡片
   Widget _buildFanCard(SwitchableModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -386,7 +386,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 灯光设备卡片
+  // 燈光設備卡片
   Widget _buildLightCard(SwitchableModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -439,7 +439,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 窗帘设备卡片
+  // 窗簾設備卡片
   Widget _buildCurtainCard(SwitchableModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -492,7 +492,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 门设备卡片
+  // 門設備卡片
   Widget _buildDoorCard(SwitchableModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -545,7 +545,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 传感器设备卡片
+  // 傳感器設備卡片
   Widget _buildSensorCard(SwitchableModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
@@ -598,7 +598,7 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 默认设备卡片
+  // 預設設備卡片
   Widget _buildDefaultCard(GeneralModel device) {
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
