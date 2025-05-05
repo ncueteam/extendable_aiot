@@ -20,10 +20,10 @@ class _DeviceCardState extends State<DeviceCard> {
   // 更新设备状态
   Future<void> _toggleDeviceStatus(bool currentStatus) async {
     try {
-      // 使用 DeviceModel 的靜態方法更新設備狀態
+      // 使用 DeviceModel 的靜態方法更新設備狀態，傳入與當前狀態相反的值
       await DeviceModel.updateDeviceStatus(
         deviceId: widget.device.id,
-        status: currentStatus,
+        status: !currentStatus, // 將狀態切換為相反值
       );
       setState(() {});
     } catch (e) {
@@ -86,7 +86,24 @@ class _DeviceCardState extends State<DeviceCard> {
     } else if (widget.device is DHT11SensorModel) {
       return _buildDHT11SensorCard(widget.device as DHT11SensorModel);
     } else if (widget.device is SwitchableModel) {
-      return _buildSwitchableCard(widget.device as SwitchableModel);
+      // 根據特定設備類型調整顯示
+      String deviceType = (widget.device as SwitchableModel).type;
+      switch (deviceType) {
+        case 'fan':
+          return _buildFanCard(widget.device as SwitchableModel);
+        case 'light':
+          return _buildLightCard(widget.device as SwitchableModel);
+        case 'curtain':
+          return _buildCurtainCard(widget.device as SwitchableModel);
+        case 'door':
+          return _buildDoorCard(widget.device as SwitchableModel);
+        case 'sensor':
+          return _buildSensorCard(widget.device as SwitchableModel);
+        case 'switch':
+          return _buildSwitchableCard(widget.device as SwitchableModel);
+        default:
+          return _buildSwitchableCard(widget.device as SwitchableModel);
+      }
     } else {
       // 默认卡片
       return _buildDefaultCard(widget.device);
@@ -291,6 +308,271 @@ class _DeviceCardState extends State<DeviceCard> {
             Text(
               truncateString(device.type, 12),
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  device.status ? '開啟' : '關閉',
+                  style: TextStyle(
+                    color: device.status ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Switch(
+                  value: device.status,
+                  onChanged: (_) => _toggleDeviceStatus(device.status),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 风扇设备卡片
+  Widget _buildFanCard(SwitchableModel device) {
+    return GestureDetector(
+      onTap: () => _navigateToDeviceControl(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: device.status ? Colors.blue.shade50 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.toys, size: 24, color: Colors.blue),
+            const SizedBox(height: 8),
+            Text(
+              truncateString(device.name, 12),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  device.status ? '開啟' : '關閉',
+                  style: TextStyle(
+                    color: device.status ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Switch(
+                  value: device.status,
+                  onChanged: (_) => _toggleDeviceStatus(device.status),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 灯光设备卡片
+  Widget _buildLightCard(SwitchableModel device) {
+    return GestureDetector(
+      onTap: () => _navigateToDeviceControl(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: device.status ? Colors.yellow.shade50 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.lightbulb, size: 24, color: Colors.yellow),
+            const SizedBox(height: 8),
+            Text(
+              truncateString(device.name, 12),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  device.status ? '開啟' : '關閉',
+                  style: TextStyle(
+                    color: device.status ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Switch(
+                  value: device.status,
+                  onChanged: (_) => _toggleDeviceStatus(device.status),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 窗帘设备卡片
+  Widget _buildCurtainCard(SwitchableModel device) {
+    return GestureDetector(
+      onTap: () => _navigateToDeviceControl(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: device.status ? Colors.green.shade50 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.window, size: 24, color: Colors.green),
+            const SizedBox(height: 8),
+            Text(
+              truncateString(device.name, 12),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  device.status ? '開啟' : '關閉',
+                  style: TextStyle(
+                    color: device.status ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Switch(
+                  value: device.status,
+                  onChanged: (_) => _toggleDeviceStatus(device.status),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 门设备卡片
+  Widget _buildDoorCard(SwitchableModel device) {
+    return GestureDetector(
+      onTap: () => _navigateToDeviceControl(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: device.status ? Colors.brown.shade50 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.door_front_door, size: 24, color: Colors.brown),
+            const SizedBox(height: 8),
+            Text(
+              truncateString(device.name, 12),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  device.status ? '開啟' : '關閉',
+                  style: TextStyle(
+                    color: device.status ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Switch(
+                  value: device.status,
+                  onChanged: (_) => _toggleDeviceStatus(device.status),
+                  activeColor: Colors.blue,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 传感器设备卡片
+  Widget _buildSensorCard(SwitchableModel device) {
+    return GestureDetector(
+      onTap: () => _navigateToDeviceControl(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: device.status ? Colors.purple.shade50 : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.sensors, size: 24, color: Colors.purple),
+            const SizedBox(height: 8),
+            Text(
+              truncateString(device.name, 12),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              overflow: TextOverflow.ellipsis,
             ),
             const Spacer(),
             Row(

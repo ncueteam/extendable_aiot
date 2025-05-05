@@ -162,61 +162,64 @@ class _RoomPageState extends State<RoomPage>
     return showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.addDevice ?? '新增設備'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _deviceNameController,
-                  decoration: InputDecoration(
-                    labelText: localizations?.deviceName ?? '設備名稱',
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: Text(localizations?.addDevice ?? '新增設備'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _deviceNameController,
+                        decoration: InputDecoration(
+                          labelText: localizations?.deviceName ?? '設備名稱',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButton<String>(
+                        value: _selectedDeviceType,
+                        items:
+                            _deviceTypes.map((Map<String, dynamic> type) {
+                              return DropdownMenuItem<String>(
+                                value: type['type'] as String,
+                                child: Row(
+                                  children: [
+                                    Icon(type['icon'] as IconData),
+                                    const SizedBox(width: 8),
+                                    Text(type['name'] as String),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            _selectedDeviceType = value!;
+                          });
+                        },
+                      ),
+                    ],
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(localizations?.cancel ?? '取消'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        if (_deviceNameController.text.isNotEmpty &&
+                            _roomModel != null) {
+                          await _addDevice(
+                            _deviceNameController.text,
+                            _selectedDeviceType,
+                          );
+                          _deviceNameController.clear();
+                          if (mounted) Navigator.pop(context);
+                        }
+                      },
+                      child: Text(localizations?.confirm ?? '確認'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                DropdownButton<String>(
-                  value: _selectedDeviceType,
-                  items:
-                      _deviceTypes.map((Map<String, dynamic> type) {
-                        return DropdownMenuItem<String>(
-                          value: type['type'] as String,
-                          child: Row(
-                            children: [
-                              Icon(type['icon'] as IconData),
-                              const SizedBox(width: 8),
-                              Text(type['name'] as String),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDeviceType = value!;
-                    });
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (_deviceNameController.text.isNotEmpty &&
-                      _roomModel != null) {
-                    await _addDevice(
-                      _deviceNameController.text,
-                      _selectedDeviceType,
-                    );
-                    _deviceNameController.clear();
-                    if (mounted) Navigator.pop(context);
-                  }
-                },
-                child: Text(localizations?.confirm ?? '確認'),
-              ),
-            ],
           ),
     );
   }
@@ -250,11 +253,11 @@ class _RoomPageState extends State<RoomPage>
           await DeviceModel.addDeviceToRoom(dht11Device, widget.roomId);
           break;
         default:
-          // 預設使用基本的 SwitchModel
+          // 預設使用基本的 SwitchModel，但保留原始設備類型
           final switchable = SwitchModel(
             null, // Firebase 會自動生成 ID
             name: name,
-            type: type,
+            type: type, // 保留原始的設備類型
             lastUpdated: Timestamp.now(),
             icon: _getIconForType(type),
             updateValue: [true, false],
@@ -345,7 +348,18 @@ class _RoomPageState extends State<RoomPage>
                             roomId: widget.roomId,
                             lastUpdated: lastUpdated,
                           );
-                          acDevice.fromJson(data);
+                          // 安全地使用 fromJson 方法，確保必要的字段存在
+                          Map<String, dynamic> safeData = {
+                            ...data,
+                            'lastUpdated':
+                                data['lastUpdated'] ?? Timestamp.now(),
+                            'temperature':
+                                (data['temperature'] as num?)?.toDouble() ??
+                                25.0,
+                            'mode': data['mode'] ?? 'Auto',
+                            'fanSpeed': data['fanSpeed'] ?? 'Mid',
+                          };
+                          acDevice.fromJson(safeData);
                           deviceModels.add(acDevice);
                         } catch (e) {
                           print('解析空調設備錯誤: $e');
