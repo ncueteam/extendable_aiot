@@ -51,6 +51,42 @@ bool ConfigManager::deleteWiFiCredentials() {
     return _storage.deleteKey("ssid") && _storage.deleteKey("password");
 }
 
+// 房間ID相關方法
+bool ConfigManager::saveRoomID(const char* roomID) {
+    if (roomID == nullptr) {
+        return false;
+    }
+    
+    return _storage.saveString("roomID", roomID);
+}
+
+bool ConfigManager::loadRoomID(char* roomID, size_t roomIDSize) {
+    if (roomID == nullptr || roomIDSize == 0) {
+        return false;
+    }
+    
+    String tempRoomID = _storage.loadString("roomID", "");
+    
+    // 檢查是否有資料和緩衝區大小
+    if (tempRoomID.length() == 0 || tempRoomID.length() >= roomIDSize) {
+        return false;
+    }
+    
+    // 複製到提供的緩衝區
+    strncpy(roomID, tempRoomID.c_str(), roomIDSize - 1);
+    roomID[roomIDSize - 1] = '\0'; // 確保以null結尾
+    
+    return true;
+}
+
+bool ConfigManager::hasRoomID() {
+    return _storage.hasKey("roomID");
+}
+
+bool ConfigManager::deleteRoomID() {
+    return _storage.deleteKey("roomID");
+}
+
 // 一般設定值管理方法 - 簡單委託給StorageManager
 bool ConfigManager::saveString(const char* key, const char* value) {
     return _storage.saveString(key, value);

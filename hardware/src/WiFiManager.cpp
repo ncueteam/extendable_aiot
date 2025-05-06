@@ -4,9 +4,11 @@ WiFiManager::WiFiManager(ConfigManager* configManager) {
     _configManager = configManager;
     _isConnected = false;
     _hasCredentials = false;
+    _hasRoomID = false;
     
     memset(_ssid, 0, sizeof(_ssid));
     memset(_password, 0, sizeof(_password));
+    memset(_roomID, 0, sizeof(_roomID));
 }
 
 WiFiManager::~WiFiManager() {
@@ -16,6 +18,7 @@ WiFiManager::~WiFiManager() {
 void WiFiManager::begin() {
     WiFi.mode(WIFI_STA);
     _hasCredentials = loadCredentials();
+    _hasRoomID = loadRoomID();
 }
 
 bool WiFiManager::connect(bool forceUseStored) {
@@ -75,7 +78,7 @@ void WiFiManager::disconnect() {
     }
 }
 
-bool WiFiManager::setCredentials(const char* ssid, const char* password) {
+bool WiFiManager::setCredentials(const char* ssid, const char* password, const char* roomID) {
     if (!ssid || !password) {
         return false;
     }
@@ -91,6 +94,16 @@ bool WiFiManager::setCredentials(const char* ssid, const char* password) {
     bool saved = _configManager->saveWiFiCredentials(_ssid, _password);
     if (saved) {
         _hasCredentials = true;
+    }
+    
+    // 如果提供了房間ID，也保存它
+    if (roomID != nullptr) {
+        strncpy(_roomID, roomID, sizeof(_roomID) - 1);
+        _roomID[sizeof(_roomID) - 1] = '\0';
+        
+        if (_configManager->saveRoomID(_roomID)) {
+            _hasRoomID = true;
+        }
     }
     
     return saved;
@@ -147,6 +160,24 @@ bool WiFiManager::parseCredentials(const char* message) {
     strncpy(_ssid, ssidPtr, ssidLen);
     strncpy(_password, passPtr, passLen);
     
+    // 嘗試解析房間ID (可選)
+    memset(_roomID, 0, sizeof(_roomID));
+    _hasRoomID = false;
+    
+    char* roomPtr = strstr(message, "ROOM=");
+    if (roomPtr) {
+        roomPtr += 5; // 跳過"ROOM="
+        char* roomEnd = strchr(roomPtr, ';');
+        if (roomEnd) {
+            int roomLen = roomEnd - roomPtr;
+            if (roomLen < sizeof(_roomID)) {
+                strncpy(_roomID, roomPtr, roomLen);
+                _hasRoomID = true;
+                _configManager->saveRoomID(_roomID);
+            }
+        }
+    }
+    
     // 保存憑證
     bool saved = _configManager->saveWiFiCredentials(_ssid, _password);
     if (saved) {
@@ -165,6 +196,17 @@ String WiFiManager::getIPAddress() const {
         return WiFi.localIP().toString();
     }
     return "Not connected";
+}
+
+String WiFiManager::getRoomID() const {
+    if (_hasRoomID) {
+        return String(_roomID);
+    }
+    return "";
+}
+
+bool WiFiManager::hasRoomID() const {
+    return _hasRoomID;
 }
 
 bool WiFiManager::isConnected() const {
@@ -187,6 +229,15 @@ bool WiFiManager::loadCredentials() {
     // 從ConfigManager獲取憑證
     bool success = _configManager->loadWiFiCredentials(_ssid, sizeof(_ssid), _password, sizeof(_password));
     return success;
+}
+
+bool WiFiManager::loadRoomID() {
+    if (!_configManager) {
+        return false;
+    }
+    
+    // 從ConfigManager加載房間ID
+    return _configManager->loadRoomID(_roomID, sizeof(_roomID));
 }
 
 void WiFiManager::notifyStatus(bool connected, const String& message) {

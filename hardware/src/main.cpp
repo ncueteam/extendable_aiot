@@ -126,7 +126,12 @@ void handleWiFiCredentials(const char* message) {
     // 透過BLE發送連接結果通知
     String statusMsg;
     if (connected) {
-      statusMsg = "WIFI_CONNECTED:" + wifiManager.getIPAddress();
+      // 如果設置了房間ID，則在連接成功訊息中也返回房間ID
+      if (wifiManager.hasRoomID()) {
+        statusMsg = "WIFI_CONNECTED:" + wifiManager.getIPAddress() + "|ROOM:" + wifiManager.getRoomID();
+      } else {
+        statusMsg = "WIFI_CONNECTED:" + wifiManager.getIPAddress();
+      }
     } else {
       statusMsg = "WIFI_FAILED";
     }

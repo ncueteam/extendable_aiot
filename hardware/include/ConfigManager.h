@@ -22,6 +22,12 @@ public:
     bool loadWiFiCredentials(char* ssid, size_t ssidSize, char* password, size_t passwordSize);
     bool hasWiFiCredentials();
     bool deleteWiFiCredentials();
+    
+    // 房間ID相關方法
+    bool saveRoomID(const char* roomID);
+    bool loadRoomID(char* roomID, size_t roomIDSize);
+    bool hasRoomID();
+    bool deleteRoomID();
 
     // 一般設定值管理方法 - 這些方法委託給StorageManager
     bool saveString(const char* key, const char* value);

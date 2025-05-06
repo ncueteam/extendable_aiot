@@ -11,6 +11,10 @@ import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:extendable_aiot/utils/edit_room.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
+import 'dart:convert';
 
 class RoomPage extends StatefulWidget {
   final String roomId;
@@ -24,6 +28,8 @@ class RoomPage extends StatefulWidget {
 class _RoomPageState extends State<RoomPage>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _deviceNameController = TextEditingController();
+  final TextEditingController _ssidController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   String _selectedDeviceType = 'air_conditioner';
   RoomModel? _roomModel;
   bool _maintainState = true;
@@ -33,6 +39,17 @@ class _RoomPageState extends State<RoomPage>
   bool loading = true;
   bool error = false;
   String? errorMsg;
+
+  // BLE相關變數
+  bool _isBluetoothEnabled = false;
+  bool _isScanning = false;
+  final List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _connectedDevice;
+  bool _isConnecting = false;
+  bool _isConnected = false;
+  BluetoothCharacteristic? _writeCharacteristic;
+  String _bleStatus = '';
+  String _bleMessage = '';
 
   // 修改好友列表狀態的類型
   UserModel? _currentUser;
@@ -291,6 +308,598 @@ class _RoomPageState extends State<RoomPage>
     }
   }
 
+  // Check and request necessary Bluetooth permissions
+  Future<void> _checkBluetoothPermissions() async {
+    // Request Bluetooth permissions
+    Map<Permission, PermissionStatus> statuses =
+        await [
+          Permission.bluetooth,
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.bluetoothAdvertise,
+          Permission.location,
+        ].request();
+
+    bool allGranted = true;
+    statuses.forEach((permission, status) {
+      if (!status.isGranted) {
+        allGranted = false;
+      }
+    });
+
+    if (allGranted) {
+      _checkBluetoothStatus();
+    } else {
+      setState(() {
+        _bleStatus = '藍牙權限被拒絕';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('需要藍牙權限以配置WiFi'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Check Bluetooth status
+  Future<void> _checkBluetoothStatus() async {
+    try {
+      bool isEnabled = await FlutterBluePlus.isOn;
+
+      setState(() {
+        _isBluetoothEnabled = isEnabled;
+        _bleStatus = _isBluetoothEnabled ? '藍牙已啟用' : '藍牙未啟用';
+      });
+
+      if (_isBluetoothEnabled) {
+        _startDiscovery();
+      } else {
+        // Request user to turn on Bluetooth
+        await FlutterBluePlus.turnOn();
+        _checkBluetoothStatus();
+      }
+    } catch (e) {
+      setState(() {
+        _bleStatus = '檢查藍牙狀態失敗: $e';
+      });
+    }
+  }
+
+  // Start scanning for nearby Bluetooth devices
+  void _startDiscovery() async {
+    setState(() {
+      _isScanning = true;
+      _devices.clear();
+      _bleStatus = '正在掃描設備...';
+    });
+
+    try {
+      // Set scan timeout
+      Timer scanTimeout = Timer(const Duration(seconds: 5), () {
+        if (_isScanning) {
+          FlutterBluePlus.stopScan();
+        }
+      });
+
+      // Listen for scan results
+      FlutterBluePlus.scanResults.listen((results) {
+        for (ScanResult result in results) {
+          // Filter devices without names
+          if (result.device.platformName.isNotEmpty) {
+            // Avoid duplicates
+            if (!_devices.any(
+              (device) => device.remoteId == result.device.remoteId,
+            )) {
+              setState(() {
+                _devices.add(result.device);
+              });
+            }
+          }
+        }
+      });
+
+      // Listen for scan status
+      FlutterBluePlus.isScanning.listen((isScanning) {
+        if (mounted && _isScanning != isScanning) {
+          setState(() {
+            _isScanning = isScanning;
+            if (!isScanning) {
+              _bleStatus = '掃描完成，找到 ${_devices.length} 個設備';
+              scanTimeout.cancel();
+            }
+          });
+        }
+      });
+
+      // Start scanning
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 5),
+        androidUsesFineLocation: true,
+      );
+    } catch (e) {
+      setState(() {
+        _isScanning = false;
+        _bleStatus = '掃描失敗: $e';
+      });
+    }
+  }
+
+  // Connect to a Bluetooth device
+  Future<void> _connectToDevice(BluetoothDevice device) async {
+    if (_isConnecting) return;
+
+    setState(() {
+      _isConnecting = true;
+      _bleStatus = '正在連接到 ${device.platformName}...';
+      _connectedDevice = device;
+    });
+
+    try {
+      // Connect to device with explicit timeout handling
+      print('開始連接到藍牙設備: ${device.platformName}');
+      await device.connect(timeout: const Duration(seconds: 15)).catchError((
+        error,
+      ) {
+        print('藍牙連接錯誤: $error');
+        throw error; // 重新拋出錯誤，讓下面的 catch 區塊捕獲
+      });
+
+      print('已成功連接到藍牙設備，正在搜尋服務...');
+      setState(() {
+        _isConnecting = false;
+        _isConnected = true;
+        _bleStatus = '已連接到 ${device.platformName}，正在搜尋服務...';
+      });
+
+      // Discover services with explicit error handling
+      List<BluetoothService> services = await device
+          .discoverServices()
+          .catchError((error) {
+            print('搜尋服務錯誤: $error');
+            throw error; // 重新拋出錯誤
+          });
+
+      print('找到 ${services.length} 個服務');
+
+      // 詳細記錄找到的所有服務和特徵，幫助調試
+      for (var service in services) {
+        print('服務 UUID: ${service.uuid}');
+        for (var characteristic in service.characteristics) {
+          print('  特徵 UUID: ${characteristic.uuid}');
+          print(
+            '  特徵屬性: 讀:${characteristic.properties.read} 寫:${characteristic.properties.write} 通知:${characteristic.properties.notify}',
+          );
+        }
+      }
+
+      // Find appropriate service and characteristic
+      bool foundCharacteristic = false;
+
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
+          // Check if characteristic supports write
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
+            _writeCharacteristic = characteristic;
+            foundCharacteristic = true;
+            print('找到可寫入的特徵: ${characteristic.uuid}');
+            setState(() {
+              _bleStatus = '找到可寫入的特徵，準備發送數據';
+            });
+            break;
+          }
+        }
+        if (foundCharacteristic) break;
+      }
+
+      if (!foundCharacteristic) {
+        print('沒有找到可寫入的特徵');
+        setState(() {
+          _bleStatus = '沒有找到可寫入的特徵';
+        });
+
+        // 即使沒有找到特徵值，我們也嘗試繼續（在某些設備上可能仍然可以工作）
+        // 但顯示警告給用戶
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('警告：未找到標準寫入特徵，可能無法發送資料'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      // Setup disconnection listener
+      device.connectionState.listen((state) {
+        print('藍牙連接狀態變更: $state');
+        if (state == BluetoothConnectionState.disconnected) {
+          setState(() {
+            _isConnected = false;
+            _connectedDevice = null;
+            _writeCharacteristic = null;
+            _bleStatus = '設備已斷開連接';
+          });
+
+          // 通知用戶設備已斷開
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('藍牙設備已斷開連接'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      });
+
+      // 無論特徵是否找到，都嘗試顯示WiFi設定對話框
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pop(context); // 關閉藍牙設備列表對話框
+        _showWiFiCredentialsDialog(); // 顯示WiFi憑證對話框
+      });
+    } catch (e) {
+      print('藍牙連接完整錯誤: $e');
+      setState(() {
+        _isConnecting = false;
+        _isConnected = false; // 確保連接狀態被重置
+        _bleStatus = '連接失敗: $e';
+        _connectedDevice = null;
+      });
+
+      // 顯示錯誤信息給用戶
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('藍牙連接錯誤: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // Send WiFi credentials and room ID to the ESP32
+  Future<void> _sendWiFiCredentials() async {
+    if (!_isConnected || _writeCharacteristic == null) {
+      setState(() {
+        _bleStatus = '未連接到設備或未找到可寫入特徵';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請先連接到藍牙設備'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    String ssid = _ssidController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (ssid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('SSID 不可為空'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Format the message according to the ESP32 code format:
+    // "WIFI:SSID=your_ssid;PASS=your_password;ROOM=room_id;"
+    String message = "WIFI:SSID=$ssid;PASS=$password;ROOM=${widget.roomId};\n";
+    List<int> data = utf8.encode(message);
+
+    try {
+      // Write data
+      await _writeCharacteristic!.write(data, withoutResponse: false);
+
+      setState(() {
+        _bleStatus = '正在發送WiFi認證資訊和房間ID...';
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已發送WiFi認證資訊和房間ID')));
+
+      // Set up listener to receive reply
+      _writeCharacteristic!.onValueReceived.listen((value) {
+        String response = String.fromCharCodes(value);
+        setState(() {
+          _bleMessage = response.trim();
+
+          if (_bleMessage.contains('WIFI_CREDS_SAVED')) {
+            _bleStatus = '設備已保存WiFi認證資訊';
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('設備已保存WiFi認證資訊')));
+          } else if (_bleMessage.contains('WIFI_CONNECTED')) {
+            _bleStatus = '設備已成功連接到WiFi';
+
+            // 檢查回覆是否包含room ID資訊
+            if (_bleMessage.contains('ROOM:')) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('設備已成功連接到WiFi並註冊到房間'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('設備已成功連接到WiFi')));
+            }
+          } else if (_bleMessage.contains('WIFI_FAILED')) {
+            _bleStatus = '設備連接WiFi失敗';
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('設備連接WiFi失敗'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
+      });
+
+      // Enable notifications to receive replies
+      await _writeCharacteristic!.setNotifyValue(true);
+    } catch (e) {
+      setState(() {
+        _bleStatus = '發送認證資訊失敗: $e';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('發送認證資訊失敗: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // Show WiFi credentials dialog
+  Future<void> _showWiFiCredentialsDialog() async {
+    // 重置認證控制器
+    _ssidController.text = '';
+    _passwordController.text = '';
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('輸入WiFi認證資訊'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('將發送WiFi認證資訊與目前房間ID: ${widget.roomId}'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _ssidController,
+                  decoration: const InputDecoration(
+                    labelText: 'WiFi SSID',
+                    hintText: '輸入您的WiFi網絡名稱',
+                  ),
+                ),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'WiFi 密碼',
+                    hintText: '輸入您的WiFi密碼',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('發送'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _sendWiFiCredentials();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Shows a dialog to manage BLE WiFi provisioning
+  void _showBLEWiFiProvisioningDialog() {
+    // Reset the connection status before showing the dialog
+    _bleStatus = '';
+    _bleMessage = '';
+    _isConnected = false;
+    _connectedDevice = null;
+    _writeCharacteristic = null;
+    _devices.clear();
+    _isScanning = false;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setState) {
+              // Helper function to update dialog state
+              void updateState(Function update) {
+                // Update both the dialog state and the outer state
+                setState(() {
+                  update();
+                });
+                this.setState(() {});
+              }
+
+              return AlertDialog(
+                title: const Text('藍牙WiFi設置'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 400,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Status display
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.blue.shade50,
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '房間: ${_roomModel?.name ?? ""}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '狀態: $_bleStatus',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (_bleMessage.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text('訊息: $_bleMessage'),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Main content based on connection status
+                      Expanded(
+                        child:
+                            _isConnected
+                                ? _buildConnectedView(context)
+                                : _buildDeviceListView(updateState),
+                      ),
+
+                      // Bottom buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          if (_isConnected)
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showWiFiCredentialsDialog();
+                              },
+                              child: const Text('發送WiFi認證'),
+                            )
+                          else
+                            ElevatedButton.icon(
+                              onPressed:
+                                  !_isScanning
+                                      ? () {
+                                        updateState(() {
+                                          _checkBluetoothPermissions();
+                                        });
+                                      }
+                                      : null,
+                              icon: const Icon(Icons.search),
+                              label: Text(_isScanning ? '掃描中...' : '掃描設備'),
+                            ),
+
+                          TextButton(
+                            onPressed: () {
+                              if (_isConnected && _connectedDevice != null) {
+                                _connectedDevice!.disconnect();
+                              }
+                              Navigator.pop(context);
+                            },
+                            child: const Text('關閉'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+    );
+  }
+
+  Widget _buildDeviceListView(Function updateState) {
+    return _devices.isEmpty
+        ? Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.bluetooth_searching,
+                size: 48,
+                color: Colors.blue,
+              ),
+              const SizedBox(height: 16),
+              const Text('未發現藍牙設備'),
+              const SizedBox(height: 8),
+              const Text('點擊掃描以搜索ESP32設備'),
+              const SizedBox(height: 16),
+              if (_isScanning) const CircularProgressIndicator(strokeWidth: 2),
+            ],
+          ),
+        )
+        : ListView.builder(
+          shrinkWrap: true,
+          itemCount: _devices.length,
+          itemBuilder: (context, index) {
+            final device = _devices[index];
+            final isConnecting =
+                _isConnecting && _connectedDevice?.remoteId == device.remoteId;
+
+            return ListTile(
+              title: Text(device.platformName),
+              subtitle: Text(device.remoteId.toString()),
+              trailing:
+                  isConnecting
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.bluetooth),
+              onTap:
+                  _isConnecting
+                      ? null
+                      : () {
+                        updateState(() {
+                          _connectToDevice(device);
+                        });
+                      },
+            );
+          },
+        );
+  }
+
+  Widget _buildConnectedView(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.bluetooth_connected, size: 48, color: Colors.green),
+          const SizedBox(height: 16),
+          Text(
+            '已連接到: ${_connectedDevice?.platformName ?? "Unknown Device"}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(_connectedDevice?.remoteId.toString() ?? ''),
+          const SizedBox(height: 16),
+          Text(
+            '已準備好發送WiFi認證資訊',
+            style: TextStyle(color: Colors.green.shade700),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.wifi),
+            label: const Text('發送WiFi認證'),
+            onPressed: () {
+              Navigator.pop(context);
+              _showWiFiCredentialsDialog();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -454,10 +1063,21 @@ class _RoomPageState extends State<RoomPage>
           //_buildRoomActions(localizations),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDeviceDialog(),
-        tooltip: localizations?.addDevice ?? '新增設備',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () => _showAddDeviceDialog(),
+            tooltip: localizations?.addDevice ?? '新增設備',
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () => _showBLEWiFiProvisioningDialog(),
+            tooltip: '藍牙WiFi設置',
+            child: const Icon(Icons.bluetooth),
+          ),
+        ],
       ),
     );
   }
