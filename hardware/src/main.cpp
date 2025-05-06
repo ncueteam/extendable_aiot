@@ -4,12 +4,12 @@
 #include <DHT.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include "time.h"
 #include "ConfigManager.h" // 引入配置管理器
 #include "LED.h" // LED控制類
 #include "BLEManager.h" // BLE管理器
 #include "WiFiManager.h" // WiFi管理器
 #include "DisplayManager.h" // 顯示管理器
+#include "TimeManager.h" // 時間管理器
 
 // 前向宣告
 void handleWiFiCredentials(const char* message);
@@ -26,6 +26,9 @@ ConfigManager configManager("wifi_cred");
 
 // 創建WiFiManager實例
 WiFiManager wifiManager(&configManager);
+
+// 創建TimeManager實例
+TimeManager timeManager("pool.ntp.org", 28800, 0, &wifiManager);
 
 // FreeRTOS相關定義
 #define CORE_0 0  // 通訊核心
@@ -51,11 +54,6 @@ struct SharedData {
   bool isMqttTransmitting;
   unsigned long mqttIconBlinkMillis;
 } sharedData;
-
-// NTP服務器設定
-const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 28800;  // GMT+8 (台灣時區)
-const int   daylightOffset_sec = 0;
 
 // MQTT設定
 const char* mqtt_server = "broker.emqx.io";
@@ -98,7 +96,7 @@ const long dhtInterval = 2000;
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
 // 創建DisplayManager實例
-DisplayManager displayManager(&u8g2, &wifiManager, &bleManager, &mutex, mqttIconBlinkInterval);
+DisplayManager displayManager(&u8g2, &wifiManager, &bleManager, &timeManager, &mutex, mqttIconBlinkInterval);
 
 // BLE狀態改變回調
 void onBLEStatusChange(bool connected, const String& message) {
@@ -285,9 +283,6 @@ void setup() {
   ledController.begin();
   ledController.setBreathing(true);
   
-  // 初始化顯示管理器
-  displayManager.begin();
-  
   // 初始化BLE並設置回調
   bleManager.setCredentialCallback(handleWiFiCredentials);
   bleManager.setStatusCallback(onBLEStatusChange);
@@ -301,9 +296,12 @@ void setup() {
   // 嘗試連接WiFi
   wifiManager.connect();
   
-  // 配置時間
+  // 初始化顯示管理器
+  displayManager.begin();
+  
+  // 初始化時間管理器
   if (wifiManager.isConnected()) {
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    timeManager.begin();
   }
   
   // 初始化MQTT

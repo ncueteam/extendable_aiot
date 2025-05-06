@@ -5,11 +5,13 @@ DisplayManager::DisplayManager(
     U8G2_SH1106_128X64_NONAME_F_HW_I2C* displayPtr, 
     WiFiManager* wifiManagerPtr, 
     BLEManager* bleManagerPtr,
+    TimeManager* timeManagerPtr,
     SemaphoreHandle_t* mutexPtr,
     long blinkInterval
 ) : display(displayPtr), 
     wifiManager(wifiManagerPtr), 
     bleManager(bleManagerPtr),
+    timeManager(timeManagerPtr),
     mutex(mutexPtr),
     mqttIconBlinkInterval(blinkInterval) {
 }
@@ -47,7 +49,7 @@ void DisplayManager::updateMainScreen(float temperature, float humidity, bool is
     // 顯示時間和溫濕度
     display->setFont(u8g2_font_ncenB08_tr);
     display->setCursor(0, 25);
-    display->print(getFormattedTime());
+    display->print(timeManager->getFormattedTime());
     
     display->setCursor(0, 38);
     display->print("T:");
@@ -63,14 +65,14 @@ void DisplayManager::updateMainScreen(float temperature, float humidity, bool is
     display->print(" MQTT:");
     display->print(isMqttConnected ? "OK" : "X");
     
-    // 顯示BLE狀態 - 更新為顯示BLE服務是否啟動，而不是是否有設備連接
+    // 顯示BLE狀態
     display->setCursor(0, 64);
     display->print("BLE:");
     display->print(bleManager->isServiceActive() ? "ON" : "OFF");
     
     // 如果BLE服務啟動但有設備連接，則添加連接指示
     if (bleManager->isServiceActive() && bleManager->isDeviceConnected()) {
-        display->print(" [linked]");
+        display->print(" [連接]");
     }
     
     if (*mutex != NULL) {
@@ -154,26 +156,4 @@ void DisplayManager::showMessage(const String& title, const String& message) {
     }
     
     display->sendBuffer();
-}
-
-// 獲取格式化時間字串
-String DisplayManager::getFormattedTime() {
-    struct tm timeinfo;
-    if(!getLocalTime(&timeinfo)){
-        return "Failed to get time";
-    }
-    char timeString[20];
-    strftime(timeString, sizeof(timeString), "%H:%M:%S", &timeinfo);
-    return String(timeString);
-}
-
-// 獲取格式化日期字串
-String DisplayManager::getFormattedDate() {
-    struct tm timeinfo;
-    if(!getLocalTime(&timeinfo)){
-        return "Failed to get date";
-    }
-    char dateString[20];
-    strftime(dateString, sizeof(dateString), "%Y-%m-%d", &timeinfo);
-    return String(dateString);
 }

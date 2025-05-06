@@ -5,7 +5,7 @@
 #include <U8g2lib.h>
 #include "WiFiManager.h"
 #include "BLEManager.h"
-#include "time.h"
+#include "TimeManager.h"
 
 // DisplayManager 類別 - 用於處理OLED顯示相關功能
 class DisplayManager {
@@ -13,14 +13,9 @@ private:
     U8G2_SH1106_128X64_NONAME_F_HW_I2C* display; // U8G2顯示器指標
     WiFiManager* wifiManager;                    // WiFi管理器指標
     BLEManager* bleManager;                      // BLE管理器指標
+    TimeManager* timeManager;                    // 時間管理器指標
     SemaphoreHandle_t* mutex;                    // 互斥鎖指標
     const long mqttIconBlinkInterval;            // MQTT傳輸圖示閃爍間隔
-
-    // 獲取格式化時間字串
-    String getFormattedTime();
-
-    // 獲取格式化日期字串
-    String getFormattedDate();
 
 public:
     // 建構函數
@@ -28,6 +23,7 @@ public:
         U8G2_SH1106_128X64_NONAME_F_HW_I2C* displayPtr, 
         WiFiManager* wifiManagerPtr, 
         BLEManager* bleManagerPtr,
+        TimeManager* timeManagerPtr,
         SemaphoreHandle_t* mutexPtr,
         long blinkInterval = 500
     );
