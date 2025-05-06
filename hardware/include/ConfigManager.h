@@ -2,10 +2,18 @@
 #define CONFIG_MANAGER_H
 
 #include <Arduino.h>
-#include <Preferences.h>
+#include "StorageManager.h"
 
+/**
+ * ConfigManager 類負責管理應用程序的配置
+ * 它使用StorageManager作為底層存儲機制
+ */
 class ConfigManager {
 public:
+    /**
+     * 構造函數
+     * @param namespace_name 配置命名空間名稱
+     */
     ConfigManager(const char* namespace_name = "app_config");
     ~ConfigManager();
 
@@ -15,7 +23,7 @@ public:
     bool hasWiFiCredentials();
     bool deleteWiFiCredentials();
 
-    // 一般設定值管理方法
+    // 一般設定值管理方法 - 這些方法委託給StorageManager
     bool saveString(const char* key, const char* value);
     String loadString(const char* key, const char* defaultValue = "");
     bool saveInt(const char* key, int value);
@@ -30,13 +38,8 @@ public:
     void clearAll();
 
 private:
-    Preferences _preferences;
-    const char* _namespace;
-    bool _isOpen;
-
-    // 私有輔助方法
-    void begin(bool readonly = false);
-    void end();
+    // 使用StorageManager處理底層存儲
+    StorageManager _storage;
 };
 
 #endif // CONFIG_MANAGER_H
