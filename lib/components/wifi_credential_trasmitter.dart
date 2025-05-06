@@ -6,7 +6,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class WifiCredentialTransmitter extends StatefulWidget {
-  const WifiCredentialTransmitter({Key? key}) : super(key: key);
+  const WifiCredentialTransmitter({super.key});
 
   @override
   _WifiCredentialTransmitterState createState() =>
@@ -17,7 +17,7 @@ class _WifiCredentialTransmitterState extends State<WifiCredentialTransmitter> {
   // Bluetooth state
   bool _isBluetoothEnabled = false;
   bool _isScanning = false;
-  List<BluetoothDevice> _devices = [];
+  final List<BluetoothDevice> _devices = [];
   BluetoothDevice? _connectedDevice;
   BluetoothConnection? _connection;
 

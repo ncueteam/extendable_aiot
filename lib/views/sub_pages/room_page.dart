@@ -10,6 +10,7 @@ import 'package:extendable_aiot/models/user_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:extendable_aiot/utils/edit_room.dart';
 
 class RoomPage extends StatefulWidget {
   final String roomId;
@@ -500,32 +501,6 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 房間底部操作區
-  Widget _buildRoomActions(AppLocalizations? localizations) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton.icon(
-            icon: const Icon(Icons.person),
-            label: Text(localizations?.manageFriends ?? '管理好友'),
-            onPressed: () => _showManageFriendsDialog(localizations),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            label: Text(
-              localizations?.deleteRoom ?? '刪除房間',
-              style: const TextStyle(color: Colors.red),
-            ),
-            onPressed: () => _showDeleteRoomConfirmation(localizations),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 顯示管理好友存取權限的對話框
   void _showManageFriendsDialog(AppLocalizations? localizations) {
     if (_loadingAllFriends || _loadingFriends) {
@@ -701,107 +676,29 @@ class _RoomPageState extends State<RoomPage>
   }
 
   // 顯示編輯房間對話框
-  void _showEditRoomDialog(AppLocalizations? localizations) {
-    final TextEditingController nameController = TextEditingController(
-      text: _roomModel?.name,
-    );
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.editRoom ?? '編輯房間'),
-            content: TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: localizations?.roomName ?? '房間名稱',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final newName = nameController.text.trim();
-                  if (newName.isNotEmpty && _roomModel != null) {
-                    _roomModel!.name = newName;
-                    await _roomModel!.updateRoom();
-                    if (mounted) {
-                      Navigator.pop(context);
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(localizations?.roomUpdated ?? '房間已更新'),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Text(localizations?.save ?? '儲存'),
-              ),
-            ],
-          ),
-    );
+  Future<void> _showEditRoomDialog(AppLocalizations? localizations) async {
+    if (_roomModel == null) return;
+    await showEditRoomDialog(context, _roomModel!);
   }
 
   // 確認刪除房間
   void _showDeleteRoomConfirmation(AppLocalizations? localizations) {
     if (_roomModel == null) return;
 
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.confirmDelete ?? '確認刪除'),
-            content: Text(
-              localizations?.confirmDeleteRoom("") ??
-                  '確定要刪除房間嗎？此操作無法撤銷，且會同時刪除所有關聯設備。',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () async {
-                  if (_roomModel != null) {
-                    try {
-                      await _roomModel!.deleteRoom();
-                      if (mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('房間已刪除')));
-
-                        Future.delayed(Duration(milliseconds: 500), () {
-                          if (mounted) {
-                            setState(() {
-                              _maintainState = false;
-                            });
-                          }
-                        });
-                      }
-                    } catch (e) {
-                      print('刪除房間錯誤: $e');
-                      if (mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('刪除房間失敗: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: Text(localizations?.delete ?? '刪除'),
-              ),
-            ],
-          ),
+    showDeleteRoomDialog(
+      context,
+      _roomModel!,
+      onDeleted: () {
+        if (mounted) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              setState(() {
+                _maintainState = false;
+              });
+            }
+          });
+        }
+      },
     );
   }
 

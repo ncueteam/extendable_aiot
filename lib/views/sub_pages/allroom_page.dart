@@ -6,6 +6,7 @@ import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
+import 'package:extendable_aiot/utils/edit_room.dart';
 
 class AllRoomPage extends StatefulWidget {
   const AllRoomPage({super.key});
@@ -215,7 +216,7 @@ class _AllRoomPageSate extends State<AllRoomPage> {
                     '刪除房間',
                     style: TextStyle(color: Colors.red),
                   ),
-                  onPressed: () => _showDeleteRoomConfirmation(room),
+                  onPressed: () => _showDeleteRoomDialog(room),
                 ),
               ],
             ),
@@ -227,72 +228,11 @@ class _AllRoomPageSate extends State<AllRoomPage> {
 
   // 顯示編輯房間對話框
   Future<void> _showEditRoomDialog(RoomModel room) async {
-    final localizations = AppLocalizations.of(context);
-    final TextEditingController nameController = TextEditingController(
-      text: room.name,
-    );
-
-    return showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.editRoom ?? '編輯房間'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: localizations?.roomName ?? '房間名稱',
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (nameController.text.isNotEmpty) {
-                    room.name = nameController.text;
-                    await room.updateRoom();
-                    if (mounted) Navigator.pop(context);
-                  }
-                },
-                child: Text(localizations?.confirm ?? '確認'),
-              ),
-            ],
-          ),
-    );
+    await showEditRoomDialog(context, room);
   }
 
   // 顯示刪除房間確認對話框
-  Future<void> _showDeleteRoomConfirmation(RoomModel room) async {
-    final localizations = AppLocalizations.of(context);
-
-    return showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations?.confirmDelete ?? '確認刪除'),
-            content: Text('確定要刪除房間 "${room.name}" 嗎？此操作無法撤銷，且會同時刪除所有關聯裝置。'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(localizations?.cancel ?? '取消'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await room.deleteRoom();
-                  if (mounted) Navigator.pop(context);
-                },
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(localizations?.delete ?? '刪除'),
-              ),
-            ],
-          ),
-    );
+  Future<void> _showDeleteRoomDialog(RoomModel room) async {
+    await showDeleteRoomDialog(context, room);
   }
 }

@@ -2,7 +2,6 @@ import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class Automatic extends StatefulWidget {
   const Automatic({super.key});
@@ -104,7 +103,7 @@ class _AutomaticState extends State<Automatic> {
                       },
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           );
