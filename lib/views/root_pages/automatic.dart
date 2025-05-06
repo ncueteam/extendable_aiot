@@ -47,7 +47,7 @@ class _AutomaticState extends State<Automatic> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Auto Setting'), centerTitle: true),
+      appBar: AppBar(title: const Text('定時裝置'), centerTitle: true),
       body: StreamBuilder<QuerySnapshot>(
         stream:
             FirebaseFirestore.instance

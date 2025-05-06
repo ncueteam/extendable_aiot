@@ -193,11 +193,11 @@ class _ProfileState extends State<Profile> {
     final localizations = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations?.profile ?? '個人資料'),
-        centerTitle: true,
-        elevation: 0,
-      ),
+      // appBar: AppBar(
+      //   title: Text(localizations?.profile ?? '個人資料'),
+      //   centerTitle: true,
+      //   elevation: 0,
+      // ),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())

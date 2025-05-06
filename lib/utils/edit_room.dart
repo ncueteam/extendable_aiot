@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
 
@@ -66,12 +67,26 @@ Future<void> showDeleteRoomDialog(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () async {
                 try {
+                  // 先取得並刪除房間內的所有裝置
+                  final devices = await room.loadDevices();
+                  final batch = FirebaseFirestore.instance.batch();
+
+                  // 批次刪除所有裝置
+                  for (var device in devices) {
+                    batch.delete(device.reference);
+                  }
+
+                  // 執行批次刪除
+                  await batch.commit();
+
+                  // 最後刪除房間
                   await room.deleteRoom();
+
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(const SnackBar(content: Text('房間已刪除')));
+                    ).showSnackBar(const SnackBar(content: Text('房間和所有裝置已刪除')));
                     onDeleted?.call();
                   }
                 } catch (e) {
@@ -80,7 +95,7 @@ Future<void> showDeleteRoomDialog(
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('刪除房間失敗: ${e.toString()}'),
+                        content: Text('刪除失敗: ${e.toString()}'),
                         backgroundColor: Colors.red,
                       ),
                     );
