@@ -9,6 +9,7 @@
 #include "LED.h" // LED控制類
 #include "BLEManager.h" // BLE管理器
 #include "WiFiManager.h" // WiFi管理器
+#include "DisplayManager.h" // 顯示管理器
 
 // 前向宣告
 void handleWiFiCredentials(const char* message);
@@ -96,6 +97,9 @@ const long dhtInterval = 2000;
 // 創建U8g2顯示器物件 (使用硬體I2C)
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
+// 創建DisplayManager實例
+DisplayManager displayManager(&u8g2, &wifiManager, &bleManager, &mutex, mqttIconBlinkInterval);
+
 // BLE狀態改變回調
 void onBLEStatusChange(bool connected, const String& message) {
   // 可在此處理BLE連接狀態變更
@@ -109,45 +113,8 @@ void onWiFiStatusChange(bool connected, const String& message) {
 
 // WiFi顯示更新回調
 void onWiFiDisplayUpdate(const String& message, int progress) {
-  // 在OLED上顯示連接狀態
-  u8g2.clearBuffer();
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-  
-  // 將消息拆分為多行顯示
-  int yPos = 20;
-  int lineHeight = 15;
-  String line;
-  
-  for (int i = 0; i < message.length(); i++) {
-    if (message[i] == '\n' || i == message.length() - 1) {
-      if (i == message.length() - 1) {
-        line += message[i];
-      }
-      u8g2.setCursor(0, yPos);
-      u8g2.print(line);
-      line = "";
-      yPos += lineHeight;
-    } else {
-      line += message[i];
-    }
-  }
-  
-  // 如果提供了進度值，顯示進度條
-  if (progress >= 0) {
-    int barWidth = 100;
-    int barHeight = 8;
-    int x = (128 - barWidth) / 2;
-    int y = 60;
-    
-    // 繪製進度條框
-    u8g2.drawFrame(x, y, barWidth, barHeight);
-    
-    // 繪製進度
-    int fillWidth = (progress * barWidth) / 100;
-    u8g2.drawBox(x, y, fillWidth, barHeight);
-  }
-  
-  u8g2.sendBuffer();
+  // 使用DisplayManager顯示WiFi連接狀態
+  displayManager.showWiFiStatus(message, progress);
 }
 
 // 處理WiFi憑證
@@ -167,28 +134,6 @@ void handleWiFiCredentials(const char* message) {
     }
     bleManager.sendStatusNotification(statusMsg);
   }
-}
-
-// 獲取格式化時間字串
-String getFormattedTime() {
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    return "Failed to get time";
-  }
-  char timeString[20];
-  strftime(timeString, sizeof(timeString), "%H:%M:%S", &timeinfo);
-  return String(timeString);
-}
-
-// 獲取格式化日期字串
-String getFormattedDate() {
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    return "Failed to get date";
-  }
-  char dateString[20];
-  strftime(dateString, sizeof(dateString), "%Y-%m-%d", &timeinfo);
-  return String(dateString);
 }
 
 // MQTT回調函數
@@ -298,58 +243,26 @@ void dhtTask(void *parameter) {
   }
 }
 
-// 顯示更新函數
-void updateDisplay() {
-  xSemaphoreTake(mutex, portMAX_DELAY);
-  u8g2.clearBuffer();
-  
-  // 顯示標題
-  u8g2.setFont(u8g2_font_ncenB10_tr);
-  u8g2.setCursor(0, 12);
-  u8g2.print("ESP32 AIOT");
-  
-  // 顯示傳輸圖示
-  if (sharedData.isMqttTransmitting) {
-    u8g2.setFont(u8g2_font_open_iconic_embedded_1x_t);
-    u8g2.drawGlyph(115, 12, 64);
-    
-    if (millis() - sharedData.mqttIconBlinkMillis >= mqttIconBlinkInterval) {
-      sharedData.isMqttTransmitting = false;
-    }
-  }
-  
-  // 顯示時間和溫濕度
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-  u8g2.setCursor(0, 25);
-  u8g2.print(getFormattedTime());
-  
-  u8g2.setCursor(0, 38);
-  u8g2.print("T:");
-  u8g2.print(sharedData.temperature, 1);
-  u8g2.print("C H:");
-  u8g2.print(sharedData.humidity, 1);
-  u8g2.print("%");
-  
-  // 顯示WiFi和MQTT狀態
-  u8g2.setCursor(0, 51);
-  u8g2.print("WiFi:");
-  u8g2.print(wifiManager.isConnected() ? "OK" : "X");
-  u8g2.print(" MQTT:");
-  u8g2.print(sharedData.isMqttConnected ? "OK" : "X");
-  
-  // 顯示BLE狀態
-  u8g2.setCursor(0, 64);
-  u8g2.print("BLE:");
-  u8g2.print(bleManager.isDeviceConnected() ? "OK" : "X");
-  
-  xSemaphoreGive(mutex);
-  u8g2.sendBuffer();
-}
-
 // 顯示更新任務
 void displayTask(void *parameter) {
   while (true) {
-    updateDisplay();
+    // 使用DisplayManager更新主畫面
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    float temp = sharedData.temperature;
+    float humid = sharedData.humidity;
+    bool isMqttConnected = sharedData.isMqttConnected;
+    bool isMqttTransmitting = sharedData.isMqttTransmitting;
+    unsigned long mqttIconBlinkMillis = sharedData.mqttIconBlinkMillis;
+    
+    // 檢查傳輸圖示是否需要關閉
+    if (isMqttTransmitting && millis() - mqttIconBlinkMillis >= mqttIconBlinkInterval) {
+      sharedData.isMqttTransmitting = false;
+      isMqttTransmitting = false;
+    }
+    xSemaphoreGive(mutex);
+    
+    displayManager.updateMainScreen(temp, humid, isMqttConnected, isMqttTransmitting, mqttIconBlinkMillis);
+    
     vTaskDelay(displayInterval / portTICK_PERIOD_MS);
   }
 }
@@ -372,9 +285,8 @@ void setup() {
   ledController.begin();
   ledController.setBreathing(true);
   
-  // 初始化OLED
-  u8g2.begin();
-  u8g2.setFont(u8g2_font_ncenB08_tr);
+  // 初始化顯示管理器
+  displayManager.begin();
   
   // 初始化BLE並設置回調
   bleManager.setCredentialCallback(handleWiFiCredentials);
