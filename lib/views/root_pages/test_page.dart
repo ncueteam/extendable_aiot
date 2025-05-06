@@ -251,7 +251,7 @@ class _TestPageState extends State<TestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Firebase CRUD 測試')),
+      appBar: AppBar(title: const Text('Firebase CRUD 測試'), centerTitle: true),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

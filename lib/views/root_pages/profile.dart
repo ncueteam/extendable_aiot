@@ -194,17 +194,9 @@ class _ProfileState extends State<Profile> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          localizations?.profile ?? '個人資料',
-          style: const TextStyle(color: Colors.black),
-        ),
+        title: Text(localizations?.profile ?? '個人資料'),
+        centerTitle: true,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
       body:
           isLoading
