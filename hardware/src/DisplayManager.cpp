@@ -63,10 +63,15 @@ void DisplayManager::updateMainScreen(float temperature, float humidity, bool is
     display->print(" MQTT:");
     display->print(isMqttConnected ? "OK" : "X");
     
-    // 顯示BLE狀態
+    // 顯示BLE狀態 - 更新為顯示BLE服務是否啟動，而不是是否有設備連接
     display->setCursor(0, 64);
     display->print("BLE:");
-    display->print(bleManager->isDeviceConnected() ? "OK" : "X");
+    display->print(bleManager->isServiceActive() ? "ON" : "OFF");
+    
+    // 如果BLE服務啟動但有設備連接，則添加連接指示
+    if (bleManager->isServiceActive() && bleManager->isDeviceConnected()) {
+        display->print(" [linked]");
+    }
     
     if (*mutex != NULL) {
         xSemaphoreGive(*mutex);

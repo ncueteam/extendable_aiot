@@ -35,6 +35,9 @@ public:
     // 檢查是否有設備連接
     bool isDeviceConnected() const;
     
+    // 檢查BLE服務是否已啟動
+    bool isServiceActive() const;
+    
     // 檢查連接狀態是否變更
     bool isConnectionChanged() const;
     
@@ -49,6 +52,7 @@ private:
     bool _deviceConnected;
     bool _oldDeviceConnected;
     String _deviceName;
+    bool _serviceActive;  // 新增: 標記BLE服務是否啟動
     
     // 回調函數
     WiFiCredentialCallback _credentialCallback;

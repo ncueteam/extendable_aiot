@@ -63,6 +63,7 @@ BLEManager::BLEManager(const char* deviceName) {
     _pStatusChar = NULL;
     _deviceConnected = false;
     _oldDeviceConnected = false;
+    _serviceActive = false;  // 初始化為未啟動狀態
     _credentialCallback = NULL;
     _statusCallback = NULL;
 }
@@ -109,6 +110,9 @@ void BLEManager::begin() {
     pAdvertising->setMaxInterval(0x40);
     BLEDevice::startAdvertising();
     
+    // 設置BLE服務為啟動狀態
+    _serviceActive = true;
+    
     Serial.println("BLE服務已啟動，等待連接...");
 }
 
@@ -142,6 +146,10 @@ void BLEManager::sendStatusNotification(const String& message) {
 
 bool BLEManager::isDeviceConnected() const {
     return _deviceConnected;
+}
+
+bool BLEManager::isServiceActive() const {
+    return _serviceActive;
 }
 
 bool BLEManager::isConnectionChanged() const {
