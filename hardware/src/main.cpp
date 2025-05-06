@@ -6,36 +6,25 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "time.h"
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 #include "ConfigManager.h" // 引入配置管理器
-#include "LED.h" // 加入LED控制類的頭文件
+#include "LED.h" // LED控制類
+#include "BLEManager.h" // BLE管理器
 
 // 前向宣告
 bool connectToWiFi(bool useStored);
 void handleWiFiCredentials(const char* message);
+void onBLEStatusChange(bool connected, const String& message);
 
-// 定義BLE的UUID常量
-#define SERVICE_UUID           "91bad492-b950-4226-aa2b-4ede9fa42f59"
-#define WIFI_CRED_CHAR_UUID    "0b30ac1c-1c8a-4770-9914-d2abe8351512"
-#define STATUS_CHAR_UUID       "d2936523-52bf-4b76-a873-727d83e2b357"
-
-// BLE相關定義
-BLEServer* pServer = NULL;
-BLECharacteristic* pWiFiCredentialChar = NULL;
-BLECharacteristic* pStatusChar = NULL;
-bool deviceConnected = false;
-bool oldDeviceConnected = false;
+// 創建BLEManager實例
+BLEManager bleManager("ESP32_AIOT_BLE");
 bool wifiCredentialsReceived = false;
 
 // 創建ConfigManager實例
 ConfigManager configManager("wifi_cred");
 
 // WiFi設定 - 從ConfigManager中獲取
-char saved_ssid[33] = "";       // 使用字符數組代替String
-char saved_password[65] = "";   // 使用字符數組代替String
+char saved_ssid[33] = "";
+char saved_password[65] = "";
 bool useStoredCredentials = true; // 使用儲存的憑證
 
 // FreeRTOS相關定義
@@ -108,94 +97,10 @@ const long dhtInterval = 2000;
 // 創建U8g2顯示器物件 (使用硬體I2C)
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
-// 創建BLE伺服器回調類
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-      // 更新狀態消息
-      if(pStatusChar != nullptr) {
-        String status = "Connected to ESP32 BLE";
-        pStatusChar->setValue(status.c_str());
-        pStatusChar->notify();
-      }
-    }
-
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-      // 重新廣播
-      pServer->getAdvertising()->start();
-    }
-};
-
-// 創建BLE特性回調類
-class WiFiCredentialsCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string value = pCharacteristic->getValue();
-      
-      if (value.length() > 0) {
-        // 將收到的BLE數據轉換為C風格字符串處理
-        handleWiFiCredentials(value.c_str());
-        
-        if (wifiCredentialsReceived) {
-          wifiCredentialsReceived = false;
-          bool connected = connectToWiFi(true); // 使用存儲的憑證連接
-          
-          // 發送連接結果通知
-          if(pStatusChar != nullptr) {
-            String statusMsg;
-            if (connected) {
-              statusMsg = "WIFI_CONNECTED:" + WiFi.localIP().toString();
-            } else {
-              statusMsg = "WIFI_FAILED";
-            }
-            pStatusChar->setValue(statusMsg.c_str());
-            pStatusChar->notify();
-          }
-        }
-      }
-    }
-};
-
-// 設置BLE服務
-void setupBLE() {
-  // 初始化BLE裝置
-  BLEDevice::init("ESP32_AIOT_BLE");
-  
-  // 創建BLE伺服器
-  pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
-  
-  // 創建BLE服務
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  
-  // 創建BLE特性 - WiFi憑證接收
-  pWiFiCredentialChar = pService->createCharacteristic(
-                          WIFI_CRED_CHAR_UUID,
-                          BLECharacteristic::PROPERTY_WRITE
-                        );
-  pWiFiCredentialChar->setCallbacks(new WiFiCredentialsCallbacks());
-  
-  // 創建BLE特性 - 狀態通知
-  pStatusChar = pService->createCharacteristic(
-                  STATUS_CHAR_UUID,
-                  BLECharacteristic::PROPERTY_READ |
-                  BLECharacteristic::PROPERTY_NOTIFY
-                );
-  pStatusChar->addDescriptor(new BLE2902());
-  
-  // 啟動服務
-  pService->start();
-  
-  // 啟動廣播
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);  // 修正：只設置一次參數
-  pAdvertising->setMinInterval(0x20);   // 添加間隔以改善發現性
-  pAdvertising->setMaxInterval(0x40);
-  BLEDevice::startAdvertising();
-  
-  Serial.println("BLE服務已啟動，等待連接...");
+// BLE狀態改變回調
+void onBLEStatusChange(bool connected, const String& message) {
+  // 可在此處理BLE連接狀態變更
+  // 例如更新UI或其他操作
 }
 
 // 處理WiFi憑證
@@ -228,6 +133,17 @@ void handleWiFiCredentials(const char* message) {
               
               // 設置標誌重新連接WiFi
               wifiCredentialsReceived = true;
+              
+              bool connected = connectToWiFi(true); // 使用存儲的憑證連接
+              
+              // 透過BLE發送連接結果通知
+              String statusMsg;
+              if (connected) {
+                statusMsg = "WIFI_CONNECTED:" + WiFi.localIP().toString();
+              } else {
+                statusMsg = "WIFI_FAILED";
+              }
+              bleManager.sendStatusNotification(statusMsg);
             }
           }
         }
@@ -478,7 +394,7 @@ void updateDisplay() {
   // 顯示BLE狀態
   u8g2.setCursor(0, 64);
   u8g2.print("BLE:");
-  u8g2.print(deviceConnected ? "OK" : "X");
+  u8g2.print(bleManager.isDeviceConnected() ? "OK" : "X");
   
   xSemaphoreGive(mutex);
   u8g2.sendBuffer();
@@ -534,8 +450,10 @@ void setup() {
   mqtt_client.setServer(mqtt_server, mqtt_port);
   mqtt_client.setCallback(mqtt_callback);
   
-  // 初始化BLE
-  setupBLE();
+  // 初始化BLE並設置回調
+  bleManager.setCredentialCallback(handleWiFiCredentials);
+  bleManager.setStatusCallback(onBLEStatusChange);
+  bleManager.begin();
   
   // 創建任務
   xTaskCreatePinnedToCore(
@@ -571,17 +489,7 @@ void setup() {
 
 void loop() {
   // 處理BLE連接狀態變化
-  if (deviceConnected != oldDeviceConnected) {
-    if (deviceConnected) {
-      // 新建立的連接
-      Serial.println("BLE裝置已連接");
-    } else {
-      // 連接中斷
-      Serial.println("BLE裝置已斷開");
-      delay(500); // 給客戶端時間接收斷開通知
-    }
-    oldDeviceConnected = deviceConnected;
-  }
+  bleManager.handleConnection();
   
   // 更新LED呼吸效果
   ledController.updateBreathing();
