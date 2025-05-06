@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
-#include <WiFi.h>
 #include <DHT.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -9,11 +8,13 @@
 #include "ConfigManager.h" // 引入配置管理器
 #include "LED.h" // LED控制類
 #include "BLEManager.h" // BLE管理器
+#include "WiFiManager.h" // WiFi管理器
 
 // 前向宣告
-bool connectToWiFi(bool useStored);
 void handleWiFiCredentials(const char* message);
 void onBLEStatusChange(bool connected, const String& message);
+void onWiFiStatusChange(bool connected, const String& message);
+void onWiFiDisplayUpdate(const String& message, int progress);
 
 // 創建BLEManager實例
 BLEManager bleManager("ESP32_AIOT_BLE");
@@ -22,10 +23,8 @@ bool wifiCredentialsReceived = false;
 // 創建ConfigManager實例
 ConfigManager configManager("wifi_cred");
 
-// WiFi設定 - 從ConfigManager中獲取
-char saved_ssid[33] = "";
-char saved_password[65] = "";
-bool useStoredCredentials = true; // 使用儲存的憑證
+// 創建WiFiManager實例
+WiFiManager wifiManager(&configManager);
 
 // FreeRTOS相關定義
 #define CORE_0 0  // 通訊核心
@@ -103,123 +102,70 @@ void onBLEStatusChange(bool connected, const String& message) {
   // 例如更新UI或其他操作
 }
 
-// 處理WiFi憑證
-void handleWiFiCredentials(const char* message) {
-  if (strncmp(message, "WIFI:", 5) == 0) {
-    char* ssidPtr = strstr(message, "SSID=");
-    char* passPtr = strstr(message, "PASS=");
-    
-    if (ssidPtr && passPtr) {
-      ssidPtr += 5; // 跳過"SSID="
-      char* ssidEnd = strchr(ssidPtr, ';');
-      
-      if (ssidEnd) {
-        int ssidLen = ssidEnd - ssidPtr;
-        if (ssidLen < 33) {
-          strncpy(saved_ssid, ssidPtr, ssidLen);
-          saved_ssid[ssidLen] = '\0';
-          
-          passPtr += 5; // 跳過"PASS="
-          char* passEnd = strchr(passPtr, ';');
-          
-          if (passEnd) {
-            int passLen = passEnd - passPtr;
-            if (passLen < 65) {
-              strncpy(saved_password, passPtr, passLen);
-              saved_password[passLen] = '\0';
-              
-              // 使用ConfigManager存儲WiFi憑證
-              configManager.saveWiFiCredentials(saved_ssid, saved_password);
-              
-              // 設置標誌重新連接WiFi
-              wifiCredentialsReceived = true;
-              
-              bool connected = connectToWiFi(true); // 使用存儲的憑證連接
-              
-              // 透過BLE發送連接結果通知
-              String statusMsg;
-              if (connected) {
-                statusMsg = "WIFI_CONNECTED:" + WiFi.localIP().toString();
-              } else {
-                statusMsg = "WIFI_FAILED";
-              }
-              bleManager.sendStatusNotification(statusMsg);
-            }
-          }
-        }
+// WiFi狀態改變回調
+void onWiFiStatusChange(bool connected, const String& message) {
+  Serial.println(message);
+}
+
+// WiFi顯示更新回調
+void onWiFiDisplayUpdate(const String& message, int progress) {
+  // 在OLED上顯示連接狀態
+  u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_ncenB08_tr);
+  
+  // 將消息拆分為多行顯示
+  int yPos = 20;
+  int lineHeight = 15;
+  String line;
+  
+  for (int i = 0; i < message.length(); i++) {
+    if (message[i] == '\n' || i == message.length() - 1) {
+      if (i == message.length() - 1) {
+        line += message[i];
       }
+      u8g2.setCursor(0, yPos);
+      u8g2.print(line);
+      line = "";
+      yPos += lineHeight;
+    } else {
+      line += message[i];
     }
   }
-}
-
-// 加載存儲的WiFi憑證
-void loadWiFiCredentials() {
-  // 使用ConfigManager加載WiFi憑證
-  configManager.loadWiFiCredentials(saved_ssid, sizeof(saved_ssid), saved_password, sizeof(saved_password));
-}
-
-// 使用WiFi憑證連接
-bool connectToWiFi(bool useStored = false) {
-  // 移除對舊變數的引用，只使用存儲的憑證
-  if (strlen(saved_ssid) == 0 || strlen(saved_password) == 0) {
-    Serial.println("無可用的WiFi憑證，等待藍牙設定");
+  
+  // 如果提供了進度值，顯示進度條
+  if (progress >= 0) {
+    int barWidth = 100;
+    int barHeight = 8;
+    int x = (128 - barWidth) / 2;
+    int y = 60;
     
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(0, 20);
-    u8g2.print("No WiFi Credentials");
-    u8g2.setCursor(0, 35);
-    u8g2.print("Please use BLE app");
-    u8g2.setCursor(0, 50);
-    u8g2.print("to setup WiFi");
-    u8g2.sendBuffer();
+    // 繪製進度條框
+    u8g2.drawFrame(x, y, barWidth, barHeight);
     
-    return false; // 沒有存儲的憑證
+    // 繪製進度
+    int fillWidth = (progress * barWidth) / 100;
+    u8g2.drawBox(x, y, fillWidth, barHeight);
   }
   
-  WiFi.disconnect();
-  WiFi.begin(saved_ssid, saved_password);
-  
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.setCursor(0, 20);
-    u8g2.print("Connecting to WiFi");
-    u8g2.setCursor(0, 35);
-    u8g2.print("SSID: ");
-    u8g2.print(saved_ssid);
-    u8g2.setCursor(0, 50);
-    u8g2.print("Attempt: ");
-    u8g2.print(attempts + 1);
-    u8g2.sendBuffer();
+  u8g2.sendBuffer();
+}
+
+// 處理WiFi憑證
+void handleWiFiCredentials(const char* message) {
+  if (wifiManager.parseCredentials(message)) {
+    wifiCredentialsReceived = true;
     
-    delay(500);
-    attempts++;
-  }
-  
-  u8g2.clearBuffer();
-  if (WiFi.status() == WL_CONNECTED) {
-    u8g2.setCursor(0, 20);
-    u8g2.print("WiFi Connected!");
-    u8g2.setCursor(0, 35);
-    u8g2.print("SSID: ");
-    u8g2.print(saved_ssid);
-    u8g2.setCursor(0, 50);
-    u8g2.print(WiFi.localIP().toString());
-    u8g2.sendBuffer();
+    // 嘗試連接WiFi
+    bool connected = wifiManager.connect();
     
-    return true;
-  } else {
-    u8g2.setCursor(0, 20);
-    u8g2.print("WiFi Connection");
-    u8g2.setCursor(0, 35);
-    u8g2.print("Failed!");
-    u8g2.setCursor(0, 50);
-    u8g2.print("Check credentials");
-    u8g2.sendBuffer();
-    
-    return false;
+    // 透過BLE發送連接結果通知
+    String statusMsg;
+    if (connected) {
+      statusMsg = "WIFI_CONNECTED:" + wifiManager.getIPAddress();
+    } else {
+      statusMsg = "WIFI_FAILED";
+    }
+    bleManager.sendStatusNotification(statusMsg);
   }
 }
 
@@ -387,7 +333,7 @@ void updateDisplay() {
   // 顯示WiFi和MQTT狀態
   u8g2.setCursor(0, 51);
   u8g2.print("WiFi:");
-  u8g2.print(WiFi.status() == WL_CONNECTED ? "OK" : "X");
+  u8g2.print(wifiManager.isConnected() ? "OK" : "X");
   u8g2.print(" MQTT:");
   u8g2.print(sharedData.isMqttConnected ? "OK" : "X");
   
@@ -430,30 +376,27 @@ void setup() {
   u8g2.begin();
   u8g2.setFont(u8g2_font_ncenB08_tr);
   
-  // 加載存儲的WiFi憑證
-  loadWiFiCredentials();
-  
-  // 嘗試連接WiFi
-  bool connected = false;
-  if (useStoredCredentials && strlen(saved_ssid) > 0) {
-    connected = connectToWiFi(true);
-  }
-  
-  if (!connected) {
-    connectToWiFi(false);
-  }
-  
-  // 配置時間
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  
-  // 初始化MQTT
-  mqtt_client.setServer(mqtt_server, mqtt_port);
-  mqtt_client.setCallback(mqtt_callback);
-  
   // 初始化BLE並設置回調
   bleManager.setCredentialCallback(handleWiFiCredentials);
   bleManager.setStatusCallback(onBLEStatusChange);
   bleManager.begin();
+  
+  // 初始化WiFi
+  wifiManager.setStatusCallback(onWiFiStatusChange);
+  wifiManager.setDisplayCallback(onWiFiDisplayUpdate);
+  wifiManager.begin();
+  
+  // 嘗試連接WiFi
+  wifiManager.connect();
+  
+  // 配置時間
+  if (wifiManager.isConnected()) {
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  }
+  
+  // 初始化MQTT
+  mqtt_client.setServer(mqtt_server, mqtt_port);
+  mqtt_client.setCallback(mqtt_callback);
   
   // 創建任務
   xTaskCreatePinnedToCore(
