@@ -20,17 +20,30 @@ class _DeviceCardState extends State<DeviceCard> {
   // 更新設備狀態
   Future<void> _toggleDeviceStatus(bool currentStatus) async {
     try {
-      // 使用 DeviceModel 的靜態方法更新設備狀態，傳入與當前狀態相反的值
+      // 先更新本地狀態以提供即時反饋
+      setState(() {
+        if (widget.device is SwitchableModel) {
+          (widget.device as SwitchableModel).status = !currentStatus;
+        }
+      });
+
+      // 使用 DeviceModel 的靜態方法更新設備狀態
       await DeviceModel.updateDeviceStatus(
         deviceId: widget.device.id,
-        status: !currentStatus, // 將狀態切換為相反值
+        status: !currentStatus,
       );
-      setState(() {});
     } catch (e) {
+      // 如果更新失敗，恢復原來的狀態
+      setState(() {
+        if (widget.device is SwitchableModel) {
+          (widget.device as SwitchableModel).status = currentStatus;
+        }
+      });
+
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('更新設備狀態失敗: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新設備狀態失敗: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }

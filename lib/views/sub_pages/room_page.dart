@@ -157,6 +157,7 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
+  // 修改 _showAddDeviceDialog 方法
   Future<void> _showAddDeviceDialog() async {
     final localizations = AppLocalizations.of(context);
 
@@ -209,12 +210,12 @@ class _RoomPageState extends State<RoomPage>
                       onPressed: () async {
                         if (_deviceNameController.text.isNotEmpty &&
                             _roomModel != null) {
+                          Navigator.pop(context); // 先關閉對話框
                           await _addDevice(
                             _deviceNameController.text,
                             _selectedDeviceType,
                           );
                           _deviceNameController.clear();
-                          if (mounted) Navigator.pop(context);
                         }
                       },
                       child: Text(localizations?.confirm ?? '確認'),
@@ -225,7 +226,7 @@ class _RoomPageState extends State<RoomPage>
     );
   }
 
-  // 使用 DeviceModel 來新增設備
+  // 修改 _addDevice 方法
   Future<void> _addDevice(String name, String type) async {
     if (_roomModel == null) return;
 
@@ -235,7 +236,7 @@ class _RoomPageState extends State<RoomPage>
       switch (type) {
         case 'air_conditioner':
           final acDevice = AirConditionerModel(
-            null, // Firebase 會自動生成 ID
+            null,
             name: name,
             roomId: widget.roomId,
             lastUpdated: Timestamp.now(),
@@ -244,7 +245,7 @@ class _RoomPageState extends State<RoomPage>
           break;
         case 'dht11':
           final dht11Device = DHT11SensorModel(
-            null, // Firebase 會自動生成 ID
+            null,
             name: name,
             roomId: widget.roomId,
             lastUpdated: Timestamp.now(),
@@ -254,11 +255,10 @@ class _RoomPageState extends State<RoomPage>
           await DeviceModel.addDeviceToRoom(dht11Device, widget.roomId);
           break;
         default:
-          // 預設使用基本的 SwitchModel，但保留原始設備類型
           final switchable = SwitchModel(
-            null, // Firebase 會自動生成 ID
+            null,
             name: name,
-            type: type, // 保留原始的設備類型
+            type: type,
             lastUpdated: Timestamp.now(),
             icon: _getIconForType(type),
             updateValue: [true, false],
@@ -269,8 +269,11 @@ class _RoomPageState extends State<RoomPage>
           break;
       }
 
-      // 添加成功提示
+      // 強制重新載入房間模型以更新設備列表
+      await _loadRoomModel();
+
       if (mounted) {
+        setState(() {}); // 觸發重建
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('已成功添加設備：$name')));
