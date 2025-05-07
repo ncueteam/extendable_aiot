@@ -55,6 +55,9 @@ struct SharedData {
   unsigned long mqttIconBlinkMillis;
 } sharedData;
 
+// 設備ID
+String deviceId = "";
+
 // MQTT設定
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
@@ -69,6 +72,9 @@ unsigned long lastMqttReconnectAttempt = 0;
 const long mqttReconnectInterval = 5000;
 unsigned long lastMqttPublish = 0;
 const long mqttPublishInterval = 5000;
+
+// MQTT 主題設定 - 在全局添加
+String mqttTopic = "esp32/device/";   // 將附加 deviceId/dht11
 
 // DHT11 設定
 #define DHTPIN 14
@@ -198,15 +204,40 @@ void mqttTask(void *parameter) {
         sharedData.mqttIconBlinkMillis = currentMillis;
         xSemaphoreGive(mutex);
         
-        // 使用較小的JSON文檔
-        StaticJsonDocument<100> doc;
+        // 使用較大的JSON文檔以容納更多信息
+        StaticJsonDocument<200> doc;
         doc["temp"] = temp;
-        doc["humid"] = humid;
+        doc["humidity"] = humid;
+        doc["deviceId"] = deviceId;
         
-        char jsonBuffer[100];
+        // 加入房間ID (如果有)
+        if (wifiManager.hasRoomID()) {
+          doc["roomId"] = wifiManager.getRoomID();
+        } else {
+          doc["roomId"] = "unknown";
+        }
+        
+        char jsonBuffer[200];
         serializeJson(doc, jsonBuffer);
         
-        mqtt_client.publish(mqtt_topic, jsonBuffer);
+        // 發布到主題，使用房間ID作為分類
+        String topic = mqtt_topic;
+        if (wifiManager.hasRoomID()) {
+          // 使用房間ID作為MQTT的主要分類方式
+          topic = String(mqtt_topic) + "/" + wifiManager.getRoomID();
+          
+          // 也發布到包含裝置ID的主題，讓App可以追蹤個別裝置
+          String deviceTopic = topic + "/" + deviceId;
+          mqtt_client.publish(deviceTopic.c_str(), jsonBuffer);
+          Serial.println("發送數據到房間和裝置主題: " + deviceTopic);
+        } else {
+          // 如果沒有房間ID，則使用裝置ID作為分類
+          topic = String(mqtt_topic) + "/unknown/" + deviceId;
+        }
+        
+        // 發布到主題
+        mqtt_client.publish(topic.c_str(), jsonBuffer);
+        Serial.println("發送數據到主題: " + topic);
       }
     }
     
@@ -273,6 +304,11 @@ void displayTask(void *parameter) {
 void setup() {
   // 初始化序列通訊
   Serial.begin(115200);
+  
+  // 初始化設備ID（使用MAC地址）
+  deviceId = WiFi.macAddress();
+  deviceId.replace(":", ""); // 移除冒號使其更簡潔
+  Serial.println("裝置ID: " + deviceId);
   
   // 創建互斥鎖
   mutex = xSemaphoreCreateMutex();
