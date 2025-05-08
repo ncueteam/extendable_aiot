@@ -6,6 +6,8 @@ import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:extendable_aiot/models/sub_type/mqtt_dht11_model.dart';
 import 'package:extendable_aiot/utils/util.dart';
+import 'package:extendable_aiot/views/card/device_cards/dht11_card.dart';
+import 'package:extendable_aiot/views/card/device_cards/general_card.dart';
 import 'package:extendable_aiot/views/sub_pages/mqtt_dht11_details_page.dart';
 import 'package:flutter/material.dart';
 
@@ -109,32 +111,22 @@ class _DeviceCardState extends State<DeviceCard> {
       case 'air_conditioner':
         return _buildAirConditionerCard(widget.device as AirConditionerModel);
       case MQTTEnabledDHT11Model.TYPE:
+        return Dht11Card(device: widget.device);
         return _buildMQTTDHT11SensorCard(widget.device);
-    }
-    if (widget.device is AirConditionerModel) {
-      return _buildAirConditionerCard(widget.device as AirConditionerModel);
-    } else if (widget.device is SwitchableModel) {
-      // 根據特定設備類型調整顯示
-      String deviceType = (widget.device as SwitchableModel).type;
-      switch (deviceType) {
-        case 'fan':
-          return _buildFanCard(widget.device as SwitchableModel);
-        case 'light':
-          return _buildLightCard(widget.device as SwitchableModel);
-        case 'curtain':
-          return _buildCurtainCard(widget.device as SwitchableModel);
-        case 'door':
-          return _buildDoorCard(widget.device as SwitchableModel);
-        case 'sensor':
-          return _buildSensorCard(widget.device as SwitchableModel);
-        case 'switch':
-          return _buildSwitchableCard(widget.device as SwitchableModel);
-        default:
-          return _buildSwitchableCard(widget.device as SwitchableModel);
-      }
-    } else {
-      // 預設卡片
-      return _buildDefaultCard(widget.device);
+      // case 'fan':
+      //   return _buildFanCard(widget.device as SwitchableModel);
+      // case 'light':
+      //   return _buildLightCard(widget.device as SwitchableModel);
+      // case 'curtain':
+      //   return _buildCurtainCard(widget.device as SwitchableModel);
+      // case 'door':
+      //   return _buildDoorCard(widget.device as SwitchableModel);
+      // case 'sensor':
+      //   return _buildSensorCard(widget.device as SwitchableModel);
+      // case 'switch':
+      //   return _buildSwitchableCard(widget.device as SwitchableModel);
+      default:
+        return GeneralCard(device: widget.device, detailedPage: Container());
     }
   }
 
@@ -669,41 +661,41 @@ class _DeviceCardState extends State<DeviceCard> {
   }
 
   // 預設設備卡片
-  Widget _buildDefaultCard(GeneralModel device) {
-    return GestureDetector(
-      onTap: () => _navigateToDeviceControl(),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.device_unknown, size: 24, color: Colors.grey),
-            const SizedBox(height: 8),
-            Text(
-              truncateString(device.name, 12),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
-            Text(
-              truncateString(device.type, 12),
-              style: TextStyle(fontSize: 20, color: Colors.grey[600]),
-            ),
-            const Spacer(),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildDefaultCard(GeneralModel device) {
+  //   return GestureDetector(
+  //     onTap: () => _navigateToDeviceControl(),
+  //     child: Container(
+  //       padding: const EdgeInsets.all(12),
+  //       margin: const EdgeInsets.all(8),
+  //       decoration: BoxDecoration(
+  //         color: Colors.grey[100],
+  //         borderRadius: BorderRadius.circular(15),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.grey.withOpacity(0.2),
+  //             spreadRadius: 1,
+  //             blurRadius: 3,
+  //             offset: const Offset(0, 1),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           const Icon(Icons.device_unknown, size: 24, color: Colors.grey),
+  //           const SizedBox(height: 8),
+  //           Text(
+  //             truncateString(device.name, 12),
+  //             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+  //           ),
+  //           Text(
+  //             truncateString(device.type, 12),
+  //             style: TextStyle(fontSize: 20, color: Colors.grey[600]),
+  //           ),
+  //           const Spacer(),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }

@@ -977,24 +977,6 @@ class _RoomPageState extends State<RoomPage>
                           throw Exception('解析空調設備錯誤: $e');
                         }
                         break;
-                      case 'dht11':
-                        try {
-                          final dht11Device = DHT11SensorModel(
-                            device.id,
-                            name: name,
-                            roomId: widget.roomId,
-                            lastUpdated: lastUpdated,
-                            temperature:
-                                (data['temperature'] as num?)?.toDouble() ??
-                                0.0,
-                            humidity:
-                                (data['humidity'] as num?)?.toDouble() ?? 0.0,
-                          );
-                          deviceModels.add(dht11Device);
-                        } catch (e) {
-                          throw Exception('解析DHT11設備錯誤: $e');
-                        }
-                        break;
                       case MQTTEnabledDHT11Model.TYPE:
                         try {
                           final mqttDHT11Device = MQTTEnabledDHT11Model(

@@ -269,7 +269,7 @@ class _MQTTDht11DetailsPageState extends State<MQTTDht11DetailsPage> {
                 _buildReadingDisplay(
                   icon: Icons.thermostat,
                   label: '溫度',
-                  value: '${_temperature.toStringAsFixed(2)}°C',
+                  value: '${_temperature.toStringAsFixed(1)}°C',
                   iconColor: Colors.red,
                 ),
                 const SizedBox(width: 20),
