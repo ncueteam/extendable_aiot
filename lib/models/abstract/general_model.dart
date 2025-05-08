@@ -23,11 +23,14 @@ abstract class GeneralModel {
   Future<void> updateData() async {}
   Future<void> deleteData() async {}
   fromJson(Map<String, dynamic> json) {
-    id = json['id'] as String;
-    name = json['name'] as String;
-    type = json['type'] as String;
-    lastUpdated = json['lastUpdated'] as Timestamp;
-    icon = IconData(json['icon'] as int, fontFamily: 'MaterialIcons');
+    id = json['id'] as String? ?? id;
+    name = json['name'] as String? ?? name;
+    type = json['type'] as String? ?? type;
+    lastUpdated = json['lastUpdated'] as Timestamp? ?? Timestamp.now();
+    icon =
+        json['icon'] != null
+            ? IconData(json['icon'] as int, fontFamily: 'MaterialIcons')
+            : icon;
   }
 
   toJson() => {

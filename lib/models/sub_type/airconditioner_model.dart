@@ -125,10 +125,11 @@ class AirConditionerModel extends SwitchableModel {
   @override
   fromJson(Map<String, dynamic> json) {
     super.fromJson(json); // 調用 SwitchableModel 的 fromJson
-    temperature = (json['temperature'] as num?)?.toDouble() ?? 25.0;
-    mode = json['mode'] as String? ?? 'Auto';
-    fanSpeed = json['fanSpeed'] as String? ?? 'Mid';
-    roomId = json['roomId'] as String? ?? '';
+    temperature = (json['temperature'] as num?)?.toDouble() ?? temperature;
+    mode = json['mode'] as String? ?? mode;
+    fanSpeed = json['fanSpeed'] as String? ?? fanSpeed;
+    roomId = json['roomId'] as String? ?? roomId;
+    // lastUpdated 已经在 GeneralModel 的 fromJson 中处理
     return this;
   }
 

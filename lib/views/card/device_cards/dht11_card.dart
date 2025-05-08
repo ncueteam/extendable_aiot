@@ -11,6 +11,47 @@ class Dht11Card extends StatefulWidget {
 }
 
 class _Dht11CardState extends State<Dht11Card> {
+  bool isOnline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始状态
+    isOnline = widget.device.isOnline;
+
+    // 添加数据更新监听器
+    widget.device.addDataUpdateListener(_onDataUpdated);
+
+    // 添加在线状态监听器
+    widget.device.addOnlineStatusListener(_onOnlineStatusChanged);
+  }
+
+  @override
+  void dispose() {
+    // 移除监听器避免内存泄漏
+    widget.device.removeDataUpdateListener(_onDataUpdated);
+    widget.device.removeOnlineStatusListener(_onOnlineStatusChanged);
+    super.dispose();
+  }
+
+  // 数据更新回调
+  void _onDataUpdated(double temperature, double humidity) {
+    if (mounted) {
+      setState(() {
+        // 数据已在model中更新，只需要刷新UI
+      });
+    }
+  }
+
+  // 在线状态变化回调
+  void _onOnlineStatusChanged(bool online) {
+    if (mounted) {
+      setState(() {
+        isOnline = online;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -36,6 +77,16 @@ class _Dht11CardState extends State<Dht11Card> {
                 color: Colors.blueGrey,
               ),
             ),
+            const SizedBox(width: 10),
+            // 显示在线状态指示器
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isOnline ? Colors.green : Colors.grey,
+              ),
+            ),
           ],
         ),
         subtitle: Column(
@@ -51,7 +102,7 @@ class _Dht11CardState extends State<Dht11Card> {
                   children: [
                     Icon(Icons.thermostat, size: 60, color: Colors.red),
                     Text(
-                      '${widget.device.temperature} °C',
+                      '${(widget.device.temperature * 10).round() / 10} °C',
                       style: TextStyle(
                         color: Colors.blueGrey,
                         fontSize: 20,
@@ -64,7 +115,7 @@ class _Dht11CardState extends State<Dht11Card> {
                   children: [
                     Icon(Icons.water_drop, size: 50, color: Colors.blue),
                     Text(
-                      '${widget.device.humidity} %',
+                      '${(widget.device.humidity * 10).round() / 10} %',
                       style: TextStyle(
                         color: Colors.blueGrey,
                         fontSize: 20,

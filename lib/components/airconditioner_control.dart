@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
+import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 class AirConditionerControl extends StatefulWidget {
   final AirConditionerModel airConditioner;
@@ -23,15 +25,66 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
   late String fanSpeed;
   late bool powerOn;
   bool _isUpdating = false;
+  bool _localChanges = false; // 追踪是否有未保存的本地更改
+  StreamSubscription? _deviceSubscription;
 
   @override
   void initState() {
     super.initState();
     // 初始化狀態
+    _initializeState();
+    // 開始監聽設備數據變化
+    _startDeviceListener();
+  }
+
+  @override
+  void dispose() {
+    // 取消數據庫監聽，避免內存洩漏
+    _deviceSubscription?.cancel();
+    super.dispose();
+  }
+
+  // 初始化状态变量
+  void _initializeState() {
     temperature = widget.airConditioner.temperature;
     mode = widget.airConditioner.mode;
     fanSpeed = widget.airConditioner.fanSpeed;
     powerOn = widget.airConditioner.status;
+  }
+
+  // 监听设备数据变化
+  void _startDeviceListener() {
+    try {
+      // 设置实时数据监听
+      _deviceSubscription = DeviceModel.getDeviceStream(
+        widget.airConditioner.id,
+      ).listen(
+        (snapshot) {
+          if (snapshot.exists && !_localChanges) {
+            // 只有在没有本地更改时才更新
+            final updatedData = snapshot.data() as Map<String, dynamic>?;
+            if (updatedData != null) {
+              setState(() {
+                // 更新本地模型
+                widget.airConditioner.fromJson(updatedData);
+                // 更新控制器状态变量
+                _initializeState();
+              });
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('设备数据监听错误: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('启动设备数据监听失败: $e');
+    }
+  }
+
+  // 标记本地有未保存的更改
+  void _markLocalChanges() {
+    _localChanges = true;
   }
 
   // 更新空調設置到Firebase
@@ -52,6 +105,9 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
 
       // 保存到Firebase
       await widget.airConditioner.updateData();
+
+      // 重置本地更改标记
+      _localChanges = false;
 
       // 回調通知父元件已更新
       if (widget.onUpdate != null) {
@@ -86,7 +142,40 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // 如果有未保存的更改，显示确认对话框
+            if (_localChanges) {
+              showDialog(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('未保存的更改'),
+                      content: const Text('您有未保存的設置更改，是否保存後再離開？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // 关闭对话框
+                            Navigator.of(context).pop(); // 离开页面
+                          },
+                          child: const Text('不保存'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop(); // 关闭对话框
+                            await _updateAirConditioner();
+                            if (context.mounted) {
+                              Navigator.of(context).pop(); // 更新后离开页面
+                            }
+                          },
+                          child: const Text('保存'),
+                        ),
+                      ],
+                    ),
+              );
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         title: Text(localizations?.airCondition ?? '空調'),
         centerTitle: true,
@@ -154,6 +243,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                                 ? (value) {
                                   setState(() {
                                     temperature = value;
+                                    _markLocalChanges();
                                   });
                                 }
                                 : null,
@@ -179,6 +269,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                                         ? () {
                                           setState(() {
                                             mode = modeOption;
+                                            _markLocalChanges();
                                           });
                                         }
                                         : null,
@@ -206,6 +297,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                                         ? () {
                                           setState(() {
                                             fanSpeed = speedOption;
+                                            _markLocalChanges();
                                           });
                                         }
                                         : null,
@@ -240,6 +332,7 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                               onChanged: (value) {
                                 setState(() {
                                   powerOn = value;
+                                  _markLocalChanges();
                                 });
                               },
                             ),
@@ -250,20 +343,46 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
                       // 最後更新時間
                       const SizedBox(height: 20),
                       Text(
-                        '最後更新: ${widget.airConditioner.lastUpdated.toDate().toString().substring(0, 19)}',
+                        '最後更新: ${_formatLastUpdated(widget.airConditioner.lastUpdated)}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
+
+                      // 如果有未保存的本地更改，显示提示
+                      if (_localChanges)
+                        Container(
+                          margin: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.warning_amber, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text(
+                                '有未保存的更改',
+                                style: TextStyle(color: Colors.orange),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _updateAirConditioner,
-        child: const Icon(Icons.save),
-      ),
+      floatingActionButton:
+          _localChanges
+              ? FloatingActionButton(
+                onPressed: _updateAirConditioner,
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.save),
+              )
+              : null, // 只在有未保存更改时显示保存按钮
     );
   }
 
@@ -347,5 +466,11 @@ class _AirConditionerControlState extends State<AirConditionerControl> {
       default:
         return speed;
     }
+  }
+
+  // 格式化最後更新時間
+  String _formatLastUpdated(Timestamp? timestamp) {
+    if (timestamp == null) return '未知';
+    return timestamp.toDate().toString().substring(0, 19);
   }
 }

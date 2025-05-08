@@ -1,5 +1,6 @@
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GeneralCard extends StatefulWidget {
   final device;
@@ -20,6 +21,12 @@ class GeneralCard extends StatefulWidget {
 }
 
 class _GeneralCardState extends State<GeneralCard> {
+  // 格式化最後更新時間
+  String _formatLastUpdated(Timestamp? timestamp) {
+    if (timestamp == null) return '未知';
+    return timestamp.toDate().toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -48,7 +55,9 @@ class _GeneralCardState extends State<GeneralCard> {
                   children: [
                     Text(widget.device.name),
                     const SizedBox(height: 5),
-                    Text('最後更新: ${widget.device.lastUpdated.toDate()}'),
+                    Text(
+                      '最後更新: ${_formatLastUpdated(widget.device.lastUpdated)}',
+                    ),
                   ],
                 ),
             tileColor: Colors.grey[200],

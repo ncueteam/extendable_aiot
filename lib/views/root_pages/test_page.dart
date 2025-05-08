@@ -249,6 +249,11 @@ class _TestPageState extends State<TestPage> {
     }
   }
 
+  String _formatLastUpdated(Timestamp? timestamp) {
+    if (timestamp == null) return '未知';
+    return timestamp.toDate().toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -497,7 +502,7 @@ class _TestPageState extends State<TestPage> {
                                         '狀態: ${_currentDevice!.status ? '開啟' : '關閉'}',
                                       ),
                                       Text(
-                                        '最後更新: ${_currentDevice!.lastUpdated.toDate()}',
+                                        '最後更新: ${_formatLastUpdated(_currentDevice!.lastUpdated)}',
                                       ),
                                     ],
                                   ),
