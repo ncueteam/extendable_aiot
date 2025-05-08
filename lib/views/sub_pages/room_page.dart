@@ -6,6 +6,7 @@ import 'package:extendable_aiot/models/abstract/room_model.dart';
 import 'package:extendable_aiot/models/sub_type/switch_model.dart';
 import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
+import 'package:extendable_aiot/models/sub_type/mqtt_dht11_model.dart';
 import 'package:extendable_aiot/models/user_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
@@ -66,7 +67,11 @@ class _RoomPageState extends State<RoomPage>
     {'type': 'curtain', 'name': '窗簾', 'icon': Icons.curtains},
     {'type': 'door', 'name': '門鎖', 'icon': Icons.lock},
     {'type': 'sensor', 'name': '感測器', 'icon': Icons.sensors},
-    {'type': 'dht11', 'name': 'DHT11溫濕度傳感器', 'icon': Icons.thermostat},
+    {
+      'type': MQTTEnabledDHT11Model.TYPE,
+      'name': 'MQTT啟用的DHT11傳感器',
+      'icon': Icons.cloud_sync,
+    },
   ];
 
   @override
@@ -260,30 +265,24 @@ class _RoomPageState extends State<RoomPage>
           );
           await DeviceModel.addDeviceToRoom(acDevice, widget.roomId);
           break;
-        case 'dht11':
-          final dht11Device = DHT11SensorModel(
+        case MQTTEnabledDHT11Model.TYPE:
+          final mqttDHT11Device = MQTTEnabledDHT11Model(
             null,
             name: name,
             roomId: widget.roomId,
+            deviceId: "",
+            roomTopic: widget.roomId,
             lastUpdated: Timestamp.now(),
             temperature: 0.0,
             humidity: 0.0,
           );
-          await DeviceModel.addDeviceToRoom(dht11Device, widget.roomId);
+          await DeviceModel.addDeviceToRoom(mqttDHT11Device, widget.roomId);
+
+          // 連接到MQTT服務
+          await mqttDHT11Device.connectToMQTT();
           break;
         default:
-          final switchable = SwitchModel(
-            null,
-            name: name,
-            type: type,
-            lastUpdated: Timestamp.now(),
-            icon: _getIconForType(type),
-            updateValue: [true, false],
-            previousValue: [false, true],
-            status: false,
-          );
-          await DeviceModel.addDeviceToRoom(switchable, widget.roomId);
-          break;
+          throw Exception('不支援的設備類型: $type');
       }
 
       // 強制重新載入房間模型以更新設備列表
@@ -975,19 +974,7 @@ class _RoomPageState extends State<RoomPage>
                           acDevice.fromJson(safeData);
                           deviceModels.add(acDevice);
                         } catch (e) {
-                          print('解析空調設備錯誤: $e');
-                          // 使用基本的 SwitchModel 作為備用
-                          final fallbackDevice = SwitchModel(
-                            device.id,
-                            name: name,
-                            type: type,
-                            lastUpdated: lastUpdated,
-                            icon: _getIconForType(type),
-                            updateValue: [true, false],
-                            previousValue: [false, true],
-                            status: status,
-                          );
-                          deviceModels.add(fallbackDevice);
+                          throw Exception('解析空調設備錯誤: $e');
                         }
                         break;
                       case 'dht11':
@@ -1005,35 +992,30 @@ class _RoomPageState extends State<RoomPage>
                           );
                           deviceModels.add(dht11Device);
                         } catch (e) {
-                          print('解析DHT11設備錯誤: $e');
-                          // 使用基本的 SwitchModel 作為備用
-                          final fallbackDevice = SwitchModel(
-                            device.id,
-                            name: name,
-                            type: type,
-                            lastUpdated: lastUpdated,
-                            icon: _getIconForType(type),
-                            updateValue: [true, false],
-                            previousValue: [false, true],
-                            status: status,
-                          );
-                          deviceModels.add(fallbackDevice);
+                          throw Exception('解析DHT11設備錯誤: $e');
                         }
                         break;
+                      case MQTTEnabledDHT11Model.TYPE:
+                        try {
+                          final mqttDHT11Device = MQTTEnabledDHT11Model(
+                            device.id,
+                            name: name,
+                            roomId: widget.roomId,
+                            roomTopic: widget.roomId,
+                            deviceId: data['deviceId'] as String? ?? '',
+                            lastUpdated: lastUpdated,
+                            temperature:
+                                (data['temperature'] as num?)?.toDouble() ??
+                                0.0,
+                            humidity:
+                                (data['humidity'] as num?)?.toDouble() ?? 0.0,
+                          );
+                          deviceModels.add(mqttDHT11Device);
+                        } catch (e) {
+                          throw Exception('解析MQTT DHT11設備錯誤: $e');
+                        }
                       default:
-                        // 預設使用基本的SwitchModel
-                        final switchable = SwitchModel(
-                          device.id,
-                          name: name,
-                          type: type,
-                          lastUpdated: lastUpdated,
-                          icon: _getIconForType(type),
-                          updateValue: [true, false],
-                          previousValue: [false, true],
-                          status: status,
-                        );
-                        deviceModels.add(switchable);
-                        break;
+                        throw Exception('不支援的設備類型: $type');
                     }
                   } catch (e) {
                     print('設備資料解析錯誤: $e');
@@ -1067,12 +1049,14 @@ class _RoomPageState extends State<RoomPage>
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
+            heroTag: 'addDeviceTag',
             onPressed: () => _showAddDeviceDialog(),
             tooltip: localizations?.addDevice ?? '新增設備',
             child: const Icon(Icons.add),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
+            heroTag: 'btuetoothTag',
             onPressed: () => _showBLEWiFiProvisioningDialog(),
             tooltip: '藍牙WiFi設置',
             child: const Icon(Icons.bluetooth),

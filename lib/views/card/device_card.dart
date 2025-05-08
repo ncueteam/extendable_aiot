@@ -4,11 +4,13 @@ import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/switchable_model.dart';
+import 'package:extendable_aiot/models/sub_type/mqtt_dht11_model.dart';
 import 'package:extendable_aiot/utils/util.dart';
+import 'package:extendable_aiot/views/sub_pages/mqtt_dht11_details_page.dart';
 import 'package:flutter/material.dart';
 
 class DeviceCard extends StatefulWidget {
-  final GeneralModel device;
+  final device;
 
   const DeviceCard({super.key, required this.device});
 
@@ -50,13 +52,15 @@ class _DeviceCardState extends State<DeviceCard> {
 
   // 根據設備類型導航到相應的控制頁面
   void _navigateToDeviceControl() {
-    if (widget.device is AirConditionerModel) {
-      _openAirConditionerControl(widget.device as AirConditionerModel);
-    } else if (widget.device is DHT11SensorModel) {
-      _openSensorDetails(widget.device as DHT11SensorModel);
-    } else if (widget.device is SwitchableModel) {
-      // 可以根據需要為其他類型的設備實現具體的頁面導航
-      _openGenericDeviceControl(widget.device);
+    switch (widget.device.type) {
+      case 'air_conditioner':
+        _openAirConditionerControl(widget.device as AirConditionerModel);
+        break;
+      case MQTTEnabledDHT11Model.TYPE:
+        _openMQTTSensorDetails(widget.device as MQTTEnabledDHT11Model);
+        break;
+      default:
+        _openGenericDeviceControl(widget.device);
     }
   }
 
@@ -75,29 +79,40 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // 打開DHT11傳感器詳情頁面
-  void _openSensorDetails(DHT11SensorModel sensor) {
-    // 這裡可以替換為具體的傳感器詳情頁面
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('DHT11傳感器: ${sensor.name}')));
+  // 打開MQTT啟用的DHT11傳感器詳情頁面
+  void _openMQTTSensorDetails(MQTTEnabledDHT11Model sensor) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return MQTTDht11DetailsPage(sensor: sensor);
+        },
+      ),
+    );
   }
 
   // 打開通用設備控制頁面
   void _openGenericDeviceControl(GeneralModel device) {
     // 這裡可以替換為通用設備控制頁面
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('設備: ${device.name}')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '未知設備類型: ${device.name} , ${device.type} not in [${MQTTEnabledDHT11Model.TYPE}, air_conditioner]',
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // 根據設備類型選擇不同的顯示方式
+    switch (widget.device.type) {
+      case 'air_conditioner':
+        return _buildAirConditionerCard(widget.device as AirConditionerModel);
+      case MQTTEnabledDHT11Model.TYPE:
+        return _buildMQTTDHT11SensorCard(widget.device);
+    }
     if (widget.device is AirConditionerModel) {
       return _buildAirConditionerCard(widget.device as AirConditionerModel);
-    } else if (widget.device is DHT11SensorModel) {
-      return _buildDHT11SensorCard(widget.device as DHT11SensorModel);
     } else if (widget.device is SwitchableModel) {
       // 根據特定設備類型調整顯示
       String deviceType = (widget.device as SwitchableModel).type;
@@ -210,16 +225,22 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-  // DHT11 溫濕度傳感器卡片
-  Widget _buildDHT11SensorCard(DHT11SensorModel device) {
+  // MQTT DHT11 溫濕度傳感器卡片
+  Widget _buildMQTTDHT11SensorCard(MQTTEnabledDHT11Model device) {
+    bool isOnline = device.isOnline;
+
     return GestureDetector(
       onTap: () => _navigateToDeviceControl(),
       child: Container(
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.lightBlue.shade50,
+          color: isOnline ? Colors.lightBlue.shade50 : Colors.grey[100],
           borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: isOnline ? Colors.blue.shade200 : Colors.grey.shade300,
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.2),
@@ -235,10 +256,40 @@ class _DeviceCardState extends State<DeviceCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.thermostat, color: Colors.blue),
-                Text(
-                  'DHT11',
-                  style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.thermostat,
+                      color: isOnline ? Colors.blue : Colors.grey,
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isOnline ? Colors.green : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'MQTT',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.blue[800],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -247,6 +298,10 @@ class _DeviceCardState extends State<DeviceCard> {
               truncateString(device.name, 12),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              'ID: ${truncateString(device.deviceId, 8)}',
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
             const Spacer(),
             Row(
@@ -257,10 +312,11 @@ class _DeviceCardState extends State<DeviceCard> {
                     const Icon(Icons.thermostat, size: 20, color: Colors.red),
                     const SizedBox(height: 4),
                     Text(
-                      '${device.temperature.toInt()}°C',
-                      style: const TextStyle(
+                      '${device.temperature.toStringAsFixed(1)}°C',
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: isOnline ? Colors.black87 : Colors.grey,
                       ),
                     ),
                   ],
@@ -270,10 +326,11 @@ class _DeviceCardState extends State<DeviceCard> {
                     const Icon(Icons.water_drop, size: 20, color: Colors.blue),
                     const SizedBox(height: 4),
                     Text(
-                      '${device.humidity.toInt()}%',
-                      style: const TextStyle(
+                      '${device.humidity.toStringAsFixed(1)}%',
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: isOnline ? Colors.black87 : Colors.grey,
                       ),
                     ),
                   ],
@@ -637,11 +694,11 @@ class _DeviceCardState extends State<DeviceCard> {
             const SizedBox(height: 8),
             Text(
               truncateString(device.name, 12),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
             Text(
               truncateString(device.type, 12),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 20, color: Colors.grey[600]),
             ),
             const Spacer(),
           ],

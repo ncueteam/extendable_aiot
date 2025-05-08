@@ -1,29 +1,18 @@
 // filepath: d:\workspace\study\extendable_aiot\lib\models\device_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:extendable_aiot/models/sub_type/mqtt_dht11_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:flutter/material.dart';
-import 'package:extendable_aiot/models/sub_type/switch_model.dart';
 import 'package:extendable_aiot/models/sub_type/dht11_sensor_model.dart';
 import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 
-/// DeviceModel 提供設備通用操作的靜態方法
-/// 實際的設備實例應該使用特定的子類如 SwitchModel, AirConditionerModel 等
 class DeviceModel {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // 獲取當前用戶ID
   static String? get currentUserId => _auth.currentUser?.uid;
-
-  /// 從文檔快照創建適當的設備模型
-  ///
-  /// 參數:
-  /// - [snapshot]: 設備文檔的快照
-  /// - [getIconForType]: 可選函數，用於根據設備類型獲取適當的圖標
-  ///
-  /// 返回:
-  /// - 創建的設備模型，如果類型不支援則返回 null
   static GeneralModel? fromDocumentSnapshot(
     DocumentSnapshot snapshot, [
     IconData Function(String)? getIconForType,
@@ -48,7 +37,7 @@ class DeviceModel {
           );
           acDevice.fromJson(data);
           return acDevice;
-        case 'dht11':
+        case DHT11SensorModel.TYPE:
           return DHT11SensorModel(
             snapshot.id,
             name: name,
@@ -57,21 +46,17 @@ class DeviceModel {
             temperature: data['temperature'] ?? 0.0,
             humidity: data['humidity'] ?? 0.0,
           );
-        default:
-          // 預設使用基本的 SwitchModel
-          return SwitchModel(
+        case MQTTEnabledDHT11Model.TYPE:
+          return MQTTEnabledDHT11Model(
             snapshot.id,
             name: name,
-            type: type,
+            roomId: data['roomId'] ?? '',
             lastUpdated: lastUpdated,
-            icon:
-                getIconForType != null
-                    ? getIconForType(type)
-                    : Icons.device_unknown,
-            updateValue: [true, false],
-            previousValue: [false, true],
-            status: status,
+            deviceId: data['deviceId'] ?? '',
+            roomTopic: data['roomTopic'],
           );
+        default:
+          throw Exception('未知設備類型: $type');
       }
     } catch (e) {
       print('創建設備模型錯誤: $e');

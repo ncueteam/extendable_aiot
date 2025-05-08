@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/models/abstract/sensor_model.dart';
+import 'package:extendable_aiot/models/sub_type/mqtt_dht11_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class DHT11SensorModel extends SensorModel {
+  static const String TYPE = 'dht11'; // 設備類型
+
   double temperature;
   double humidity;
   String roomId;
@@ -22,7 +25,7 @@ class DHT11SensorModel extends SensorModel {
     bool status = false,
   }) : super(
          value: [temperature, humidity],
-         type: 'dht11',
+         type: MQTTEnabledDHT11Model.TYPE,
          icon: Icons.thermostat,
        );
 
