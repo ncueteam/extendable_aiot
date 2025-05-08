@@ -4,6 +4,7 @@ import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/abstract/device_model.dart';
 import 'package:extendable_aiot/models/abstract/general_model.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
+import 'package:extendable_aiot/models/sub_type/airconditioner_model.dart';
 import 'package:extendable_aiot/views/card/device_card.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/utils/edit_room.dart';
@@ -20,7 +21,7 @@ class _AllRoomPageSate extends State<AllRoomPage> {
 
   // 裝置類型列表用於圖標匹配
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
+    {'type': AirConditionerModel.TYPE, 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': '風扇', 'name': '風扇', 'icon': Icons.wind_power},
     {'type': '燈光', 'name': '燈光', 'icon': Icons.lightbulb},
     {'type': '窗簾', 'name': '窗簾', 'icon': Icons.curtains},

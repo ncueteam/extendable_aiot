@@ -106,7 +106,7 @@ class _DeviceCardState extends State<DeviceCard> {
   Widget build(BuildContext context) {
     // 根據設備類型選擇不同的顯示方式
     switch (widget.device.type) {
-      case 'air_conditioner':
+      case AirConditionerModel.TYPE:
         return AirConditionerCard(
           device: widget.device as AirConditionerModel,
           onStatusChange: (newStatus) {

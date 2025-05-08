@@ -46,7 +46,7 @@ class _IntegratedDevicesPageState extends State<IntegratedDevicesPage>
 
   final List<Map<String, dynamic>> _deviceTypes = [
     {'type': 'switch', 'name': '可切換設備', 'icon': Icons.toggle_on},
-    {'type': 'air_conditioner', 'name': '空調設備', 'icon': Icons.ac_unit},
+    {'type': AirConditionerModel.TYPE, 'name': '空調設備', 'icon': Icons.ac_unit},
     {'type': 'dht11', 'name': 'DHT11溫濕度傳感器', 'icon': Icons.thermostat},
   ];
 

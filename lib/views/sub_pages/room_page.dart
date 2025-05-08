@@ -49,7 +49,7 @@ class _RoomPageState extends State<RoomPage>
 
   // 裝置類型列表
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'type': 'air_conditioner', 'name': '中央空調', 'icon': Icons.ac_unit},
+    {'type': AirConditionerModel.TYPE, 'name': '中央空調', 'icon': Icons.ac_unit},
     {'type': 'fan', 'name': '風扇', 'icon': Icons.wind_power},
     {'type': 'light', 'name': '燈光', 'icon': Icons.lightbulb},
     {'type': 'curtain', 'name': '窗簾', 'icon': Icons.curtains},
@@ -57,7 +57,7 @@ class _RoomPageState extends State<RoomPage>
     {'type': 'sensor', 'name': '感測器', 'icon': Icons.sensors},
     {
       'type': MQTTEnabledDHT11Model.TYPE,
-      'name': 'MQTT啟用的DHT11傳感器',
+      'name': 'DHT11',
       'icon': Icons.cloud_sync,
     },
   ];
@@ -246,7 +246,7 @@ class _RoomPageState extends State<RoomPage>
       setState(() => _maintainState = true); // 確保狀態保持
 
       switch (type) {
-        case 'air_conditioner':
+        case AirConditionerModel.TYPE:
           final acDevice = AirConditionerModel(
             null,
             name: name,
@@ -792,7 +792,7 @@ class _RoomPageState extends State<RoomPage>
                         data['lastUpdated'] as Timestamp? ?? Timestamp.now();
 
                     switch (type) {
-                      case 'air_conditioner':
+                      case AirConditionerModel.TYPE:
                         try {
                           final acDevice = AirConditionerModel(
                             device.id,

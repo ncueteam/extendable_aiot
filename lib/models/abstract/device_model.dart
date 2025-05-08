@@ -28,7 +28,7 @@ class DeviceModel {
       final bool status = data['status'] as bool? ?? false;
 
       switch (type) {
-        case 'air_conditioner':
+        case AirConditionerModel.TYPE:
           final acDevice = AirConditionerModel(
             snapshot.id,
             name: name,

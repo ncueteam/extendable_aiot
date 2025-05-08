@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 /// 冷氣設備模型
 class AirConditionerModel extends SwitchableModel {
+  static const String TYPE = 'air_conditioner';
+
   // 溫度設置 (16°C-30°C)
   double temperature;
 
