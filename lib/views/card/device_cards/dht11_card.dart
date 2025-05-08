@@ -50,13 +50,27 @@ class _Dht11CardState extends State<Dht11Card> {
                 Column(
                   children: [
                     Icon(Icons.thermostat, size: 60, color: Colors.red),
-                    Text('溫度: ${widget.device.temperature} °C'),
+                    Text(
+                      '${widget.device.temperature} °C',
+                      style: TextStyle(
+                        color: Colors.blueGrey,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 Column(
                   children: [
-                    Icon(Icons.water_drop, size: 60, color: Colors.blue),
-                    Text('濕度: ${widget.device.humidity} %'),
+                    Icon(Icons.water_drop, size: 50, color: Colors.blue),
+                    Text(
+                      '${widget.device.humidity} %',
+                      style: TextStyle(
+                        color: Colors.blueGrey,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],

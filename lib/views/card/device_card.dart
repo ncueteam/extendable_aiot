@@ -112,7 +112,6 @@ class _DeviceCardState extends State<DeviceCard> {
         return _buildAirConditionerCard(widget.device as AirConditionerModel);
       case MQTTEnabledDHT11Model.TYPE:
         return Dht11Card(device: widget.device);
-        return _buildMQTTDHT11SensorCard(widget.device);
       // case 'fan':
       //   return _buildFanCard(widget.device as SwitchableModel);
       // case 'light':
@@ -659,43 +658,4 @@ class _DeviceCardState extends State<DeviceCard> {
       ),
     );
   }
-
-  // 預設設備卡片
-  // Widget _buildDefaultCard(GeneralModel device) {
-  //   return GestureDetector(
-  //     onTap: () => _navigateToDeviceControl(),
-  //     child: Container(
-  //       padding: const EdgeInsets.all(12),
-  //       margin: const EdgeInsets.all(8),
-  //       decoration: BoxDecoration(
-  //         color: Colors.grey[100],
-  //         borderRadius: BorderRadius.circular(15),
-  //         boxShadow: [
-  //           BoxShadow(
-  //             color: Colors.grey.withOpacity(0.2),
-  //             spreadRadius: 1,
-  //             blurRadius: 3,
-  //             offset: const Offset(0, 1),
-  //           ),
-  //         ],
-  //       ),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           const Icon(Icons.device_unknown, size: 24, color: Colors.grey),
-  //           const SizedBox(height: 8),
-  //           Text(
-  //             truncateString(device.name, 12),
-  //             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-  //           ),
-  //           Text(
-  //             truncateString(device.type, 12),
-  //             style: TextStyle(fontSize: 20, color: Colors.grey[600]),
-  //           ),
-  //           const Spacer(),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }
