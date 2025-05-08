@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:extendable_aiot/components/wifi_credential_trasmitter.dart';
 import 'package:extendable_aiot/models/sub_type/switch_model.dart';
 import 'package:extendable_aiot/views/demo_pages/integrated_devices_page.dart';
+import 'package:extendable_aiot/views/test_pages/mqtt_test_page.dart'; // 添加MQTT測試頁面
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/models/abstract/switchable_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -278,6 +279,31 @@ class _TestPageState extends State<TestPage> {
                         ),
                         child: const Text(
                           '整合裝置管理頁面 (冷氣+開關)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 添加MQTT測試工具按鈕
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MQTTTestPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          'MQTT 測試工具 (硬體訊息收集)',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
