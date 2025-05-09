@@ -314,14 +314,13 @@ void displayTask(void *parameter) {
     if (isMqttTransmitting && millis() - mqttIconBlinkMillis >= mqttIconBlinkInterval) {
       sharedData.isMqttTransmitting = false;
       isMqttTransmitting = false;
-    }
-    xSemaphoreGive(mutex);
+    }    xSemaphoreGive(mutex);
     
     // 優先顯示IR數據，如果有的話
-    displayManager.showIRData();
+    bool hasIrData = displayManager.showIRData();
     
     // 如果沒有IR數據要顯示，則顯示主畫面
-    if (!displayManager.showIRData()) {
+    if (!hasIrData) {
       displayManager.updateMainScreen(temp, humid, isMqttConnected, isMqttTransmitting, mqttIconBlinkMillis);
     }
     

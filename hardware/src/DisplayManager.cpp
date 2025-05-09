@@ -165,19 +165,36 @@ void DisplayManager::showMessage(const String& title, const String& message) {
 
 // 更新紅外線接收資料
 void DisplayManager::updateIRData(const String& protocol, uint32_t value, uint16_t bits) {
+    Serial.println("DisplayManager: 收到IR信號更新請求");
+    Serial.printf("協議: %s, 值: 0x%08X, 位元數: %d\n", protocol.c_str(), value, bits);
+    
     this->irProtocol = protocol;
     this->irValue = value;
     this->irBits = bits;
-    this->irDisplayTimeout = millis() + 5000;  // 顯示5秒後消失
+    this->irDisplayTimeout = millis() + 10000;  // 延長顯示時間至10秒
     this->hasIRData = true;
+    
+    Serial.printf("設置顯示超時至: %lu ms\n", this->irDisplayTimeout);
 }
 
 // 顯示紅外線接收資料畫面
 bool DisplayManager::showIRData() {
     // 檢查是否有IR資料要顯示以及是否過期
-    if (!hasIRData || millis() > irDisplayTimeout) {
+    unsigned long currentTime = millis();
+    if (!hasIRData) {
+        return false;
+    }
+    
+    if (currentTime > irDisplayTimeout) {
+        Serial.println("DisplayManager: IR顯示超時，停止顯示IR數據");
         hasIRData = false;
         return false;
+    }
+    
+    // 顯示剩餘時間
+    int remainingTime = (irDisplayTimeout - currentTime) / 1000;
+    if (remainingTime % 2 == 0) { // 每2秒輸出一次日誌
+        Serial.printf("DisplayManager: 顯示IR數據中，剩餘 %d 秒\n", remainingTime);
     }
 
     if (*mutex != NULL) {

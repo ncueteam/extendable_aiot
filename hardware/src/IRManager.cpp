@@ -64,11 +64,16 @@ void IRManager::beginReceiver(int pin) {
         delete irReceiver;
     }
     
-    // 創建接收器（緩衝區大小1024，接收訊號超時50毫秒）
-    irReceiver = new IRrecv(pin, 1024, 50, true);
+    // 創建接收器（增加緩衝區大小至2048，並設置較長的接收超時，以提高捕獲能力）
+    irReceiver = new IRrecv(pin, 2048, 60, true);
     irReceiver->enableIRIn();  // 啟動接收器
+    
+    // 設置接收器允許處理未知協議
+    irReceiver->setUnknownThreshold(12);  // 允許偵測更短的協議
+    irReceiver->setTolerance(25);  // 增加容錯率(%)，預設是25%
+    
     receiverInitialized = true;
-    Serial.printf("IR接收器已初始化於引腳 %d\n", pin);
+    Serial.printf("IR接收器已增強模式初始化於引腳 %d\n", pin);
 }
 
 // 獲取IR控制主題
@@ -343,14 +348,13 @@ void IRManager::irReceiverTask(void* parameter) {
     // 釋放參數結構體內存
     delete params;
     
-    Serial.println("IR接收任務已啟動");
-      // 任務主循環
+    Serial.println("IR接收任務已啟動");    // 任務主循環
     while (true) {
         // 檢查並發佈接收到的IR數據
         irManager->publishIRReceived(mqttClient);
         
-        // 短暫延遲以減少CPU使用，但保持對IR信號的快速響應
-        vTaskDelay(20 / portTICK_PERIOD_MS);
+        // 使用更短的延遲，提高IR信號捕獲的靈敏度
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
