@@ -1,4 +1,5 @@
 #include "IRManager.h"
+#include "DisplayManager.h"  // 添加 DisplayManager 引用
 
 // 構造函數
 IRManager::IRManager(int irSendPin, int irRecvPin, const char* controlTopic, const char* receiveTopic) {
@@ -16,6 +17,9 @@ IRManager::IRManager(int irSendPin, int irRecvPin, const char* controlTopic, con
     
     // 創建互斥鎖
     irMutex = xSemaphoreCreateMutex();
+
+    // 初始化 DisplayManager 為空指針
+    displayManager = nullptr;
 }
 
 // 析構函數
@@ -245,6 +249,11 @@ void IRManager::publishIRReceived(PubSubClient* mqttClient) {
         doc["type"] = typeStr;
         doc["bits"] = results.bits;
         
+        // 若有Display Manager可用，通知顯示紅外線數據
+        if (displayManager != nullptr) {
+            displayManager->updateIRData(typeStr, results.value, results.bits);
+        }
+        
         // 處理不同類型的編碼
         switch (results.decode_type) {
             case decode_type_t::NEC:
@@ -416,4 +425,9 @@ const char* IRManager::typeToString(decode_type_t type) {
         default:
             return "UNKNOWN";
     }
+}
+
+// 設置顯示管理器
+void IRManager::setDisplayManager(DisplayManager* displayManagerPtr) {
+    this->displayManager = displayManagerPtr;
 }

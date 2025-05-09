@@ -16,6 +16,13 @@ private:
     TimeManager* timeManager;                    // 時間管理器指標
     SemaphoreHandle_t* mutex;                    // 互斥鎖指標
     const long mqttIconBlinkInterval;            // MQTT傳輸圖示閃爍間隔
+    
+    // 紅外線接收資料顯示相關參數
+    String irProtocol;                           // 紅外線協議類型
+    uint32_t irValue;                            // 紅外線接收到的值
+    uint16_t irBits;                             // 紅外線位元數
+    unsigned long irDisplayTimeout;              // 紅外線資料顯示超時時間
+    bool hasIRData;                              // 是否有紅外線資料
 
 public:
     // 建構函數
@@ -40,6 +47,11 @@ public:
 
     // 顯示訊息畫面
     void showMessage(const String& title, const String& message);
+    
+    // 更新紅外線接收資料
+    void updateIRData(const String& protocol, uint32_t value, uint16_t bits);
+      // 顯示紅外線接收資料畫面
+    bool showIRData();
 };
 
 #endif // DISPLAY_MANAGER_H

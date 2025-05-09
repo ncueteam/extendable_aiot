@@ -9,6 +9,8 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
+// 前向宣告 DisplayManager 以避免循環引用
+class DisplayManager;
 
 
 class IRManager {
@@ -19,10 +21,10 @@ private:
     const char* irControlTopic;
     const char* irReceiveTopic;
     bool initialized;
-    bool receiverInitialized;
-    int receiverPin;
+    bool receiverInitialized;    int receiverPin;
     TaskHandle_t irReceiverTaskHandle;
     SemaphoreHandle_t irMutex;
+    DisplayManager* displayManager;  // 顯示管理器指標
 
 public:
     // 構造函數
@@ -59,6 +61,9 @@ public:
     
     // 發送RC6格式命令
     void sendRC6(uint32_t data, uint16_t bits = 20);
+    
+    // 設置顯示管理器
+    void setDisplayManager(DisplayManager* displayManagerPtr);
     
     // 檢查是否有新的IR信號
     bool available();

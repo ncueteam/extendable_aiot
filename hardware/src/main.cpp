@@ -298,8 +298,11 @@ void dhtTask(void *parameter) {
 
 // 顯示更新任務
 void displayTask(void *parameter) {
+  static bool showingIrData = false;
+  static unsigned long irDisplayStartTime = 0;
+  
   while (true) {
-    // 使用DisplayManager更新主畫面
+    // 使用DisplayManager更新主畫面或顯示IR數據
     xSemaphoreTake(mutex, portMAX_DELAY);
     float temp = sharedData.temperature;
     float humid = sharedData.humidity;
@@ -314,7 +317,13 @@ void displayTask(void *parameter) {
     }
     xSemaphoreGive(mutex);
     
-    displayManager.updateMainScreen(temp, humid, isMqttConnected, isMqttTransmitting, mqttIconBlinkMillis);
+    // 優先顯示IR數據，如果有的話
+    displayManager.showIRData();
+    
+    // 如果沒有IR數據要顯示，則顯示主畫面
+    if (!displayManager.showIRData()) {
+      displayManager.updateMainScreen(temp, humid, isMqttConnected, isMqttTransmitting, mqttIconBlinkMillis);
+    }
     
     vTaskDelay(displayInterval / portTICK_PERIOD_MS);
   }
@@ -337,8 +346,8 @@ void setup() {
   // DHT11 初始化
   pinMode(DHTPIN, INPUT);
   dht.begin();
-  
-  // 初始化紅外線發射器
+    // 初始化紅外線發射器
+  irManager.setDisplayManager(&displayManager);  // 連接顯示管理器
   irManager.begin();
   
   // LED控制器初始化

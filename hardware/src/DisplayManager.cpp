@@ -14,6 +14,11 @@ DisplayManager::DisplayManager(
     timeManager(timeManagerPtr),
     mutex(mutexPtr),
     mqttIconBlinkInterval(blinkInterval) {
+    hasIRData = false;
+    irDisplayTimeout = 0;
+    irValue = 0;
+    irBits = 0;
+    irProtocol = "";
 }
 
 // 初始化顯示器
@@ -156,4 +161,65 @@ void DisplayManager::showMessage(const String& title, const String& message) {
     }
     
     display->sendBuffer();
+}
+
+// 更新紅外線接收資料
+void DisplayManager::updateIRData(const String& protocol, uint32_t value, uint16_t bits) {
+    this->irProtocol = protocol;
+    this->irValue = value;
+    this->irBits = bits;
+    this->irDisplayTimeout = millis() + 5000;  // 顯示5秒後消失
+    this->hasIRData = true;
+}
+
+// 顯示紅外線接收資料畫面
+bool DisplayManager::showIRData() {
+    // 檢查是否有IR資料要顯示以及是否過期
+    if (!hasIRData || millis() > irDisplayTimeout) {
+        hasIRData = false;
+        return false;
+    }
+
+    if (*mutex != NULL) {
+        xSemaphoreTake(*mutex, portMAX_DELAY);
+    }
+    
+    display->clearBuffer();
+    
+    // 顯示標題
+    display->setFont(u8g2_font_ncenB10_tr);
+    display->setCursor(0, 12);
+    display->print("IR Received");
+    
+    // 顯示IR詳細信息
+    display->setFont(u8g2_font_ncenB08_tr);
+    
+    // 顯示協議類型
+    display->setCursor(0, 28);
+    display->print("Protocol: ");
+    display->print(irProtocol);
+    
+    // 顯示接收到的值 (十六進制)
+    display->setCursor(0, 40);
+    char hexValue[12];
+    sprintf(hexValue, "0x%08X", irValue);
+    display->print("Value: ");
+    display->print(hexValue);
+    
+    // 顯示位元數
+    display->setCursor(0, 52);
+    display->print("Bits: ");
+    display->print(irBits);
+      // 顯示倒數計時
+    int remaining = (irDisplayTimeout - millis()) / 1000 + 1;
+    display->setCursor(100, 64);
+    display->print(remaining);
+    display->print("s");
+    
+    if (*mutex != NULL) {
+        xSemaphoreGive(*mutex);
+    }
+    
+    display->sendBuffer();
+    return true;
 }
