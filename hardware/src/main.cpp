@@ -10,6 +10,7 @@
 #include "WiFiManager.h" // WiFi管理器
 #include "DisplayManager.h" // 顯示管理器
 #include "TimeManager.h" // 時間管理器
+#include "IRManager.h" // IR管理器
 
 // 前向宣告
 void handleWiFiCredentials(const char* message);
@@ -29,6 +30,13 @@ WiFiManager wifiManager(&configManager);
 
 // 創建TimeManager實例
 TimeManager timeManager("pool.ntp.org", 28800, 0, &wifiManager);
+
+// IR引腳定義
+#define IR_LED_PIN 32  // ESP32 GPIO32作為IR發射引腳
+#define IR_RECV_PIN 33  // ESP32 GPIO33作為IR接收引腳
+
+// 創建IRManager實例
+IRManager irManager(IR_LED_PIN, IR_RECV_PIN);
 
 // FreeRTOS相關定義
 #define CORE_0 0  // 通訊核心
@@ -80,6 +88,8 @@ String mqttTopic = "esp32/device/";   // 將附加 deviceId/dht11
 #define DHTPIN 14
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+
+// LED Pin定義
 
 // LED Pin定義
 const int LED_PIN = 2;
@@ -149,8 +159,17 @@ void handleWiFiCredentials(const char* message) {
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   // 簡化處理方式，減少內存使用
   if (length > 0) {
-    // 可以在這裡處理來自Flutter的命令
-    // 實際處理邏輯減少複雜性
+    // 將 payload 轉換為 null 結尾的字串
+    payload[length] = '\0';
+    String payloadStr = String((char*)payload);
+    
+    // 嘗試使用IRManager處理消息
+    if (irManager.handleMQTTMessage(topic, payloadStr.c_str())) {
+      // 如果IRManager已處理，則返回
+      return;
+    }
+    
+    // 可以在這裡處理來自Flutter的其他命令
   }
 }
 
@@ -163,11 +182,11 @@ bool mqtt_connect() {
     // 設置遺囑消息
     const char* willTopic = "esp32/status";
     const char* willMessage = "offline";
-    bool willRetain = true;
-    
-    if (mqtt_client.connect(uniqueClientId, NULL, NULL, willTopic, 0, willRetain, willMessage)) {
+    bool willRetain = true;    if (mqtt_client.connect(uniqueClientId, NULL, NULL, willTopic, 0, willRetain, willMessage)) {
       mqtt_client.subscribe("esp32/commands");
+      mqtt_client.subscribe(irManager.getIRControlTopic());  // 訂閱IR控制主題
       mqtt_client.publish("esp32/status", "online", true);
+      mqtt_client.publish(irManager.getIRReceiveTopic(), "IR接收器已啟動", true);
       return true;
     }
     return false;
@@ -203,12 +222,12 @@ void mqttTask(void *parameter) {
         sharedData.isMqttTransmitting = true;
         sharedData.mqttIconBlinkMillis = currentMillis;
         xSemaphoreGive(mutex);
-        
-        // 使用較大的JSON文檔以容納更多信息
+          // 使用較大的JSON文檔以容納更多信息
         StaticJsonDocument<200> doc;
         doc["temp"] = temp;
         doc["humidity"] = humid;
         doc["deviceId"] = deviceId;
+        doc["features"] = "ir_control";  // 添加表明支持IR控制的特性標記
         
         // 加入房間ID (如果有)
         if (wifiManager.hasRoomID()) {
@@ -315,10 +334,12 @@ void setup() {
   
   // 初始化共享數據
   memset(&sharedData, 0, sizeof(sharedData));
-  
   // DHT11 初始化
   pinMode(DHTPIN, INPUT);
   dht.begin();
+  
+  // 初始化紅外線發射器
+  irManager.begin();
   
   // LED控制器初始化
   ledController.begin();
@@ -344,10 +365,12 @@ void setup() {
   if (wifiManager.isConnected()) {
     timeManager.begin();
   }
-  
-  // 初始化MQTT
+    // 初始化MQTT
   mqtt_client.setServer(mqtt_server, mqtt_port);
   mqtt_client.setCallback(mqtt_callback);
+  
+  // 啟動IR接收任務
+  irManager.startReceiverTask(&mqtt_client);
   
   // 創建任務
   xTaskCreatePinnedToCore(
