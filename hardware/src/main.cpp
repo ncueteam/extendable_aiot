@@ -11,6 +11,7 @@
 #include "DisplayManager.h" // 顯示管理器
 #include "TimeManager.h" // 時間管理器
 #include "IRManager.h" // IR管理器
+#include "MQTTManager.h" // MQTT管理器
 
 // 前向宣告
 void handleWiFiCredentials(const char* message);
@@ -58,9 +59,6 @@ TaskHandle_t dhtTaskHandle = NULL;
 struct SharedData {
   float temperature;
   float humidity;
-  bool isMqttConnected;
-  bool isMqttTransmitting;
-  unsigned long mqttIconBlinkMillis;
 } sharedData;
 
 // 設備ID
@@ -75,11 +73,8 @@ const long mqttIconBlinkInterval = 500;
 
 // MQTT客戶端設定
 WiFiClient espClient;
-PubSubClient mqtt_client(espClient);
-unsigned long lastMqttReconnectAttempt = 0;
-const long mqttReconnectInterval = 5000;
-unsigned long lastMqttPublish = 0;
-const long mqttPublishInterval = 5000;
+// 創建MQTTManager實例
+MQTTManager mqttManager(&espClient, &wifiManager, &mutex, mqtt_server, mqtt_port, mqtt_topic, client_id, 5000, 5000, mqttIconBlinkInterval);
 
 // MQTT 主題設定 - 在全局添加
 String mqttTopic = "esp32/device/";   // 將附加 deviceId/dht11
@@ -156,7 +151,7 @@ void handleWiFiCredentials(const char* message) {
 }
 
 // MQTT回調函數
-void mqtt_callback(char* topic, byte* payload, unsigned int length) {
+void mqtt_callback(const char* topic, byte* payload, unsigned int length) {
   // 簡化處理方式，減少內存使用
   if (length > 0) {
     // 將 payload 轉換為 null 結尾的字串
@@ -173,92 +168,19 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-bool mqtt_connect() {
-  if (!mqtt_client.connected()) {
-    // 生成唯一的客戶端ID - 減少String操作
-    char uniqueClientId[20];
-    sprintf(uniqueClientId, "%s%04X", client_id, random(0xffff));
-    
-    // 設置遺囑消息
-    const char* willTopic = "esp32/status";
-    const char* willMessage = "offline";
-    bool willRetain = true;    if (mqtt_client.connect(uniqueClientId, NULL, NULL, willTopic, 0, willRetain, willMessage)) {
-      mqtt_client.subscribe("esp32/commands");
-      mqtt_client.subscribe(irManager.getIRControlTopic());  // 訂閱IR控制主題
-      mqtt_client.publish("esp32/status", "online", true);
-      mqtt_client.publish(irManager.getIRReceiveTopic(), "IR接收器已啟動", true);
-      return true;
-    }
-    return false;
-  }
-  return true;
-}
-
 // MQTT通訊任務
 void mqttTask(void *parameter) {
-  while (true) {
-    unsigned long currentMillis = millis();
+  while (true) {    // 使用MQTTManager處理連接和消息循環
+    mqttManager.loop();
     
-    // MQTT連接檢查和數據發送
-    if (!mqtt_client.connected()) {
-      if (currentMillis - lastMqttReconnectAttempt >= mqttReconnectInterval) {
-        lastMqttReconnectAttempt = currentMillis;
-        if (mqtt_connect()) {
-          lastMqttReconnectAttempt = 0;
-          xSemaphoreTake(mutex, portMAX_DELAY);
-          sharedData.isMqttConnected = true;
-          xSemaphoreGive(mutex);
-        }
-      }
-    } else {
-      mqtt_client.loop();
-      
-      if (currentMillis - lastMqttPublish >= mqttPublishInterval) {
-        lastMqttPublish = currentMillis;
-        
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        float temp = sharedData.temperature;
-        float humid = sharedData.humidity;
-        sharedData.isMqttTransmitting = true;
-        sharedData.mqttIconBlinkMillis = currentMillis;
-        xSemaphoreGive(mutex);
-          // 使用較大的JSON文檔以容納更多信息
-        StaticJsonDocument<200> doc;
-        doc["temp"] = temp;
-        doc["humidity"] = humid;
-        doc["deviceId"] = deviceId;
-        doc["features"] = "ir_control";  // 添加表明支持IR控制的特性標記
-        
-        // 加入房間ID (如果有)
-        if (wifiManager.hasRoomID()) {
-          doc["roomId"] = wifiManager.getRoomID();
-        } else {
-          doc["roomId"] = "unknown";
-        }
-        
-        char jsonBuffer[200];
-        serializeJson(doc, jsonBuffer);
-        
-        // 發布到主題，使用房間ID作為分類
-        String topic = mqtt_topic;
-        if (wifiManager.hasRoomID()) {
-          // 使用房間ID作為MQTT的主要分類方式
-          topic = String(mqtt_topic) + "/" + wifiManager.getRoomID();
-          
-          // 也發布到包含裝置ID的主題，讓App可以追蹤個別裝置
-          String deviceTopic = topic + "/" + deviceId;
-          mqtt_client.publish(deviceTopic.c_str(), jsonBuffer);
-          Serial.println("發送數據到房間和裝置主題: " + deviceTopic);
-        } else {
-          // 如果沒有房間ID，則使用裝置ID作為分類
-          topic = String(mqtt_topic) + "/unknown/" + deviceId;
-        }
-        
-        // 發布到主題
-        mqtt_client.publish(topic.c_str(), jsonBuffer);
-        Serial.println("發送數據到主題: " + topic);
-      }
-    }
+    // 獲取當前傳感器數據
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    float temp = sharedData.temperature;
+    float humid = sharedData.humidity;
+    xSemaphoreGive(mutex);
+    
+    // 發布傳感器數據
+    mqttManager.publishSensorData(temp, humid);
     
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
@@ -302,19 +224,14 @@ void displayTask(void *parameter) {
   static unsigned long irDisplayStartTime = 0;
   
   while (true) {
-    // 使用DisplayManager更新主畫面或顯示IR數據
+  // 使用DisplayManager更新主畫面或顯示IR數據
     xSemaphoreTake(mutex, portMAX_DELAY);
     float temp = sharedData.temperature;
     float humid = sharedData.humidity;
-    bool isMqttConnected = sharedData.isMqttConnected;
-    bool isMqttTransmitting = sharedData.isMqttTransmitting;
-    unsigned long mqttIconBlinkMillis = sharedData.mqttIconBlinkMillis;
-    
-    // 檢查傳輸圖示是否需要關閉
-    if (isMqttTransmitting && millis() - mqttIconBlinkMillis >= mqttIconBlinkInterval) {
-      sharedData.isMqttTransmitting = false;
-      isMqttTransmitting = false;
-    }    xSemaphoreGive(mutex);
+    bool isMqttConnected = mqttManager.isConnected();
+    bool isMqttTransmitting = mqttManager.isTransmitting();
+    unsigned long mqttIconBlinkMillis = mqttManager.getIconBlinkMillis();
+    xSemaphoreGive(mutex);
     
     // 優先顯示IR數據，如果有的話
     bool hasIrData = displayManager.showIRData();
@@ -368,17 +285,24 @@ void setup() {
   
   // 初始化顯示管理器
   displayManager.begin();
-  
-  // 初始化時間管理器
+    // 初始化時間管理器
   if (wifiManager.isConnected()) {
     timeManager.begin();
   }
-    // 初始化MQTT
-  mqtt_client.setServer(mqtt_server, mqtt_port);
-  mqtt_client.setCallback(mqtt_callback);
+  
+  // 初始化MQTT管理器
+  mqttManager.begin(deviceId);
+  mqttManager.setCallback(mqtt_callback);
+  
+  // 訂閱必要的主題
+  if (mqttManager.isConnected()) {
+    mqttManager.subscribe("esp32/commands");
+    mqttManager.subscribe(irManager.getIRControlTopic());
+    mqttManager.publish(irManager.getIRReceiveTopic(), "IR接收器已啟動", true);
+  }
   
   // 啟動IR接收任務
-  irManager.startReceiverTask(&mqtt_client);
+  irManager.startReceiverTask(&mqttManager);
   
   // 創建任務
   xTaskCreatePinnedToCore(

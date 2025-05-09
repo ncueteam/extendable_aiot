@@ -1,5 +1,6 @@
 #include "IRManager.h"
 #include "DisplayManager.h"  // 添加 DisplayManager 引用
+#include "MQTTManager.h"     // 添加 MQTTManager 引用
 
 // 構造函數
 IRManager::IRManager(int irSendPin, int irRecvPin, const char* controlTopic, const char* receiveTopic) {
@@ -237,7 +238,7 @@ bool IRManager::read() {
 }
 
 // 解析接收到的IR數據並發送到MQTT
-void IRManager::publishIRReceived(PubSubClient* mqttClient) {
+void IRManager::publishIRReceived(MQTTManager* mqttManager) {
     if (!receiverInitialized) {
         return;
     }    if (read()) {
@@ -317,15 +318,10 @@ void IRManager::publishIRReceived(PubSubClient* mqttClient) {
                          results.value, results.bits);
         }
         Serial.println("===============================================");
-        
-        // 只有在MQTT連接時才發布
-        if (mqttClient->connected()) {
-            // 序列化成 JSON 字符串
-            char buffer[512];
-            size_t n = serializeJson(doc, buffer);
-            
-            // 發布到MQTT
-            mqttClient->publish(irReceiveTopic, buffer, n);
+          // 只有在MQTT連接時才發布
+        if (mqttManager && mqttManager->isConnected()) {
+            // 使用JSON發布
+            mqttManager->publishJson(irReceiveTopic, doc);
             
             Serial.printf("已發佈IR接收數據到主題: %s\n", irReceiveTopic);
         }
@@ -337,13 +333,13 @@ void IRManager::irReceiverTask(void* parameter) {
     // 獲取傳入參數
     struct ReceiverTaskParams {
         IRManager* irManager;
-        PubSubClient* mqttClient;
+        MQTTManager* mqttManager;
     };
     
     ReceiverTaskParams* params = (ReceiverTaskParams*)parameter;
     
     IRManager* irManager = params->irManager;
-    PubSubClient* mqttClient = params->mqttClient;
+    MQTTManager* mqttManager = params->mqttManager;
     
     // 釋放參數結構體內存
     delete params;
@@ -351,7 +347,7 @@ void IRManager::irReceiverTask(void* parameter) {
     Serial.println("IR接收任務已啟動");    // 任務主循環
     while (true) {
         // 檢查並發佈接收到的IR數據
-        irManager->publishIRReceived(mqttClient);
+        irManager->publishIRReceived(mqttManager);
         
         // 使用更短的延遲，提高IR信號捕獲的靈敏度
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -359,7 +355,7 @@ void IRManager::irReceiverTask(void* parameter) {
 }
 
 // 啟動IR接收任務
-void IRManager::startReceiverTask(PubSubClient* mqttClient) {
+void IRManager::startReceiverTask(MQTTManager* mqttManager) {
     // 確保接收器已初始化
     if (!receiverInitialized) {
         Serial.println("IR接收器未初始化，無法啟動接收任務");
@@ -369,13 +365,13 @@ void IRManager::startReceiverTask(PubSubClient* mqttClient) {
     // 為任務參數分配內存
     struct ReceiverTaskParams {
         IRManager* irManager;
-        PubSubClient* mqttClient;
+        MQTTManager* mqttManager;
     };
     
     ReceiverTaskParams* params = new ReceiverTaskParams;
     
     params->irManager = this;
-    params->mqttClient = mqttClient;
+    params->mqttManager = mqttManager;
     
     // 創建任務
     xTaskCreatePinnedToCore(

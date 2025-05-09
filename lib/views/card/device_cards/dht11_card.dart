@@ -54,85 +54,157 @@ class _Dht11CardState extends State<Dht11Card> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(10),
-      child: ListTile(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MQTTDht11DetailsPage(sensor: widget.device),
-            ),
-          );
-        },
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Icon(Icons.thermostat, size: 30, color: Colors.blueGrey),
-            Text(
-              widget.device.name,
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
-              ),
-            ),
-            const SizedBox(width: 10),
-            // 显示在线状态指示器
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isOnline ? Colors.green : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Text(
-              '最後更新: ${widget.device.lastUpdatedTime.toString().split('.')[0]}',
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  children: [
-                    Icon(Icons.thermostat, size: 60, color: Colors.red),
-                    Text(
-                      '${(widget.device.temperature * 10).round() / 10} °C',
-                      style: TextStyle(
-                        color: Colors.blueGrey,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Icon(Icons.water_drop, size: 50, color: Colors.blue),
-                    Text(
-                      '${(widget.device.humidity * 10).round() / 10} %',
-                      style: TextStyle(
-                        color: Colors.blueGrey,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-          ],
-        ),
+    // 使用外層的 LayoutBuilder 獲取卡片的可用空間
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 基於卡片的實際寬度調整所有元素大小
+        final cardWidth = constraints.maxWidth;
+        final cardPadding = cardWidth * 0.03;
 
-        tileColor: Colors.grey[200],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+        return Card(
+          margin: const EdgeInsets.all(10),
+          color: Colors.grey[200],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => MQTTDht11DetailsPage(sensor: widget.device),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: EdgeInsets.all(cardPadding),
+              child: LayoutBuilder(
+                builder: (context, innerConstraints) {
+                  // 取得內部容器的實際尺寸
+                  final contentWidth = innerConstraints.maxWidth;
+
+                  // 基於內部容器大小動態計算各元素尺寸
+                  final titleIconSize = contentWidth * 0.16;
+                  final statusSize = contentWidth * 0.06;
+                  final tempIconSize = contentWidth * 0.32;
+                  final humidityIconSize = contentWidth * 0.28;
+                  final titleFontSize = contentWidth * 0.12;
+                  final dataFontSize = contentWidth * 0.08;
+                  final infoFontSize = contentWidth * 0.07;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 標題區域
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.thermostat,
+                            size: titleIconSize,
+                            color: Colors.blueGrey,
+                          ),
+                          SizedBox(width: contentWidth * 0.02),
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                widget.device.name,
+                                style: TextStyle(
+                                  fontSize: titleFontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueGrey,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: contentWidth * 0.02),
+                          // 在線狀態指示器
+                          Container(
+                            width: statusSize,
+                            height: statusSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isOnline ? Colors.green : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: contentWidth * 0.03),
+
+                      // 更新時間
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '最後更新: ${widget.device.lastUpdatedTime.toString().split('.')[0]}',
+                          style: TextStyle(fontSize: infoFontSize),
+                        ),
+                      ),
+
+                      SizedBox(height: contentWidth * 0.04),
+
+                      // 溫度和濕度資訊
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.thermostat,
+                                  size: tempIconSize,
+                                  color: Colors.red,
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${(widget.device.temperature * 10).round() / 10} °C',
+                                    style: TextStyle(
+                                      color: Colors.blueGrey,
+                                      fontSize: dataFontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.water_drop,
+                                  size: humidityIconSize,
+                                  color: Colors.blue,
+                                ),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${(widget.device.humidity * 10).round() / 10} %',
+                                    style: TextStyle(
+                                      color: Colors.blueGrey,
+                                      fontSize: dataFontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

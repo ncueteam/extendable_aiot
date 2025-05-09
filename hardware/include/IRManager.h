@@ -7,10 +7,10 @@
 #include <IRrecv.h>
 #include <IRutils.h>
 #include <ArduinoJson.h>
-#include <PubSubClient.h>
 
-// 前向宣告 DisplayManager 以避免循環引用
+// 前向宣告以避免循環引用
 class DisplayManager;
+class MQTTManager;
 
 
 class IRManager {
@@ -70,14 +70,13 @@ public:
     
     // 獲取接收到的IR信號並解碼
     bool read();
-    
-    // 解析接收到的IR數據並發送到MQTT
-    void publishIRReceived(PubSubClient* mqttClient);
+      // 解析接收到的IR數據並發送到MQTT
+    void publishIRReceived(MQTTManager* mqttManager);
     
     // IR接收任務（靜態方法，用於FreeRTOS任務）
     static void irReceiverTask(void* parameter);
       // 啟動IR接收任務
-    void startReceiverTask(PubSubClient* mqttClient);
+    void startReceiverTask(MQTTManager* mqttManager);
     
     // 將解碼類型轉換為字符串的靜態方法
     static const char* typeToString(decode_type_t type);
