@@ -33,7 +33,7 @@ TimeManager timeManager("pool.ntp.org", 28800, 0, &wifiManager);
 
 // IR引腳定義
 #define IR_LED_PIN 32  // ESP32 GPIO32作為IR發射引腳
-#define IR_RECV_PIN 33  // ESP32 GPIO33作為IR接收引腳
+#define IR_RECV_PIN 23  // ESP32 GPIO23作為IR接收引腳
 
 // 創建IRManager實例
 IRManager irManager(IR_LED_PIN, IR_RECV_PIN);
