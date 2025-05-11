@@ -12,7 +12,7 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   if (const bool.fromEnvironment('dart.vm.product')) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }

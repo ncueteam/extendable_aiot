@@ -538,7 +538,6 @@ class _RoomPageState extends State<RoomPage>
                       // Status display
                       Container(
                         padding: const EdgeInsets.all(8),
-                        color: Colors.blue.shade50,
                         width: double.infinity,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
