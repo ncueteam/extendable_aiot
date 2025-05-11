@@ -1,3 +1,4 @@
+import 'package:app_chiseletor/widgets/theme_selection_button.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/models/user_model.dart';
 import 'package:extendable_aiot/models/abstract/room_model.dart';
@@ -193,11 +194,12 @@ class _ProfileState extends State<Profile> {
     final localizations = AppLocalizations.of(context);
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(localizations?.profile ?? '個人資料'),
-      //   centerTitle: true,
-      //   elevation: 0,
-      // ),
+      appBar: AppBar(
+        title: Text(localizations?.profile ?? '個人資料'),
+        centerTitle: true,
+        elevation: 0,
+        actions: [ThemeSelectionButton()],
+      ),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())

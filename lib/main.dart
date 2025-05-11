@@ -3,6 +3,7 @@ import 'package:app_chiseletor/theme/app_initializer.dart';
 import 'package:app_chiseletor/widgets/theme_material_app.dart';
 import 'package:extendable_aiot/l10n/app_localizations.dart';
 import 'package:extendable_aiot/themes/default_theme.dart';
+import 'package:extendable_aiot/themes/aurora_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:extendable_aiot/views/root_page.dart';
 import 'package:flutter/services.dart';
@@ -18,12 +19,11 @@ void main() async {
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // 等待 Firebase 應用檢查實例的啟動
-  // await FirebaseAppCheck.instance.activate(
+  // 等待 Firebase 應用檢查實例的啟動  // await FirebaseAppCheck.instance.activate(
   //   androidProvider: AndroidProvider.debug,
   // );
   final providers = await AppInitializer.initialize(
-    customThemes: [DefaultTheme()],
+    customThemes: [DefaultTheme(), AuroraTheme()],
     defaultLocale: const Locale('zh', 'TW'),
   );
 

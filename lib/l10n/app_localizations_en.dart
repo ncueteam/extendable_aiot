@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeVicky => 'Vicky\'s Theme';
 
   @override
+  String get themeAurora => 'Aurora Theme';
+
+  @override
   String get hello => 'Hello';
 
   @override

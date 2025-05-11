@@ -12,6 +12,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeVicky => 'Vicky主题';
 
   @override
+  String get themeAurora => '极光主题';
+
+  @override
   String get hello => '您好';
 
   @override
@@ -261,6 +264,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get themeVicky => 'Vicky主题';
 
   @override
+  String get themeAurora => '极光主题';
+
+  @override
   String get hello => '您好';
 
   @override
@@ -508,6 +514,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get themeVicky => 'Vicky主題';
+
+  @override
+  String get themeAurora => '極光主題';
 
   @override
   String get hello => '您好';

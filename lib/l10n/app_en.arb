@@ -4,6 +4,10 @@
     "@themeVicky": {
         "description": "The theme name for Vicky's theme"
     },
+    "themeAurora": "Aurora Theme",
+    "@themeAurora": {
+        "description": "The theme name for Aurora theme"
+    },
     "hello": "Hello",
     "@hello": {
         "description": "Greeting text on the main page"

@@ -103,6 +103,12 @@ abstract class AppLocalizations {
   /// **'Vicky\'s Theme'**
   String get themeVicky;
 
+  /// The theme name for Aurora theme
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora Theme'**
+  String get themeAurora;
+
   /// Greeting text on the main page
   ///
   /// In en, this message translates to:
